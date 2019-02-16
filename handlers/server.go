@@ -30,6 +30,9 @@ func SetupRoutes(router *mux.Router) {
 		Methods("GET").
 		Queries("output", "{output:move}").
 		Queries("youId", "{youId}")
+	router.HandleFunc("/games/{id}/frames/{frame}", getGif).
+		Methods("GET").
+		Queries("output", "{output:gif}")
 	router.HandleFunc("/games/{id}/frames/{frame}", getFrame).
 		Methods("GET").
 		Queries("output", "{output:board|board-animated|raw}")
