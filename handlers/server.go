@@ -67,8 +67,6 @@ func getFrame(w http.ResponseWriter, r *http.Request) {
 		response(w, 500, "Problem getting game frames: "+err.Error())
 		return
 	}
-	width := int(gameStatus.Game.Width)
-	height := int(gameStatus.Game.Height)
 	if params["output"] == move {
 		move, err := ConvertFrameToMove(&gameFrames.Frames[0], gameStatus, params["youId"])
 		if err != nil {
@@ -80,7 +78,7 @@ func getFrame(w http.ResponseWriter, r *http.Request) {
 		w.Write(json)
 	}
 	if strings.HasPrefix(params["output"], board) {
-		grid := ConvertFrameToGrid(width, height, &gameFrames.Frames[0])
+		grid := ConvertFrameToGrid(&gameFrames.Frames[0], gameStatus)
 		turn := int(gameFrames.Frames[0].Turn)
 		board := ConvertGridToString(grid)
 		if params["output"] == boardAnimated {
