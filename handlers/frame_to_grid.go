@@ -37,7 +37,8 @@ type Pixel struct {
 }
 
 // ConvertFrameToGrid takes a frame and makes a 2d grid representatin.
-func ConvertFrameToGrid(width int, height int, gameFrame *openapi.EngineGameFrame) [][]Pixel {
+func ConvertFrameToGrid(gameFrame *openapi.EngineGameFrame, gameStatus *openapi.EngineStatusResponse) [][]Pixel {
+	width, height := getDimensions(gameStatus)
 	response := make([][]Pixel, width)
 	for x := 0; x < width; x++ {
 		response[x] = make([]Pixel, height)
