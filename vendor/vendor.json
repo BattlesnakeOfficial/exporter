@@ -1,0 +1,45 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "dvabztWVQX8f6oMLRyv4dLH+TGY=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/davecgh/go-spew/spew",
+			"path": "github.com/davecgh/go-spew/spew",
+			"revision": "363ebb24d041ccea8068222281c2e963e997b9dc",
+			"revisionTime": "2019-01-09T08:30:14Z"
+		},
+		{
+			"checksumSHA1": "yGnECJsPZBlk5khJmLUP8thNNxM=",
+			"path": "github.com/gorilla/mux",
+			"revision": "a7962380ca08b5a188038c69871b8d3fbdf31e89",
+			"revisionTime": "2019-01-25T16:05:53Z"
+		},
+		{
+			"checksumSHA1": "Lyokxcm6jLScIFJGNu9U409S3RU=",
+			"path": "github.com/h2non/parth",
+			"revision": "b4df798d65426f8c8ab5ca5f9987aec5575d26c9",
+			"revisionTime": "2019-01-31T12:31:55Z"
+		},
+		{
+			"checksumSHA1": "LuFv4/jlrmFNnDb/5SCSEPAM9vU=",
+			"origin": "github.com/stretchr/testify/vendor/github.com/pmezard/go-difflib/difflib",
+			"path": "github.com/pmezard/go-difflib/difflib",
+			"revision": "363ebb24d041ccea8068222281c2e963e997b9dc",
+			"revisionTime": "2019-01-09T08:30:14Z"
+		},
+		{
+			"checksumSHA1": "qTNfPVU4Tz/JDMcSeL+k9HX2cV8=",
+			"path": "github.com/stretchr/testify/assert",
+			"revision": "363ebb24d041ccea8068222281c2e963e997b9dc",
+			"revisionTime": "2019-01-09T08:30:14Z"
+		},
+		{
+			"checksumSHA1": "NZHTvtfT/NWM/9gf5zThYVaBGV4=",
+			"path": "gopkg.in/h2non/gock.v1",
+			"revision": "ba88c4862a27596539531ce469478a91bc5a0511",
+			"revisionTime": "2019-01-31T12:33:34Z"
+		}
+	],
+	"rootPath": "github.com/battlesnakeio/exporter"
+}

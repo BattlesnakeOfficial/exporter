@@ -1,0 +1,13 @@
+
+# Editors
+.vscode
+.idea/
+
+# Builds
+exporter
+
+# General
+*.tgz
+.DS_Store
+coverage.txt
+debug
