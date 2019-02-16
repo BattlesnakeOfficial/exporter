@@ -5,7 +5,7 @@ Converts a game or frame of a game into a different format.
 ## Run the server
 
 ```shell
-make run
+PORT=8000 make run
 ```
 
 ## Docker
