@@ -74,6 +74,8 @@ func getGIF(w http.ResponseWriter, r *http.Request) {
 		response(w, 500, "Problem getting game frames: "+err.Error())
 		return
 	}
+
+	w.Header().Set("Content-Type", "image/gif")
 	err = ConvertGameToGif(w, gameStatus, params["id"], batchSize)
 	if err != nil {
 		response(w, 500, "Could not export to gif: "+err.Error())
@@ -101,6 +103,7 @@ func getPNG(w http.ResponseWriter, r *http.Request) {
 		response(w, 500, "Problem getting game frames: "+err.Error())
 		return
 	}
+	w.Header().Set("Content-Type", "image/png")
 	ConvertFrameToPNG(w, &gameFrames.Frames[0], gameStatus)
 }
 
