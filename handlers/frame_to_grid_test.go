@@ -100,8 +100,9 @@ func createFrame() *engine.GameFrame {
 	return &engine.GameFrame{
 		Snakes: []engine.Snake{
 			engine.Snake{
-				ID:    "id1",
-				Color: "6611FF",
+				ID:       "id1",
+				Color:    "6611FF",
+				HeadType: "fang",
 				Body: []engine.Point{
 					engine.Point{
 						X: 0, Y: 0,
