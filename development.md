@@ -24,6 +24,12 @@ make intsall
 make model
 ```
 
+## Regenate the custom image heads/tails from board repo
+
+```shell
+make images
+```
+
 ## Run the tests
 
 ```shell

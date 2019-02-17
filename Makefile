@@ -8,16 +8,16 @@ install:
 
 run: install
 	./exporter 
-.PHONY: run
+.PHONY: install
 
 model:
-	./model.sh
-.PHONY: proto
+	./scripts/model.sh
+.PHONY: model
+
+images:
+	./scripts/images.sh
+.PHONY: images
 
 docker:
 	docker build -t battlesnakeio/exporter .
-.PHONY: build-docker
-
-lint:
-	golangci-lint run
-.PHONY: lint
+.PHONY: docker
