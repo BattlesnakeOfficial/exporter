@@ -1,0 +1,8 @@
+{
+    "Cyclo": 20,
+    "Deadline": "120s",
+    "Vendor": true,
+    "Exclude": [
+        ".pb.go"
+    ]
+}

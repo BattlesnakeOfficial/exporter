@@ -1,0 +1,4 @@
+ignore:
+  - "**/model/*.go"
+  - "**/vendor/"
+  - '**/e2e/'

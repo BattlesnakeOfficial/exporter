@@ -1,0 +1,14 @@
+exclude_patterns:
+  - "**/*.pb.go"
+  - "**/*pb_test.go"
+  - "**/vendor/"
+plugins:
+  govet:
+    enabled: true
+  gofmt:
+    enabled: true
+  golint:
+    enabled: true
+checks:
+  return-statements:
+    enabled: false
