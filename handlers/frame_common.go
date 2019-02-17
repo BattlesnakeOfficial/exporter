@@ -1,8 +1,8 @@
 package handlers
 
-import openapi "github.com/battlesnakeio/exporter/model"
+import engine "github.com/battlesnakeio/exporter/engine"
 
-func getDimensions(gameStatus *openapi.EngineStatusResponse) (int, int) {
+func getDimensions(gameStatus *engine.StatusResponse) (int, int) {
 	width := int(gameStatus.Game.Width)
 	height := int(gameStatus.Game.Height)
 	return width, height

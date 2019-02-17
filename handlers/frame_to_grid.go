@@ -5,7 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	openapi "github.com/battlesnakeio/exporter/model"
+	engine "github.com/battlesnakeio/exporter/engine"
+	snakemodel "github.com/battlesnakeio/exporter/snake"
 )
 
 // PixelType are the types of things on a snake board
@@ -37,7 +38,7 @@ type Pixel struct {
 }
 
 // ConvertFrameToGrid takes a frame and makes a 2d grid representatin.
-func ConvertFrameToGrid(gameFrame *openapi.EngineGameFrame, gameStatus *openapi.EngineStatusResponse) [][]Pixel {
+func ConvertFrameToGrid(gameFrame *engine.GameFrame, gameStatus *engine.StatusResponse) [][]Pixel {
 	width, height := getDimensions(gameStatus)
 	response := make([][]Pixel, width)
 	for x := 0; x < width; x++ {
@@ -67,22 +68,22 @@ func ConvertFrameToGrid(gameFrame *openapi.EngineGameFrame, gameStatus *openapi.
 }
 
 // ConvertFrameToMove takes a frame and makes a snake request.
-func ConvertFrameToMove(gameFrame *openapi.EngineGameFrame, gameStatus *openapi.EngineStatusResponse, youID string) (*openapi.SnakeSnakeRequest, error) {
+func ConvertFrameToMove(gameFrame *engine.GameFrame, gameStatus *engine.StatusResponse, youID string) (*snakemodel.SnakeRequest, error) {
 	deadSnakes := 0
 	for _, snake := range gameFrame.Snakes {
 		if snake.Death.Cause != "" {
 			deadSnakes++
 		}
 	}
-	response := &openapi.SnakeSnakeRequest{}
+	response := &snakemodel.SnakeRequest{}
 	response.Turn = gameFrame.Turn
 	response.Game.Id = gameStatus.Game.ID
 	response.Board.Width = gameStatus.Game.Width
 	response.Board.Height = gameStatus.Game.Height
-	response.Board.Food = make([]openapi.SnakeCoords, len(gameFrame.Food))
-	response.Board.Snakes = make([]openapi.SnakeSnake, len(gameFrame.Snakes)-deadSnakes)
+	response.Board.Food = make([]snakemodel.Coords, len(gameFrame.Food))
+	response.Board.Snakes = make([]snakemodel.Snake, len(gameFrame.Snakes)-deadSnakes)
 	for i, food := range gameFrame.Food {
-		response.Board.Food[i] = openapi.SnakeCoords(food)
+		response.Board.Food[i] = snakemodel.Coords(food)
 	}
 	youIndex := -1
 	k := 0
@@ -91,13 +92,13 @@ func ConvertFrameToMove(gameFrame *openapi.EngineGameFrame, gameStatus *openapi.
 			youIndex = k
 		}
 		if snake.Death.Cause == "" {
-			response.Board.Snakes[k] = openapi.SnakeSnake{}
+			response.Board.Snakes[k] = snakemodel.Snake{}
 			response.Board.Snakes[k].Id = snake.ID
 			response.Board.Snakes[k].Health = snake.Health
 			response.Board.Snakes[k].Name = snake.Name
-			response.Board.Snakes[k].Body = make([]openapi.SnakeCoords, len(snake.Body))
+			response.Board.Snakes[k].Body = make([]snakemodel.Coords, len(snake.Body))
 			for j, body := range snake.Body {
-				response.Board.Snakes[k].Body[j] = openapi.SnakeCoords(body)
+				response.Board.Snakes[k].Body[j] = snakemodel.Coords(body)
 			}
 			k++
 		}
@@ -109,7 +110,7 @@ func ConvertFrameToMove(gameFrame *openapi.EngineGameFrame, gameStatus *openapi.
 	return response, nil
 }
 
-func getSegmentType(index int, body []openapi.EnginePoint) PixelType {
+func getSegmentType(index int, body []engine.Point) PixelType {
 	if index == 0 {
 		return Head
 	}

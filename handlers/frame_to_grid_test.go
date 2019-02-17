@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"testing"
 
-	openapi "github.com/battlesnakeio/exporter/model"
+	engine "github.com/battlesnakeio/exporter/engine"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConvertGridToString(t *testing.T) {
 	frame := createFrame()
-	frame.Food = []openapi.EnginePoint{
-		openapi.EnginePoint{X: 0, Y: 2},
+	frame.Food = []engine.Point{
+		engine.Point{X: 0, Y: 2},
 	}
 	grid := ConvertFrameToGrid(frame, createGameStatus(3, 3))
 	board := ConvertGridToString(grid)
@@ -25,8 +25,8 @@ func TestConvertGridToString(t *testing.T) {
 }
 func TestConvertFrameToMove(t *testing.T) {
 	frame := createFrame()
-	frame.Food = []openapi.EnginePoint{
-		openapi.EnginePoint{X: 0, Y: 2},
+	frame.Food = []engine.Point{
+		engine.Point{X: 0, Y: 2},
 	}
 	gameStatus := createGameStatus(2, 2)
 
@@ -35,9 +35,9 @@ func TestConvertFrameToMove(t *testing.T) {
 	assert.Equal(t, "{\"game\":{\"id\":\"GameID\"},\"board\":{\"height\":2,\"width\":2,\"food\":[{\"y\":2}],\"snakes\":[{\"id\":\"id1\",\"body\":[{},{\"x\":1},{\"x\":1,\"y\":1}]},{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}]},\"you\":{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}}", string(json))
 }
 
-func createGameStatus(width int, height int) *openapi.EngineStatusResponse {
-	return &openapi.EngineStatusResponse{
-		Game: openapi.EngineGame{
+func createGameStatus(width int, height int) *engine.StatusResponse {
+	return &engine.StatusResponse{
+		Game: engine.Game{
 			Height: int32(height),
 			Width:  int32(width),
 			ID:     "GameID",
@@ -45,13 +45,13 @@ func createGameStatus(width int, height int) *openapi.EngineStatusResponse {
 	}
 }
 func TestFrameToGridOneSnake(t *testing.T) {
-	frame := &openapi.EngineGameFrame{
-		Snakes: []openapi.EngineSnake{
-			openapi.EngineSnake{
+	frame := &engine.GameFrame{
+		Snakes: []engine.Snake{
+			engine.Snake{
 				ID:    "id1",
 				Color: "6611FF",
-				Body: []openapi.EnginePoint{
-					openapi.EnginePoint{
+				Body: []engine.Point{
+					engine.Point{
 						X: 0, Y: 0,
 					},
 				},
@@ -65,18 +65,18 @@ func TestFrameToGridOneSnake(t *testing.T) {
 }
 
 func TestFrameToGridOneSnakeAndFood(t *testing.T) {
-	frame := &openapi.EngineGameFrame{
-		Food: []openapi.EnginePoint{
-			openapi.EnginePoint{
+	frame := &engine.GameFrame{
+		Food: []engine.Point{
+			engine.Point{
 				X: 1, Y: 1,
 			},
 		},
-		Snakes: []openapi.EngineSnake{
-			openapi.EngineSnake{
+		Snakes: []engine.Snake{
+			engine.Snake{
 				ID:    "id1",
 				Color: "6611FF",
-				Body: []openapi.EnginePoint{
-					openapi.EnginePoint{
+				Body: []engine.Point{
+					engine.Point{
 						X: 0, Y: 0,
 					},
 				},
@@ -90,47 +90,47 @@ func TestFrameToGridOneSnakeAndFood(t *testing.T) {
 }
 
 func TestFrameToGridEmpty(t *testing.T) {
-	frame := &openapi.EngineGameFrame{}
+	frame := &engine.GameFrame{}
 	grid := ConvertFrameToGrid(frame, createGameStatus(1, 1))
 	assert.Equal(t, [][]Pixel{
 		{Pixel{PixelType: Space}}}, grid)
 }
 
-func createFrame() *openapi.EngineGameFrame {
-	return &openapi.EngineGameFrame{
-		Snakes: []openapi.EngineSnake{
-			openapi.EngineSnake{
+func createFrame() *engine.GameFrame {
+	return &engine.GameFrame{
+		Snakes: []engine.Snake{
+			engine.Snake{
 				ID:    "id1",
 				Color: "6611FF",
-				Body: []openapi.EnginePoint{
-					openapi.EnginePoint{
+				Body: []engine.Point{
+					engine.Point{
 						X: 0, Y: 0,
 					},
-					openapi.EnginePoint{
+					engine.Point{
 						X: 1, Y: 0,
 					},
-					openapi.EnginePoint{
+					engine.Point{
 						X: 1, Y: 1,
 					},
 				},
 			},
-			openapi.EngineSnake{
+			engine.Snake{
 				ID:    "id2",
 				Color: "FFFFFF",
-				Body: []openapi.EnginePoint{
-					openapi.EnginePoint{
+				Body: []engine.Point{
+					engine.Point{
 						X: 2, Y: 2,
 					},
 				},
 			},
-			openapi.EngineSnake{
+			engine.Snake{
 				ID: "id3",
-				Death: openapi.EngineDeathCause{
+				Death: engine.DeathCause{
 					Cause: "DOA",
 				},
 				Color: "FF0000",
-				Body: []openapi.EnginePoint{
-					openapi.EnginePoint{
+				Body: []engine.Point{
+					engine.Point{
 						X: 2, Y: 0,
 					},
 				},

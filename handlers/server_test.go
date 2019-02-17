@@ -6,8 +6,7 @@ import (
 	"net/http"
 	"testing"
 
-	openapi "github.com/battlesnakeio/exporter/model"
-
+	engine "github.com/battlesnakeio/exporter/engine"
 	"github.com/stretchr/testify/assert"
 	gock "gopkg.in/h2non/gock.v1"
 )
@@ -54,8 +53,8 @@ func TestGetMove(t *testing.T) {
 	frameList, _ := json.Marshal(createFrameList())
 	GockFrame(string(frameList))
 
-	gameStatus, _ := json.Marshal(openapi.EngineStatusResponse{
-		Game: openapi.EngineGame{
+	gameStatus, _ := json.Marshal(engine.StatusResponse{
+		Game: engine.Game{
 			Height: 2,
 			Width:  2,
 		},
@@ -69,8 +68,8 @@ func TestGetBoard(t *testing.T) {
 	frameList, _ := json.Marshal(createFrameList())
 	GockFrame(string(frameList))
 
-	gameStatus, _ := json.Marshal(openapi.EngineStatusResponse{
-		Game: openapi.EngineGame{
+	gameStatus, _ := json.Marshal(engine.StatusResponse{
+		Game: engine.Game{
 			Height: 2,
 			Width:  2,
 		},
@@ -86,8 +85,8 @@ func TestGetBoardAnimated(t *testing.T) {
 	frameList, _ := json.Marshal(createFrameList())
 	GockFrame(string(frameList))
 
-	gameStatus, _ := json.Marshal(openapi.EngineStatusResponse{
-		Game: openapi.EngineGame{
+	gameStatus, _ := json.Marshal(engine.StatusResponse{
+		Game: engine.Game{
 			Height: 2,
 			Width:  2,
 		},
@@ -118,15 +117,15 @@ func TestNoFrames(t *testing.T) {
 	assert.Equal(t, "No frames", rr.Body.String())
 }
 
-func createFrameList() *openapi.EngineListGameFramesResponse {
-	return &openapi.EngineListGameFramesResponse{
-		Frames: []openapi.EngineGameFrame{
-			openapi.EngineGameFrame{
-				Snakes: []openapi.EngineSnake{
-					openapi.EngineSnake{
+func createFrameList() *engine.ListGameFramesResponse {
+	return &engine.ListGameFramesResponse{
+		Frames: []engine.GameFrame{
+			engine.GameFrame{
+				Snakes: []engine.Snake{
+					engine.Snake{
 						ID: "1",
-						Body: []openapi.EnginePoint{
-							openapi.EnginePoint{
+						Body: []engine.Point{
+							engine.Point{
 								X: 0, Y: 1,
 							},
 						},
@@ -137,63 +136,63 @@ func createFrameList() *openapi.EngineListGameFramesResponse {
 	}
 }
 
-func createFrameList5() *openapi.EngineListGameFramesResponse {
-	return &openapi.EngineListGameFramesResponse{
-		Frames: []openapi.EngineGameFrame{
-			openapi.EngineGameFrame{
-				Snakes: []openapi.EngineSnake{
-					openapi.EngineSnake{
+func createFrameList5() *engine.ListGameFramesResponse {
+	return &engine.ListGameFramesResponse{
+		Frames: []engine.GameFrame{
+			engine.GameFrame{
+				Snakes: []engine.Snake{
+					engine.Snake{
 						ID: "1",
-						Body: []openapi.EnginePoint{
-							openapi.EnginePoint{
+						Body: []engine.Point{
+							engine.Point{
 								X: 0, Y: 1,
 							},
 						},
 					},
 				},
 			},
-			openapi.EngineGameFrame{
-				Snakes: []openapi.EngineSnake{
-					openapi.EngineSnake{
+			engine.GameFrame{
+				Snakes: []engine.Snake{
+					engine.Snake{
 						ID: "1",
-						Body: []openapi.EnginePoint{
-							openapi.EnginePoint{
+						Body: []engine.Point{
+							engine.Point{
 								X: 0, Y: 1,
 							},
 						},
 					},
 				},
 			},
-			openapi.EngineGameFrame{
-				Snakes: []openapi.EngineSnake{
-					openapi.EngineSnake{
+			engine.GameFrame{
+				Snakes: []engine.Snake{
+					engine.Snake{
 						ID: "1",
-						Body: []openapi.EnginePoint{
-							openapi.EnginePoint{
+						Body: []engine.Point{
+							engine.Point{
 								X: 0, Y: 1,
 							},
 						},
 					},
 				},
 			},
-			openapi.EngineGameFrame{
-				Snakes: []openapi.EngineSnake{
-					openapi.EngineSnake{
+			engine.GameFrame{
+				Snakes: []engine.Snake{
+					engine.Snake{
 						ID: "1",
-						Body: []openapi.EnginePoint{
-							openapi.EnginePoint{
+						Body: []engine.Point{
+							engine.Point{
 								X: 0, Y: 1,
 							},
 						},
 					},
 				},
 			},
-			openapi.EngineGameFrame{
-				Snakes: []openapi.EngineSnake{
-					openapi.EngineSnake{
+			engine.GameFrame{
+				Snakes: []engine.Snake{
+					engine.Snake{
 						ID: "1",
-						Body: []openapi.EnginePoint{
-							openapi.EnginePoint{
+						Body: []engine.Point{
+							engine.Point{
 								X: 0, Y: 1,
 							},
 						},

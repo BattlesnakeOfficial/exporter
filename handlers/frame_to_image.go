@@ -9,11 +9,11 @@ import (
 
 	"github.com/fogleman/gg"
 
-	openapi "github.com/battlesnakeio/exporter/model"
+	engine "github.com/battlesnakeio/exporter/engine"
 )
 
 // ConvertFrameToPNG takes a frame and makes a png
-func ConvertFrameToPNG(w io.Writer, gameFrame *openapi.EngineGameFrame, gameStatus *openapi.EngineStatusResponse) {
+func ConvertFrameToPNG(w io.Writer, gameFrame *engine.GameFrame, gameStatus *engine.StatusResponse) {
 	width, height := getDimensions(gameStatus)
 	square := int32(20)
 	filled := make(map[string]bool)
@@ -61,7 +61,7 @@ func ConvertFrameToPNG(w io.Writer, gameFrame *openapi.EngineGameFrame, gameStat
 }
 
 // ConvertGameToGif reads all frames from the engine and outputs an animated gif.
-func ConvertGameToGif(w io.Writer, gameStatus *openapi.EngineStatusResponse, gameID string, batchSize int) error {
+func ConvertGameToGif(w io.Writer, gameStatus *engine.StatusResponse, gameID string, batchSize int) error {
 	currentOffset := 0
 	outGif := &gif.GIF{}
 	for {

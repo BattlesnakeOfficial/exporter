@@ -5,13 +5,13 @@ import (
 	"os"
 	"testing"
 
-	openapi "github.com/battlesnakeio/exporter/model"
+	engine "github.com/battlesnakeio/exporter/engine"
 )
 
 func TestFrameToPNG(t *testing.T) {
 	frame := createFrame()
-	frame.Food = []openapi.EnginePoint{
-		openapi.EnginePoint{X: 0, Y: 2},
+	frame.Food = []engine.Point{
+		engine.Point{X: 0, Y: 2},
 	}
 	status := createGameStatus(2, 2)
 	f, _ := os.Create("/tmp/temp.png")
