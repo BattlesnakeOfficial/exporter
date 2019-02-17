@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	engine "github.com/battlesnakeio/exporter/engine"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	gock "gopkg.in/h2non/gock.v1"
 )
 
@@ -21,11 +21,11 @@ func TestGetGif(t *testing.T) {
 	router, rr := initialize()
 	req, _ := http.NewRequest("GET", fmt.Sprintf("/games/%s?output=gif&batchSize=5", GameID), nil)
 	router.ServeHTTP(rr, req)
-	assert.Equal(t, 200, rr.Code)
+	require.Equal(t, 200, rr.Code)
 	if rr.Code != 200 {
 		fmt.Println(rr.Body.String())
 	}
-	assert.True(t, rr.Body.Len() > 0)
+	require.True(t, rr.Body.Len() > 0)
 }
 func TestGetPNG(t *testing.T) {
 	defer gock.Off()
@@ -34,18 +34,18 @@ func TestGetPNG(t *testing.T) {
 	GockFrame(string(frameList))
 	GockStatus(string(gameStatus))
 	rr := serveURL("output=png")
-	assert.Equal(t, 200, rr.Code)
-	assert.True(t, rr.Body.Len() > 0)
+	require.Equal(t, 200, rr.Code)
+	require.True(t, rr.Body.Len() > 0)
 }
 func TestBadURLs(t *testing.T) {
 	rr := serveURL("output=aoeu")
-	assert.Equal(t, 404, rr.Code)
+	require.Equal(t, 404, rr.Code)
 	rr = serveURL("output=move")
-	assert.Equal(t, 404, rr.Code)
+	require.Equal(t, 404, rr.Code)
 	rr = serveURL("youId=id1")
-	assert.Equal(t, 404, rr.Code)
+	require.Equal(t, 404, rr.Code)
 	rr = serveURL("")
-	assert.Equal(t, 404, rr.Code)
+	require.Equal(t, 404, rr.Code)
 }
 
 func TestGetMove(t *testing.T) {
@@ -61,7 +61,7 @@ func TestGetMove(t *testing.T) {
 	})
 	GockStatus(string(gameStatus))
 	rr := serveURL("output=move&youId=1")
-	assert.Equal(t, "{\"game\":{},\"board\":{\"height\":2,\"width\":2,\"snakes\":[{\"id\":\"1\",\"body\":[{\"y\":1}]}]},\"you\":{\"id\":\"1\",\"body\":[{\"y\":1}]}}", rr.Body.String())
+	require.Equal(t, "{\"game\":{},\"board\":{\"height\":2,\"width\":2,\"snakes\":[{\"id\":\"1\",\"body\":[{\"y\":1}]}]},\"you\":{\"id\":\"1\",\"body\":[{\"y\":1}]}}", rr.Body.String())
 }
 func TestGetBoard(t *testing.T) {
 	defer gock.Off()
@@ -77,7 +77,7 @@ func TestGetBoard(t *testing.T) {
 	GockStatus(string(gameStatus))
 
 	rr := serveURL("output=board")
-	assert.Equal(t, "------\n|    |\n|H1  |\n------\n", rr.Body.String())
+	require.Equal(t, "------\n|    |\n|H1  |\n------\n", rr.Body.String())
 }
 
 func TestGetBoardAnimated(t *testing.T) {
@@ -94,7 +94,7 @@ func TestGetBoardAnimated(t *testing.T) {
 	GockStatus(string(gameStatus))
 
 	rr := serveURL("output=board-animated")
-	assert.Equal(t, "<html><head></head><body><pre>"+
+	require.Equal(t, "<html><head></head><body><pre>"+
 		"------\n"+
 		"|    |\n"+
 		"|H1  |\n"+
@@ -106,15 +106,15 @@ func TestGetFrameWithTurn(t *testing.T) {
 	defer gock.Off()
 	GockFrame("{ \"Frames\": [ { \"Turn\": 5 }] }")
 	rr := serveURL("output=raw")
-	assert.Equal(t, "{\"Turn\":5}", rr.Body.String())
+	require.Equal(t, "{\"Turn\":5}", rr.Body.String())
 }
 
 func TestNoFrames(t *testing.T) {
 	defer gock.Off()
 	GockFrame("{ \"Frames\": [ ] }")
 	rr := serveURL("output=raw")
-	assert.Equal(t, 404, rr.Code)
-	assert.Equal(t, "No frames", rr.Body.String())
+	require.Equal(t, 404, rr.Code)
+	require.Equal(t, "No frames", rr.Body.String())
 }
 
 func createFrameList() *engine.ListGameFramesResponse {

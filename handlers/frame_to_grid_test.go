@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	engine "github.com/battlesnakeio/exporter/engine"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConvertGridToString(t *testing.T) {
@@ -15,7 +15,7 @@ func TestConvertGridToString(t *testing.T) {
 	}
 	grid := ConvertFrameToGrid(frame, createGameStatus(3, 3))
 	board := ConvertGridToString(grid)
-	assert.Equal(t,
+	require.Equal(t,
 		""+
 			"--------\n"+
 			"|H1B1  |\n"+
@@ -32,7 +32,7 @@ func TestConvertFrameToMove(t *testing.T) {
 
 	move, _ := ConvertFrameToMove(frame, gameStatus, "id2")
 	json, _ := json.Marshal(move)
-	assert.Equal(t, "{\"game\":{\"id\":\"GameID\"},\"board\":{\"height\":2,\"width\":2,\"food\":[{\"y\":2}],\"snakes\":[{\"id\":\"id1\",\"body\":[{},{\"x\":1},{\"x\":1,\"y\":1}]},{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}]},\"you\":{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}}", string(json))
+	require.Equal(t, "{\"game\":{\"id\":\"GameID\"},\"board\":{\"height\":2,\"width\":2,\"food\":[{\"y\":2}],\"snakes\":[{\"id\":\"id1\",\"body\":[{},{\"x\":1},{\"x\":1,\"y\":1}]},{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}]},\"you\":{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}}", string(json))
 }
 
 func createGameStatus(width int, height int) *engine.StatusResponse {
@@ -59,7 +59,7 @@ func TestFrameToGridOneSnake(t *testing.T) {
 		},
 	}
 	grid := ConvertFrameToGrid(frame, createGameStatus(2, 2))
-	assert.Equal(t, [][]Pixel{
+	require.Equal(t, [][]Pixel{
 		{Pixel{ID: "id1", Colour: "6611FF", PixelType: "H"}, Pixel{PixelType: Space}},
 		{Pixel{PixelType: Space}, Pixel{PixelType: Space}}}, grid)
 }
@@ -84,7 +84,7 @@ func TestFrameToGridOneSnakeAndFood(t *testing.T) {
 		},
 	}
 	grid := ConvertFrameToGrid(frame, createGameStatus(2, 2))
-	assert.Equal(t, [][]Pixel{
+	require.Equal(t, [][]Pixel{
 		{Pixel{ID: "id1", Colour: "6611FF", PixelType: Head}, Pixel{PixelType: Space}},
 		{Pixel{PixelType: Space}, Pixel{PixelType: Food}}}, grid)
 }
@@ -92,7 +92,7 @@ func TestFrameToGridOneSnakeAndFood(t *testing.T) {
 func TestFrameToGridEmpty(t *testing.T) {
 	frame := &engine.GameFrame{}
 	grid := ConvertFrameToGrid(frame, createGameStatus(1, 1))
-	assert.Equal(t, [][]Pixel{
+	require.Equal(t, [][]Pixel{
 		{Pixel{PixelType: Space}}}, grid)
 }
 
