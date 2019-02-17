@@ -1,5 +1,5 @@
 test:
-	go test -timeout 20s -race -coverprofile coverage.txt -covermode=atomic ./...
+	go test -coverprofile coverage.txt -covermode=atomic ./...
 .PHONY: test
 
 install:

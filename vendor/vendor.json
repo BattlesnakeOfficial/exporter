@@ -16,6 +16,12 @@
 			"revisionTime": "2019-02-07T20:47:22Z"
 		},
 		{
+			"checksumSHA1": "2i4IVFoxgxXUoGyb9+toNV0lRCk=",
+			"path": "github.com/gobuffalo/packr/v2",
+			"revision": "d93b0e17023e6fa58f86d547bdc551837df1daa8",
+			"revisionTime": "2019-02-07T17:42:41Z"
+		},
+		{
 			"checksumSHA1": "aJ/kX/eCUlrCJBZ26Hwh/RXzAIw=",
 			"path": "github.com/golang/freetype/raster",
 			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
