@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"fmt"
+	"image"
+	"image/gif"
 	"io"
 
 	"github.com/fogleman/gg"
@@ -9,8 +12,8 @@ import (
 	openapi "github.com/battlesnakeio/exporter/model"
 )
 
-// ConvertFrameToPng takes a frame and makes a png
-func ConvertFrameToPng(w io.Writer, gameFrame *openapi.EngineGameFrame, gameStatus *openapi.EngineStatusResponse) {
+// ConvertFrameToPNG takes a frame and makes a png
+func ConvertFrameToPNG(w io.Writer, gameFrame *openapi.EngineGameFrame, gameStatus *openapi.EngineStatusResponse) {
 	width, height := getDimensions(gameStatus)
 	square := int32(20)
 	filled := make(map[string]bool)
@@ -55,4 +58,37 @@ func ConvertFrameToPng(w io.Writer, gameFrame *openapi.EngineGameFrame, gameStat
 	}
 
 	dc.EncodePNG(w)
+}
+
+// ConvertGameToGif reads all frames from the engine and outputs an animated gif.
+func ConvertGameToGif(w io.Writer, gameStatus *openapi.EngineStatusResponse, gameID string, batchSize int) error {
+	currentOffset := 0
+	outGif := &gif.GIF{}
+	for {
+		gameFrames, err := GetGameFramesWithLength(gameID, currentOffset, batchSize)
+		if err != nil {
+			return err
+		}
+		frameCount := 0
+
+		for _, frame := range gameFrames.Frames {
+			var framePng bytes.Buffer
+			frameCount++
+			ConvertFrameToPNG(&framePng, &frame, gameStatus)
+			imagePng, _, _ := image.Decode(&framePng)
+			var frameGif bytes.Buffer
+			gif.Encode(&frameGif, imagePng, nil)
+			imageGif, _, _ := image.Decode(&frameGif)
+			outGif.Image = append(outGif.Image, imageGif.(*image.Paletted))
+			outGif.Delay = append(outGif.Delay, 10)
+		}
+		if frameCount < batchSize {
+			break
+		}
+		currentOffset += batchSize
+		fmt.Printf("game: %s: frames: %d of %d\n", gameID, currentOffset, gameStatus.LastFrame.Turn)
+	}
+	outGif.LoopCount = -1
+	gif.EncodeAll(w, outGif)
+	return nil
 }

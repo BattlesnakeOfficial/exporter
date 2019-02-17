@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"testing"
 
 	openapi "github.com/battlesnakeio/exporter/model"
@@ -10,7 +12,33 @@ import (
 	gock "gopkg.in/h2non/gock.v1"
 )
 
-func TestBadUrls(t *testing.T) {
+func TestGetGif(t *testing.T) {
+	defer gock.Off()
+	frameList, _ := json.Marshal(createFrameList())
+	frameList5, _ := json.Marshal(createFrameList5())
+	gameStatus, _ := json.Marshal(createGameStatus(3, 3))
+	Gock15Frames(string(frameList5), string(frameList))
+	GockStatus(string(gameStatus))
+	router, rr := initialize()
+	req, _ := http.NewRequest("GET", fmt.Sprintf("/games/%s?output=gif&batchSize=5", GameID), nil)
+	router.ServeHTTP(rr, req)
+	assert.Equal(t, 200, rr.Code)
+	if rr.Code != 200 {
+		fmt.Println(rr.Body.String())
+	}
+	assert.True(t, rr.Body.Len() > 0)
+}
+func TestGetPNG(t *testing.T) {
+	defer gock.Off()
+	frameList, _ := json.Marshal(createFrameList())
+	gameStatus, _ := json.Marshal(createGameStatus(3, 3))
+	GockFrame(string(frameList))
+	GockStatus(string(gameStatus))
+	rr := serveURL("output=png")
+	assert.Equal(t, 200, rr.Code)
+	assert.True(t, rr.Body.Len() > 0)
+}
+func TestBadURLs(t *testing.T) {
 	rr := serveURL("output=aoeu")
 	assert.Equal(t, 404, rr.Code)
 	rr = serveURL("output=move")
@@ -93,6 +121,73 @@ func TestNoFrames(t *testing.T) {
 func createFrameList() *openapi.EngineListGameFramesResponse {
 	return &openapi.EngineListGameFramesResponse{
 		Frames: []openapi.EngineGameFrame{
+			openapi.EngineGameFrame{
+				Snakes: []openapi.EngineSnake{
+					openapi.EngineSnake{
+						ID: "1",
+						Body: []openapi.EnginePoint{
+							openapi.EnginePoint{
+								X: 0, Y: 1,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func createFrameList5() *openapi.EngineListGameFramesResponse {
+	return &openapi.EngineListGameFramesResponse{
+		Frames: []openapi.EngineGameFrame{
+			openapi.EngineGameFrame{
+				Snakes: []openapi.EngineSnake{
+					openapi.EngineSnake{
+						ID: "1",
+						Body: []openapi.EnginePoint{
+							openapi.EnginePoint{
+								X: 0, Y: 1,
+							},
+						},
+					},
+				},
+			},
+			openapi.EngineGameFrame{
+				Snakes: []openapi.EngineSnake{
+					openapi.EngineSnake{
+						ID: "1",
+						Body: []openapi.EnginePoint{
+							openapi.EnginePoint{
+								X: 0, Y: 1,
+							},
+						},
+					},
+				},
+			},
+			openapi.EngineGameFrame{
+				Snakes: []openapi.EngineSnake{
+					openapi.EngineSnake{
+						ID: "1",
+						Body: []openapi.EnginePoint{
+							openapi.EnginePoint{
+								X: 0, Y: 1,
+							},
+						},
+					},
+				},
+			},
+			openapi.EngineGameFrame{
+				Snakes: []openapi.EngineSnake{
+					openapi.EngineSnake{
+						ID: "1",
+						Body: []openapi.EnginePoint{
+							openapi.EnginePoint{
+								X: 0, Y: 1,
+							},
+						},
+					},
+				},
+			},
 			openapi.EngineGameFrame{
 				Snakes: []openapi.EngineSnake{
 					openapi.EngineSnake{

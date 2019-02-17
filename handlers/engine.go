@@ -31,8 +31,14 @@ func MakeEngineCall(url string) ([]byte, error) {
 }
 
 // GetGameFrames returns a game frame object
-func GetGameFrames(gameID string, offset string) (*openapi.EngineListGameFramesResponse, error) {
-	body, err := MakeEngineCall(fmt.Sprintf("https://engine.battlesnake.io/games/%s/frames?offset=%s&limit=1", gameID, offset))
+func GetGameFrames(gameID string, offset int) (*openapi.EngineListGameFramesResponse, error) {
+	return GetGameFramesWithLength(gameID, offset, 1)
+}
+
+// GetGameFramesWithLength returns a game frame object with length frames
+func GetGameFramesWithLength(gameID string, offset int, length int) (*openapi.EngineListGameFramesResponse, error) {
+	url := fmt.Sprintf("https://engine.battlesnake.io/games/%s/frames?offset=%d&limit=%d", gameID, offset, length)
+	body, err := MakeEngineCall(url)
 	if err != nil {
 		return nil, err
 	}

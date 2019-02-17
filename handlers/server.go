@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -16,7 +17,13 @@ const (
 	boardAnimated string = "board-animated"
 	move          string = "move"
 	png           string = "png"
+	gifImage      string = "gif"
 )
+
+// OutputTypes All the output types
+var OutputTypes = []string{
+	raw, board, boardAnimated, move, png, gifImage,
+}
 
 //  main function
 func main() {
@@ -27,17 +34,50 @@ func main() {
 
 // SetupRoutes defines all the routs that this server will handle.
 func SetupRoutes(router *mux.Router) {
-	router.HandleFunc("/games/{id}/frames/{frame}", getFrame).
+
+	router.HandleFunc("/games/{id}/frames/{frame:[0-9]+}", getFrame).
 		Methods("GET").
 		Queries("output", "{output:move}").
 		Queries("youId", "{youId}")
-	router.HandleFunc("/games/{id}/frames/{frame}", getPNG).
+	router.HandleFunc("/games/{id}/frames/{frame:[0-9]*}", getPNG).
 		Methods("GET").
 		Queries("output", "{output:png}")
-	router.HandleFunc("/games/{id}/frames/{frame}", getFrame).
+	router.HandleFunc("/games/{id}/frames/{frame:[0-9]*}", getFrame).
 		Methods("GET").
 		Queries("output", "{output:board|board-animated|raw}")
+	router.HandleFunc("/games/{id}", getGIF).
+		Methods("GET").
+		Queries("output", "{output:gif}")
 	router.NotFoundHandler = http.HandlerFunc(readMe)
+}
+
+// create a png of the game
+func getGIF(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	if paramsNotOk(w, params) {
+		return
+	}
+	batchSize, err := strconv.Atoi(r.FormValue("batchSize"))
+	if err != nil {
+		batchSize = 100
+	}
+	gameFrames, err := GetGameFrames(params["id"], 0)
+	if err != nil {
+		response(w, 500, "Problem getting game frames: "+err.Error())
+	}
+	if len(gameFrames.Frames) == 0 {
+		response(w, 404, "No frames")
+		return
+	}
+	gameStatus, err := GetGameStatus(params["id"])
+	if err != nil {
+		response(w, 500, "Problem getting game frames: "+err.Error())
+		return
+	}
+	err = ConvertGameToGif(w, gameStatus, params["id"], batchSize)
+	if err != nil {
+		response(w, 500, "Could not export to gif: "+err.Error())
+	}
 }
 
 // create a png of the game
@@ -46,7 +86,8 @@ func getPNG(w http.ResponseWriter, r *http.Request) {
 	if paramsNotOk(w, params) {
 		return
 	}
-	gameFrames, err := GetGameFrames(params["id"], params["frame"])
+	offset, _ := strconv.Atoi(params["frame"])
+	gameFrames, err := GetGameFrames(params["id"], offset)
 	if err != nil {
 		response(w, 500, "Problem getting game frames: "+err.Error())
 		return
@@ -60,7 +101,7 @@ func getPNG(w http.ResponseWriter, r *http.Request) {
 		response(w, 500, "Problem getting game frames: "+err.Error())
 		return
 	}
-	ConvertFrameToPng(w, &gameFrames.Frames[0], gameStatus)
+	ConvertFrameToPNG(w, &gameFrames.Frames[0], gameStatus)
 }
 
 // gets a frame from the engine, writes it out in a supported format.
@@ -70,7 +111,8 @@ func getFrame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gameFrames, err := GetGameFrames(params["id"], params["frame"])
+	offset, _ := strconv.Atoi(params["frame"])
+	gameFrames, err := GetGameFrames(params["id"], offset)
 	if err != nil {
 		response(w, 500, "Problem getting game frames: "+err.Error())
 		return
@@ -114,12 +156,10 @@ func getFrame(w http.ResponseWriter, r *http.Request) {
 }
 
 func paramsNotOk(w http.ResponseWriter, params map[string]string) bool {
-	if params["output"] == raw ||
-		params["output"] == board ||
-		params["output"] == boardAnimated ||
-		params["output"] == move ||
-		params["output"] == png {
-		return false
+	for _, output := range OutputTypes {
+		if params["output"] == output {
+			return false
+		}
 	}
 	response(w, 404, fmt.Sprintf("Unsupported output type: %s support types are %s|%s|%s|%s", params["output"], raw, board, boardAnimated, move))
 	return true

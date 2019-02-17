@@ -26,6 +26,14 @@ func GockFrame(response string) {
 	GockStatus(response).MatchParam("offset", "29")
 }
 
+// Gock15Frames create a mock http call to the engine for 15 consequitive frames.
+func Gock15Frames(response string, lastResponse string) {
+	GockStatus(response).MatchParam("offset", "0").MatchParam("limit", "1")
+	GockStatus(response).MatchParam("offset", "0").MatchParam("limit", "5")
+	GockStatus(response).MatchParam("offset", "5").MatchParam("limit", "5")
+	GockStatus(lastResponse).MatchParam("offset", "10").MatchParam("limit", "5")
+}
+
 func initialize() (*mux.Router, *httptest.ResponseRecorder) {
 	router := mux.NewRouter()
 	rr := httptest.NewRecorder()
