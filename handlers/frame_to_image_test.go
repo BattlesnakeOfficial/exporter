@@ -2,10 +2,12 @@ package handlers
 
 import (
 	"bufio"
+	"encoding/json"
 	"os"
 	"testing"
 
 	engine "github.com/battlesnakeio/exporter/engine"
+	gock "gopkg.in/h2non/gock.v1"
 )
 
 func TestFrameToPNG(t *testing.T) {
@@ -18,5 +20,19 @@ func TestFrameToPNG(t *testing.T) {
 	defer f.Close()
 	w := bufio.NewWriter(f)
 	ConvertFrameToPNG(w, frame, status)
+	w.Flush()
+}
+
+func TestGetGif(t *testing.T) {
+	defer gock.Off()
+	frameList, _ := json.Marshal(createFrameList())
+	frameList5, _ := json.Marshal(createFrameList5())
+	// GockFrame(string(frameList))
+	Gock15Frames(string(frameList5), string(frameList))
+
+	f, _ := os.Create("/tmp/temp.gif")
+	defer f.Close()
+	w := bufio.NewWriter(f)
+	ConvertGameToGif(w, createGameStatus(3, 3), GameID, 5)
 	w.Flush()
 }
