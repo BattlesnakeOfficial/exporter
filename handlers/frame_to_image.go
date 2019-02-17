@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	gifOriginal "image/gif"
+	gif_original "image/gif"
 	"io"
 	"strings"
 
@@ -117,7 +117,7 @@ func createGif(frame *engine.GameFrame, gameStatus *engine.StatusResponse) image
 	ConvertFrameToPNG(&framePng, frame, gameStatus)
 	imagePng, _, _ := image.Decode(&framePng)
 	var frameGif bytes.Buffer
-	gifOriginal.Encode(&frameGif, imagePng, nil)
+	gif_original.Encode(&frameGif, imagePng, nil)
 	imageGif, _, _ := image.Decode(&frameGif)
 	return imageGif
 }
