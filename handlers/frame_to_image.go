@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/gif"
+	gifOriginal "image/gif"
 	"io"
 
 	"github.com/fogleman/gg"
 
 	engine "github.com/battlesnakeio/exporter/engine"
+	gif "github.com/battlesnakeio/exporter/gif"
 )
 
 // ConvertFrameToPNG takes a frame and makes a png
@@ -62,33 +63,52 @@ func ConvertFrameToPNG(w io.Writer, gameFrame *engine.GameFrame, gameStatus *eng
 
 // ConvertGameToGif reads all frames from the engine and outputs an animated gif.
 func ConvertGameToGif(w io.Writer, gameStatus *engine.StatusResponse, gameID string, batchSize int) error {
-	currentOffset := 0
 	outGif := &gif.GIF{}
+	c := make(chan gif.PalettAndDelay, 50)
+	outGif.Image = c
+	gameFrames, _ := GetGameFramesWithLength(gameID, 0, batchSize)
+	outGif.SampleImage = createGif(&gameFrames.Frames[0], gameStatus).(*image.Paletted)
+	go getGifFrames(c, gameFrames, outGif, gameStatus, gameID, batchSize)
+	outGif.LoopCount = -1
+	gif.EncodeAll(w, outGif)
+	return nil
+}
+
+func getGifFrames(c chan gif.PalettAndDelay, firstSet *engine.ListGameFramesResponse, outGif *gif.GIF, gameStatus *engine.StatusResponse, gameID string, batchSize int) {
+	currentOffset := 0
 	for {
-		gameFrames, err := GetGameFramesWithLength(gameID, currentOffset, batchSize)
-		if err != nil {
-			return err
+		var gameFrames *engine.ListGameFramesResponse
+		if currentOffset == 0 {
+			gameFrames = firstSet
+		} else {
+			gameFrames, _ = GetGameFramesWithLength(gameID, currentOffset, batchSize)
 		}
 		frameCount := 0
 
 		for _, frame := range gameFrames.Frames {
-			var framePng bytes.Buffer
 			frameCount++
-			ConvertFrameToPNG(&framePng, &frame, gameStatus)
-			imagePng, _, _ := image.Decode(&framePng)
-			var frameGif bytes.Buffer
-			gif.Encode(&frameGif, imagePng, nil)
-			imageGif, _, _ := image.Decode(&frameGif)
-			outGif.Image = append(outGif.Image, imageGif.(*image.Paletted))
-			outGif.Delay = append(outGif.Delay, 10)
+			imageGif := createGif(&frame, gameStatus)
+			outGif.Image <- gif.PalettAndDelay{
+				Palett: imageGif.(*image.Paletted),
+				Delay:  10,
+				I:      frameCount + currentOffset,
+			}
 		}
 		if frameCount < batchSize {
+			close(c)
 			break
 		}
 		currentOffset += batchSize
 		fmt.Printf("game: %s: frames: %d of %d\n", gameID, currentOffset, gameStatus.LastFrame.Turn)
 	}
-	outGif.LoopCount = -1
-	gif.EncodeAll(w, outGif)
-	return nil
+}
+
+func createGif(frame *engine.GameFrame, gameStatus *engine.StatusResponse) image.Image {
+	var framePng bytes.Buffer
+	ConvertFrameToPNG(&framePng, frame, gameStatus)
+	imagePng, _, _ := image.Decode(&framePng)
+	var frameGif bytes.Buffer
+	gifOriginal.Encode(&frameGif, imagePng, nil)
+	imageGif, _, _ := image.Decode(&frameGif)
+	return imageGif
 }

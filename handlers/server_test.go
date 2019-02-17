@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
-	"net/http"
 	"testing"
 
 	engine "github.com/battlesnakeio/exporter/engine"
@@ -11,22 +9,6 @@ import (
 	gock "gopkg.in/h2non/gock.v1"
 )
 
-func TestGetGif(t *testing.T) {
-	defer gock.Off()
-	frameList, _ := json.Marshal(createFrameList())
-	frameList5, _ := json.Marshal(createFrameList5())
-	gameStatus, _ := json.Marshal(createGameStatus(3, 3))
-	Gock15Frames(string(frameList5), string(frameList))
-	GockStatus(string(gameStatus))
-	router, rr := initialize()
-	req, _ := http.NewRequest("GET", fmt.Sprintf("/games/%s?output=gif&batchSize=5", GameID), nil)
-	router.ServeHTTP(rr, req)
-	require.Equal(t, 200, rr.Code)
-	if rr.Code != 200 {
-		fmt.Println(rr.Body.String())
-	}
-	require.True(t, rr.Body.Len() > 0)
-}
 func TestGetPNG(t *testing.T) {
 	defer gock.Off()
 	frameList, _ := json.Marshal(createFrameList())

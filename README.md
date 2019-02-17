@@ -20,9 +20,11 @@ docker run -d -p 8000:8000 battlesnakeio/exporter
 
 Exports the game as an animated gif.
 
-```shell
-curl http://exporter.battlesnake.io/games/15799e31-cd98-4e87-9d49-40ceb4eb439e?output=gif
-```
+Open a browser and go to:
+
+http://exporter.battlesnake.io/games/15799e31-cd98-4e87-9d49-40ceb4eb439e?output=gif
+
+<img src="http://exporter.battlesnake.io/games/15799e31-cd98-4e87-9d49-40ceb4eb439e?output=gif"/>
 
 ### `/game/{game id}/frame/{frame offset}?output=png`
 
