@@ -10,5 +10,5 @@
 package snakemodel
 
 type Game struct {
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 }

@@ -17,7 +17,7 @@ do
     newFilename=`echo ${filename} | cut -c 7-`
     echo "  ${filename} -> ${newFilename}"
     sed "s/,omitempty//g" ${filename}  \
-      | sed "s/package openapi/package ${api}model/g" ${filename} \
+      | sed "s/package openapi/package ${api}model/g" \
       > ${dir}/${api}/${newFilename}; 
   done
   cd ${dir}

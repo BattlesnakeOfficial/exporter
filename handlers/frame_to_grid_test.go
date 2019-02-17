@@ -32,7 +32,7 @@ func TestConvertFrameToMove(t *testing.T) {
 
 	move, _ := ConvertFrameToMove(frame, gameStatus, "id2")
 	json, _ := json.Marshal(move)
-	require.Equal(t, "{\"game\":{\"id\":\"GameID\"},\"board\":{\"height\":2,\"width\":2,\"food\":[{\"y\":2}],\"snakes\":[{\"id\":\"id1\",\"body\":[{},{\"x\":1},{\"x\":1,\"y\":1}]},{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}]},\"you\":{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}}", string(json))
+	require.Equal(t, "{\"game\":{\"id\":\"GameID\"},\"turn\":0,\"board\":{\"height\":2,\"width\":2,\"food\":[{\"x\":0,\"y\":2}],\"snakes\":[{\"id\":\"id1\",\"name\":\"\",\"health\":0,\"body\":[{\"x\":0,\"y\":0},{\"x\":1,\"y\":0},{\"x\":1,\"y\":1}]},{\"id\":\"id2\",\"name\":\"\",\"health\":0,\"body\":[{\"x\":2,\"y\":2}]}]},\"you\":{\"id\":\"id2\",\"name\":\"\",\"health\":0,\"body\":[{\"x\":2,\"y\":2}]}}", string(json))
 }
 
 func createGameStatus(width int, height int) *engine.StatusResponse {

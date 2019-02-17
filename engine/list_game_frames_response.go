@@ -10,5 +10,5 @@
 package enginemodel
 
 type ListGameFramesResponse struct {
-	Frames []GameFrame `json:"frames,omitempty"`
+	Frames []GameFrame `json:"frames"`
 }

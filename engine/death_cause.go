@@ -11,7 +11,7 @@ package enginemodel
 
 type DeathCause struct {
 	// this records how the snake died, and is one of the 4 possible enum values
-	Cause string `json:"Cause,omitempty"`
+	Cause string `json:"Cause"`
 	// this is the turn that the snake died on
-	Turn int32 `json:"Turn,omitempty"`
+	Turn int32 `json:"Turn"`
 }

@@ -43,7 +43,7 @@ func TestGetMove(t *testing.T) {
 	})
 	GockStatus(string(gameStatus))
 	rr := serveURL("output=move&youId=1")
-	require.Equal(t, "{\"game\":{},\"board\":{\"height\":2,\"width\":2,\"snakes\":[{\"id\":\"1\",\"body\":[{\"y\":1}]}]},\"you\":{\"id\":\"1\",\"body\":[{\"y\":1}]}}", rr.Body.String())
+	require.Equal(t, "{\"game\":{\"id\":\"\"},\"turn\":0,\"board\":{\"height\":2,\"width\":2,\"food\":[],\"snakes\":[{\"id\":\"1\",\"name\":\"\",\"health\":0,\"body\":[{\"x\":0,\"y\":1}]}]},\"you\":{\"id\":\"1\",\"name\":\"\",\"health\":0,\"body\":[{\"x\":0,\"y\":1}]}}", rr.Body.String())
 }
 func TestGetBoard(t *testing.T) {
 	defer gock.Off()
@@ -88,7 +88,7 @@ func TestGetFrameWithTurn(t *testing.T) {
 	defer gock.Off()
 	GockFrame("{ \"Frames\": [ { \"Turn\": 5 }] }")
 	rr := serveURL("output=raw")
-	require.Equal(t, "{\"Turn\":5}", rr.Body.String())
+	require.Equal(t, "{\"Turn\":5,\"Food\":null,\"Snakes\":null}", rr.Body.String())
 }
 
 func TestNoFrames(t *testing.T) {

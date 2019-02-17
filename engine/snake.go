@@ -10,12 +10,16 @@
 package enginemodel
 
 type Snake struct {
-	ID string `json:"ID,omitempty"`
-	Name string `json:"Name,omitempty"`
-	URL string `json:"URL,omitempty"`
-	Body []Point `json:"Body,omitempty"`
-	Health int32 `json:"Health,omitempty"`
-	Death DeathCause `json:"Death,omitempty"`
+	ID string `json:"ID"`
+	Name string `json:"Name"`
+	URL string `json:"URL"`
+	Body []Point `json:"Body"`
+	Health int32 `json:"Health"`
+	Death DeathCause `json:"Death"`
 	// the hex code of the color of the snake
-	Color string `json:"Color,omitempty"`
+	Color string `json:"Color"`
+	// the vector head to display, list here https://github.com/battlesnakeio/board/tree/master/public/images/snake/head
+	HeadType string `json:"HeadType"`
+	// the vector tail to display, list here https://github.com/battlesnakeio/board/tree/master/public/images/snake/tail
+	TailType string `json:"TailType"`
 }
