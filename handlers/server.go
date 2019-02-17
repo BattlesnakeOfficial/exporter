@@ -15,6 +15,7 @@ const (
 	board         string = "board"
 	boardAnimated string = "board-animated"
 	move          string = "move"
+	png           string = "png"
 )
 
 //  main function
@@ -30,13 +31,36 @@ func SetupRoutes(router *mux.Router) {
 		Methods("GET").
 		Queries("output", "{output:move}").
 		Queries("youId", "{youId}")
-	router.HandleFunc("/games/{id}/frames/{frame}", getGif).
+	router.HandleFunc("/games/{id}/frames/{frame}", getPNG).
 		Methods("GET").
-		Queries("output", "{output:gif}")
+		Queries("output", "{output:png}")
 	router.HandleFunc("/games/{id}/frames/{frame}", getFrame).
 		Methods("GET").
 		Queries("output", "{output:board|board-animated|raw}")
 	router.NotFoundHandler = http.HandlerFunc(readMe)
+}
+
+// create a png of the game
+func getPNG(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	if paramsNotOk(w, params) {
+		return
+	}
+	gameFrames, err := GetGameFrames(params["id"], params["frame"])
+	if err != nil {
+		response(w, 500, "Problem getting game frames: "+err.Error())
+		return
+	}
+	if len(gameFrames.Frames) == 0 {
+		response(w, 404, "No frames")
+		return
+	}
+	gameStatus, err := GetGameStatus(params["id"])
+	if err != nil {
+		response(w, 500, "Problem getting game frames: "+err.Error())
+		return
+	}
+	ConvertFrameToPng(w, &gameFrames.Frames[0], gameStatus)
 }
 
 // gets a frame from the engine, writes it out in a supported format.
@@ -55,9 +79,9 @@ func getFrame(w http.ResponseWriter, r *http.Request) {
 		response(w, 404, "No frames")
 		return
 	}
-	obj, _ := json.Marshal(gameFrames.Frames[0])
 	if params["output"] == raw {
 		w.Header().Set("Content-Type", "application/json")
+		obj, _ := json.Marshal(gameFrames.Frames[0])
 		w.Write(obj)
 		return
 	}
@@ -93,7 +117,8 @@ func paramsNotOk(w http.ResponseWriter, params map[string]string) bool {
 	if params["output"] == raw ||
 		params["output"] == board ||
 		params["output"] == boardAnimated ||
-		params["output"] == move {
+		params["output"] == move ||
+		params["output"] == png {
 		return false
 	}
 	response(w, 404, fmt.Sprintf("Unsupported output type: %s support types are %s|%s|%s|%s", params["output"], raw, board, boardAnimated, move))

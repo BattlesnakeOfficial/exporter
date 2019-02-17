@@ -70,10 +70,10 @@ In this example, snake 5 is dead so it doesn't show on the board.
 
 Exports the same as board but will reload the page and go to the next frame.
 
-### `/game/{game id}/frame/{frame offset}?output=gif`
+### `/game/{game id}/frame/{frame offset}?output=png`
 
-Exports the game as a gif
+Exports the game as a png
 
 ```shell
-curl http://exporter.battlesnake.io/games/15799e31-cd98-4e87-9d49-40ceb4eb439e/frames/30?output=gif
+curl http://exporter.battlesnake.io/games/15799e31-cd98-4e87-9d49-40ceb4eb439e/frames/30?output=png
 ```

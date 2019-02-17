@@ -10,6 +10,12 @@
 			"revisionTime": "2019-01-09T08:30:14Z"
 		},
 		{
+			"checksumSHA1": "bb1/5pU71wjnMs9RtdU3smIpixc=",
+			"path": "github.com/fogleman/gg",
+			"revision": "0e8122236da1a55935e63e10149b8c092c07426d",
+			"revisionTime": "2019-02-07T20:47:22Z"
+		},
+		{
 			"checksumSHA1": "yGnECJsPZBlk5khJmLUP8thNNxM=",
 			"path": "github.com/gorilla/mux",
 			"revision": "a7962380ca08b5a188038c69871b8d3fbdf31e89",

@@ -90,8 +90,8 @@ func TestNoFrames(t *testing.T) {
 	assert.Equal(t, "No frames", rr.Body.String())
 }
 
-func createFrameList() openapi.EngineListGameFramesResponse {
-	return openapi.EngineListGameFramesResponse{
+func createFrameList() *openapi.EngineListGameFramesResponse {
+	return &openapi.EngineListGameFramesResponse{
 		Frames: []openapi.EngineGameFrame{
 			openapi.EngineGameFrame{
 				Snakes: []openapi.EngineSnake{

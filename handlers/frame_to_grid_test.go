@@ -13,7 +13,7 @@ func TestConvertGridToString(t *testing.T) {
 	frame.Food = []openapi.EnginePoint{
 		openapi.EnginePoint{X: 0, Y: 2},
 	}
-	grid := ConvertFrameToGrid(&frame, createGameStatus(3, 3))
+	grid := ConvertFrameToGrid(frame, createGameStatus(3, 3))
 	board := ConvertGridToString(grid)
 	assert.Equal(t,
 		""+
@@ -30,7 +30,7 @@ func TestConvertFrameToMove(t *testing.T) {
 	}
 	gameStatus := createGameStatus(2, 2)
 
-	move, _ := ConvertFrameToMove(&frame, gameStatus, "id2")
+	move, _ := ConvertFrameToMove(frame, gameStatus, "id2")
 	json, _ := json.Marshal(move)
 	assert.Equal(t, "{\"game\":{\"id\":\"GameID\"},\"board\":{\"height\":2,\"width\":2,\"food\":[{\"y\":2}],\"snakes\":[{\"id\":\"id1\",\"body\":[{},{\"x\":1},{\"x\":1,\"y\":1}]},{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}]},\"you\":{\"id\":\"id2\",\"body\":[{\"x\":2,\"y\":2}]}}", string(json))
 }
@@ -96,8 +96,8 @@ func TestFrameToGridEmpty(t *testing.T) {
 		{Pixel{PixelType: Space}}}, grid)
 }
 
-func createFrame() openapi.EngineGameFrame {
-	return openapi.EngineGameFrame{
+func createFrame() *openapi.EngineGameFrame {
+	return &openapi.EngineGameFrame{
 		Snakes: []openapi.EngineSnake{
 			openapi.EngineSnake{
 				ID:    "id1",
