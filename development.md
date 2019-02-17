@@ -4,11 +4,12 @@ You will need to install:
 
 - Golang
 - Docker
+- gin (`go get github.com/codegangsta/gin`)
 
 ## Run the service
 
 ```shell
-make run
+gin run serve.go
 ```
 
 ## Build the executable
