@@ -5,6 +5,7 @@
 
 # Builds
 exporter
+gin-bin
 
 # General
 *.tgz
