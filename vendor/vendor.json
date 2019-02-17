@@ -16,6 +16,18 @@
 			"revisionTime": "2019-02-07T20:47:22Z"
 		},
 		{
+			"checksumSHA1": "aJ/kX/eCUlrCJBZ26Hwh/RXzAIw=",
+			"path": "github.com/golang/freetype/raster",
+			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
+			"revisionTime": "2017-06-09T00:35:04Z"
+		},
+		{
+			"checksumSHA1": "I3u9Uh9thka1gsgch6QEiPkaAr0=",
+			"path": "github.com/golang/freetype/truetype",
+			"revision": "e2365dfdc4a05e4b8299a783240d4a7d5a65d4e4",
+			"revisionTime": "2017-06-09T00:35:04Z"
+		},
+		{
 			"checksumSHA1": "yGnECJsPZBlk5khJmLUP8thNNxM=",
 			"path": "github.com/gorilla/mux",
 			"revision": "a7962380ca08b5a188038c69871b8d3fbdf31e89",
@@ -39,6 +51,36 @@
 			"path": "github.com/stretchr/testify/assert",
 			"revision": "363ebb24d041ccea8068222281c2e963e997b9dc",
 			"revisionTime": "2019-01-09T08:30:14Z"
+		},
+		{
+			"checksumSHA1": "6r4wlD2ccsItjIKBhqZc1mch3IQ=",
+			"path": "golang.org/x/image/draw",
+			"revision": "ef4a1470e0dc5915f2f5fa04a28eeab72c6936a4",
+			"revisionTime": "2019-01-25T12:57:31Z"
+		},
+		{
+			"checksumSHA1": "CQYQ8wELyxPMRYOTDLELVtude/M=",
+			"path": "golang.org/x/image/font",
+			"revision": "ef4a1470e0dc5915f2f5fa04a28eeab72c6936a4",
+			"revisionTime": "2019-01-25T12:57:31Z"
+		},
+		{
+			"checksumSHA1": "iV2FonJPeLV+iF4JHS3TRRXegF4=",
+			"path": "golang.org/x/image/font/basicfont",
+			"revision": "ef4a1470e0dc5915f2f5fa04a28eeab72c6936a4",
+			"revisionTime": "2019-01-25T12:57:31Z"
+		},
+		{
+			"checksumSHA1": "o7VkCGBiKM5HXzVzrIci1YDlpvc=",
+			"path": "golang.org/x/image/math/f64",
+			"revision": "ef4a1470e0dc5915f2f5fa04a28eeab72c6936a4",
+			"revisionTime": "2019-01-25T12:57:31Z"
+		},
+		{
+			"checksumSHA1": "euzvwlMLxyD0hwc+raoVsDLv6j4=",
+			"path": "golang.org/x/image/math/fixed",
+			"revision": "ef4a1470e0dc5915f2f5fa04a28eeab72c6936a4",
+			"revisionTime": "2019-01-25T12:57:31Z"
 		},
 		{
 			"checksumSHA1": "NZHTvtfT/NWM/9gf5zThYVaBGV4=",
