@@ -89,6 +89,12 @@
 			"revisionTime": "2019-01-25T12:57:31Z"
 		},
 		{
+			"checksumSHA1": "h1kSGOuq3TDhKiXgljZ20bVxmMY=",
+			"path": "gopkg.in/go-playground/colors.v1",
+			"revision": "6d198b46b745c6fed7bcae3d0d8f3bb443d37904",
+			"revisionTime": "2018-12-08T15:49:16Z"
+		},
+		{
 			"checksumSHA1": "NZHTvtfT/NWM/9gf5zThYVaBGV4=",
 			"path": "gopkg.in/h2non/gock.v1",
 			"revision": "ba88c4862a27596539531ce469478a91bc5a0511",
