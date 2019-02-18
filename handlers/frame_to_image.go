@@ -78,7 +78,7 @@ func ConvertGameToGif(w io.Writer, gameStatus *engine.StatusResponse, gameID str
 	gameFrames, _ := GetGameFramesWithLength(gameID, 0, batchSize)
 	outGif.SampleImage = createGif(&gameFrames.Frames[0], gameStatus).(*image.Paletted)
 	go getGifFrames(c, gameFrames, outGif, gameStatus, gameID, batchSize)
-	outGif.LoopCount = -1
+	outGif.LoopCount = 0
 	gif.EncodeAll(w, outGif)
 	return nil
 }
