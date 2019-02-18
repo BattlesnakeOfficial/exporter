@@ -13,16 +13,24 @@ var SnakeImages = packr.NewBox("../snake-images")
 
 // GetSnakeHeadImage returns a snake head or the default if not found.
 func GetSnakeHeadImage(name string) (image.Image, error) {
+	return getSnakeImage(name, "head")
+}
 
-	byteImage, err := SnakeImages.Find(fmt.Sprintf("head/%s.svg.png", name))
+// GetSnakeTailImage returns a snake head or the default if not found.
+func GetSnakeTailImage(name string) (image.Image, error) {
+	return getSnakeImage(name, "tail")
+}
+
+func getSnakeImage(name string, dir string) (image.Image, error) {
+
+	byteImage, err := SnakeImages.Find(fmt.Sprintf("%s/%s.svg.png", dir, name))
 	if err != nil {
 		return nil, err
 	}
 	r := bytes.NewReader(byteImage)
-	image, imageType, err := image.Decode(r)
+	image, _, err := image.Decode(r)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(imageType)
 	return image, nil
 }
