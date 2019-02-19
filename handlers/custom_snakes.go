@@ -109,6 +109,7 @@ func GetOrCreateRotatedSnakeImage(segmentType SegmentType, snake *engine.Snake, 
 		ic.RotateAbout(gg.Radians(rotation), 17, 17)
 		ic.DrawImage(h, 0, 0)
 		hr := ic.Image()
+		// TODO remove the possible 6GB image cache and make it more sensible per game not global
 		snakeImagesCache[key] = hr
 		return hr, nil
 	}

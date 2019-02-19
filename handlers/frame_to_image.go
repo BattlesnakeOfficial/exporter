@@ -172,6 +172,7 @@ func getRotation(point *engine.Point, nextPoint *engine.Point) float64 {
 		return -180
 	case "right":
 		return 0
+		// if somehow a snake moves diagonally or some other direction due to future move mechanics.
 	default:
 		return 0
 	}
@@ -200,11 +201,13 @@ func drawSegment(dc *gg.Context, segmentImage image.Image, square int32, point *
 
 func drawSnake(dc *gg.Context, snake *engine.Snake, square int32) {
 	halfSquare := float64(square) / float64(2)
-
 	borderHalf := float64(square) / float64(20)
 	border := float64(square) / float64(8)
 	var previousPoint engine.Point
 	var nextPoint *engine.Point
+	if snake.Death.Cause != "" {
+		snake.Color = "#333333"
+	}
 	for i, point := range snake.Body {
 		if i < len(snake.Body)-1 {
 			nextPoint = &snake.Body[i+1]
@@ -212,9 +215,6 @@ func drawSnake(dc *gg.Context, snake *engine.Snake, square int32) {
 			nextPoint = nil
 		}
 		corner := corner(&previousPoint, &point, nextPoint)
-		if snake.Death.Cause != "" {
-			snake.Color = "#333333"
-		}
 		if i == 0 {
 			placeHead(snake, dc, &point, nextPoint, square, "#111111")
 		} else if i == len(snake.Body)-1 {
