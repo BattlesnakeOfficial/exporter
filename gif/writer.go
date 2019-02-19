@@ -177,7 +177,7 @@ func (e *encoder) writeHeader() {
 	}
 
 	// Add animation info if necessary.
-	if len(e.g.Image) > 1 && e.g.LoopCount >= 0 {
+	if e.g.LoopCount >= 0 {
 		e.buf[0] = 0x21 // Extension Introducer.
 		e.buf[1] = 0xff // Application Label.
 		e.buf[2] = 0x0b // Block Size.
