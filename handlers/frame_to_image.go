@@ -61,7 +61,7 @@ func direction(p *engine.Point, nP *engine.Point) string {
 // ConvertFrameToPNG takes a frame and makes a png
 func ConvertFrameToPNG(w io.Writer, gameFrame *engine.GameFrame, gameStatus *engine.StatusResponse) {
 	width, height := getDimensions(gameStatus)
-	square := int32(40)
+	square := int32(20)
 	border := int(square / 8)
 	dc := gg.NewContext(width*int(square)+border, height*int(square)+border)
 	dc.DrawRectangle(0, 0, float64(width*int(square)+border), float64(height*int(square)+border))
@@ -122,9 +122,13 @@ func getGifFrames(c chan gif.PalettAndDelay, firstSet *engine.ListGameFramesResp
 		for _, frame := range gameFrames.Frames {
 			frameCount++
 			imageGif := createGif(&frame, gameStatus)
+			delay := 8
+			if gameStatus.LastFrame.Turn == frame.Turn {
+				delay = 500
+			}
 			outGif.Image <- gif.PalettAndDelay{
 				Palett: imageGif.(*image.Paletted),
-				Delay:  10,
+				Delay:  delay,
 				I:      frameCount + currentOffset,
 			}
 		}
@@ -178,7 +182,7 @@ func getRotation(point *engine.Point, nextPoint *engine.Point) float64 {
 	}
 }
 func placeHead(snake *engine.Snake, dc *gg.Context, point *engine.Point, nextPoint *engine.Point, square int32, backgroundColor string) {
-	segmentImage, err := GetOrCreateRotatedSnakeImage(HeadSegment, snake, backgroundColor, getRotation(point, nextPoint))
+	segmentImage, err := GetOrCreateRotatedSnakeImage(HeadSegment, snake, backgroundColor, getRotation(point, nextPoint), float64(square))
 	if err != nil {
 		fmt.Printf("Couldn't load head segment: %s\n", err)
 		return
@@ -187,7 +191,7 @@ func placeHead(snake *engine.Snake, dc *gg.Context, point *engine.Point, nextPoi
 }
 
 func placeTail(snake *engine.Snake, dc *gg.Context, point *engine.Point, nextPoint *engine.Point, square int32, backgroundColor string) {
-	segmentImage, err := GetOrCreateRotatedSnakeImage(TailSegment, snake, backgroundColor, getRotation(point, nextPoint))
+	segmentImage, err := GetOrCreateRotatedSnakeImage(TailSegment, snake, backgroundColor, getRotation(point, nextPoint), float64(square))
 	if err != nil {
 		fmt.Printf("Couldn't load tail segment: %s\n", err)
 		return

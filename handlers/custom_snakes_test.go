@@ -18,12 +18,12 @@ func TestBox(t *testing.T) {
 
 func TestHeadTailCache(t *testing.T) {
 	start1 := time.Now()
-	GetOrCreateRotatedSnakeImage(HeadSegment, &engine.Snake{}, "FFFFFF", 90)
+	GetOrCreateRotatedSnakeImage(HeadSegment, &engine.Snake{}, "FFFFFF", 90, 10)
 	finish1 := time.Now()
 	duration1 := finish1.Nanosecond() - start1.Nanosecond()
 
 	start2 := time.Now()
-	GetOrCreateRotatedSnakeImage(HeadSegment, &engine.Snake{}, "FFFFFF", 90)
+	GetOrCreateRotatedSnakeImage(HeadSegment, &engine.Snake{}, "FFFFFF", 90, 10)
 	finish2 := time.Now()
 	duration2 := finish2.Nanosecond() - start2.Nanosecond()
 
