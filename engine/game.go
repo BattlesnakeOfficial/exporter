@@ -10,9 +10,9 @@
 package enginemodel
 
 type Game struct {
-	ID string `json:"ID,omitempty"`
-	Status string `json:"Status,omitempty"`
-	Width int32 `json:"Width,omitempty"`
-	Height int32 `json:"Height,omitempty"`
-	SnakeTimeout int32 `json:"SnakeTimeout,omitempty"`
+	ID string `json:"ID"`
+	Status string `json:"Status"`
+	Width int32 `json:"Width"`
+	Height int32 `json:"Height"`
+	SnakeTimeout int32 `json:"SnakeTimeout"`
 }

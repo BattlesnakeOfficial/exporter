@@ -2,22 +2,26 @@ test:
 	go test -timeout 20s -race -coverprofile coverage.txt -covermode=atomic ./...
 .PHONY: test
 
+build:
+	packr2 build
+.PHONY: build
+
 install:
-	go build
+	packr2 install
 .PHONY: install
 
-run: install
+run: build
 	./exporter 
 .PHONY: run
 
 model:
-	./model.sh
-.PHONY: proto
+	./scripts/model.sh
+.PHONY: model
+
+images:
+	./scripts/images.sh
+.PHONY: images
 
 docker:
 	docker build -t battlesnakeio/exporter .
-.PHONY: build-docker
-
-lint:
-	golangci-lint run
-.PHONY: lint
+.PHONY: docker

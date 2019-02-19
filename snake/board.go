@@ -10,9 +10,9 @@
 package snakemodel
 
 type Board struct {
-	Height int32 `json:"height,omitempty"`
-	Width int32 `json:"width,omitempty"`
-	Food []Coords `json:"food,omitempty"`
+	Height int32 `json:"height"`
+	Width int32 `json:"width"`
+	Food []Coords `json:"food"`
 	// A list of snakes that are still alive
-	Snakes []Snake `json:"snakes,omitempty"`
+	Snakes []Snake `json:"snakes"`
 }

@@ -10,7 +10,7 @@
 package enginemodel
 
 type GameFrame struct {
-	Turn int32 `json:"Turn,omitempty"`
-	Food []Point `json:"Food,omitempty"`
-	Snakes []Snake `json:"Snakes,omitempty"`
+	Turn int32 `json:"Turn"`
+	Food []Point `json:"Food"`
+	Snakes []Snake `json:"Snakes"`
 }

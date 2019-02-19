@@ -6,6 +6,7 @@
 # Builds
 exporter
 gin-bin
+packrd
 
 # General
 *.tgz

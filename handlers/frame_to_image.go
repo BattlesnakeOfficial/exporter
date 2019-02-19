@@ -15,12 +15,12 @@ import (
 )
 
 // pP = previous point, p = current point, nP next point.
-func corner(pP engine.Point, p engine.Point, nP engine.Point) string {
-	if (pP == engine.Point{}) || (nP == engine.Point{}) {
+func corner(pP *engine.Point, p *engine.Point, nP *engine.Point) string {
+	if (pP == nil) || (nP == nil) {
 		return "none"
 	}
-
-	switch fmt.Sprintf("%d,%d:%d,%d", pP.X-p.X, pP.Y-p.Y, nP.X-p.X, nP.Y-p.Y) {
+	coords := fmt.Sprintf("%d,%d:%d,%d", pP.X-p.X, pP.Y-p.Y, nP.X-p.X, nP.Y-p.Y)
+	switch coords {
 	case "0,-1:1,0", "1,0:0,-1":
 		return "bottom-left"
 	case "-1,0:0,-1", "0,-1:-1,0":
@@ -34,12 +34,37 @@ func corner(pP engine.Point, p engine.Point, nP engine.Point) string {
 	}
 }
 
+// pP = previous point, p = current point, nP next point.
+func direction(p *engine.Point, nP *engine.Point) string {
+	if nP == nil {
+		return "up"
+	}
+	coords := fmt.Sprintf("%d,%d", p.X-nP.X, p.Y-nP.Y)
+	switch coords {
+	case "-1,0":
+		return "left"
+	case "1,0":
+		return "right"
+	case "0,-1":
+		return "up"
+	case "0,1":
+		return "down"
+	case "0,0":
+		return "up"
+	default:
+
+		panic("snake went weird direction" + coords)
+	}
+
+}
+
 // ConvertFrameToPNG takes a frame and makes a png
 func ConvertFrameToPNG(w io.Writer, gameFrame *engine.GameFrame, gameStatus *engine.StatusResponse) {
 	width, height := getDimensions(gameStatus)
-	square := int32(20)
-	dc := gg.NewContext(width*int(square)+2, height*int(square)+2)
-	dc.DrawRectangle(0, 0, float64(width*int(square)+2), float64(height*int(square)+2))
+	square := int32(40)
+	border := int(square / 8)
+	dc := gg.NewContext(width*int(square)+border, height*int(square)+border)
+	dc.DrawRectangle(0, 0, float64(width*int(square)+border), float64(height*int(square)+border))
 	dc.SetHexColor("#000000")
 	dc.Fill()
 
@@ -123,60 +148,101 @@ func createGif(frame *engine.GameFrame, gameStatus *engine.StatusResponse) image
 }
 
 func drawSquare(dc *gg.Context, x int32, y int32, square int32) {
-	dc.DrawRectangle(float64(x*square)+2, float64(y*square)+2, float64(square)-2, float64(square)-2)
+	border := float64(square / 8)
+	dc.DrawRectangle(float64(x*square)+border, float64(y*square)+border, float64(square)-border, float64(square)-border)
 	dc.SetHexColor("#111111")
 	dc.Fill()
 }
 
 func drawFood(dc *gg.Context, point *engine.Point, square int32) {
-	dc.DrawCircle(float64(point.X*square)+float64(square)/2.0+1, float64(point.Y*square+square/2.0)+1, float64(square)/float64(4))
+	borderHalf := float64(square) / float64(20)
+	dc.DrawCircle(float64(point.X*square)+float64(square)/2.0+borderHalf, float64(point.Y*square+square/2.0)+borderHalf, float64(square)/float64(4))
 	dc.SetHexColor("#FFA500")
 	dc.Fill()
 }
 
+func getRotation(point *engine.Point, nextPoint *engine.Point) float64 {
+	direction := direction(point, nextPoint)
+	switch direction {
+	case "up":
+		return -90
+	case "down":
+		return 90
+	case "left":
+		return -180
+	case "right":
+		return 0
+		// if somehow a snake moves diagonally or some other direction due to future move mechanics.
+	default:
+		return 0
+	}
+}
+func placeHead(snake *engine.Snake, dc *gg.Context, point *engine.Point, nextPoint *engine.Point, square int32, backgroundColor string) {
+	segmentImage, err := GetOrCreateRotatedSnakeImage(HeadSegment, snake, backgroundColor, getRotation(point, nextPoint))
+	if err != nil {
+		fmt.Printf("Couldn't load head segment: %s\n", err)
+		return
+	}
+	drawSegment(dc, segmentImage, square, point)
+}
+
+func placeTail(snake *engine.Snake, dc *gg.Context, point *engine.Point, nextPoint *engine.Point, square int32, backgroundColor string) {
+	segmentImage, err := GetOrCreateRotatedSnakeImage(TailSegment, snake, backgroundColor, getRotation(point, nextPoint))
+	if err != nil {
+		fmt.Printf("Couldn't load tail segment: %s\n", err)
+		return
+	}
+	drawSegment(dc, segmentImage, square, point)
+}
+func drawSegment(dc *gg.Context, segmentImage image.Image, square int32, point *engine.Point) {
+	border := float64(square) / float64(8)
+	dc.DrawImage(segmentImage, int(point.X*square+int32(border)), int(point.Y*square+int32(border)))
+}
+
 func drawSnake(dc *gg.Context, snake *engine.Snake, square int32) {
 	halfSquare := float64(square) / float64(2)
-	previousPoint := engine.Point{}
-	nextPoint := engine.Point{}
+	borderHalf := float64(square) / float64(20)
+	border := float64(square) / float64(8)
+	var previousPoint engine.Point
+	var nextPoint *engine.Point
+	if snake.Death.Cause != "" {
+		snake.Color = "#333333"
+	}
 	for i, point := range snake.Body {
 		if i < len(snake.Body)-1 {
-			nextPoint = snake.Body[i+1]
+			nextPoint = &snake.Body[i+1]
 		} else {
-			nextPoint = engine.Point{}
+			nextPoint = nil
 		}
-		corner := corner(previousPoint, point, nextPoint)
-		transparancy := "AA"
+		corner := corner(&previousPoint, &point, nextPoint)
 		if i == 0 {
-			transparancy = "FF"
-		}
-		color := snake.Color + transparancy
-		if snake.Death.Cause != "" {
-			color = "#555555" + transparancy
-		}
-		if corner == "none" {
-			dc.DrawRectangle(float64(point.X*square)+2, float64(point.Y*square)+2, float64(square)-2, float64(square)-2)
+			placeHead(snake, dc, &point, nextPoint, square, "#111111")
+		} else if i == len(snake.Body)-1 {
+			placeTail(snake, dc, &point, &previousPoint, square, "#111111")
+		} else if corner == "none" {
+			dc.DrawRectangle(float64(point.X*square)+border, float64(point.Y*square)+border, float64(square)-border, float64(square)-border)
 		} else {
-			dc.DrawRoundedRectangle(float64(point.X*square)+2, float64(point.Y*square)+2, float64(square)-2, float64(square)-2, halfSquare)
+			dc.DrawRoundedRectangle(float64(point.X*square)+border, float64(point.Y*square)+border, float64(square)-border, float64(square)-border, halfSquare)
 			if strings.HasPrefix(corner, "bottom") {
-				dc.DrawRectangle(float64(point.X*square)+2, float64(point.Y*square)+2, float64(square)-2, float64(square)-2-halfSquare)
+				dc.DrawRectangle(float64(point.X*square)+border, float64(point.Y*square)+border, float64(square)-border, float64(square)-border-halfSquare+borderHalf)
 				if strings.HasSuffix(corner, "left") {
-					dc.DrawRectangle(float64(point.X*square)+2+halfSquare, float64(point.Y*square)+2, float64(square)-2-halfSquare, float64(square)-2)
+					dc.DrawRectangle(float64(point.X*square)+border+halfSquare-borderHalf, float64(point.Y*square)+border, float64(square)-border-halfSquare+borderHalf, float64(square)-border)
 				}
 				if strings.HasSuffix(corner, "right") {
-					dc.DrawRectangle(float64(point.X*square)+2, float64(point.Y*square)+2, float64(square)-2-halfSquare, float64(square)-2)
+					dc.DrawRectangle(float64(point.X*square)+border, float64(point.Y*square)+border, float64(square)-border-halfSquare+borderHalf, float64(square)-border)
 				}
 			}
 			if strings.HasPrefix(corner, "top") {
-				dc.DrawRectangle(float64(point.X*square)+2, float64(point.Y*square)+2+halfSquare, float64(square)-2, float64(square)-2-halfSquare)
+				dc.DrawRectangle(float64(point.X*square)+border, float64(point.Y*square)+border+halfSquare-borderHalf, float64(square)-border, float64(square)-border-halfSquare+borderHalf)
 				if strings.HasSuffix(corner, "left") {
-					dc.DrawRectangle(float64(point.X*square)+2+halfSquare, float64(point.Y*square)+2, float64(square)-2-halfSquare, float64(square)-2)
+					dc.DrawRectangle(float64(point.X*square)+border+halfSquare-borderHalf, float64(point.Y*square)+border, float64(square)-border-halfSquare+borderHalf, float64(square)-border)
 				}
 				if strings.HasSuffix(corner, "right") {
-					dc.DrawRectangle(float64(point.X*square)+2, float64(point.Y*square)+2, float64(square)-2-halfSquare, float64(square)-2)
+					dc.DrawRectangle(float64(point.X*square)+border, float64(point.Y*square)+border, float64(square)-border-halfSquare+borderHalf, float64(square)-border)
 				}
 			}
 		}
-		dc.SetHexColor(color)
+		dc.SetHexColor(snake.Color)
 		dc.Fill()
 		previousPoint = point
 	}

@@ -10,5 +10,5 @@
 package snakemodel
 
 type StartResponse struct {
-	Color string `json:"color,omitempty"`
+	Color string `json:"color"`
 }

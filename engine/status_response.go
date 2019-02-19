@@ -10,6 +10,6 @@
 package enginemodel
 
 type StatusResponse struct {
-	Game Game `json:"game,omitempty"`
-	LastFrame GameFrame `json:"lastFrame,omitempty"`
+	Game Game `json:"game"`
+	LastFrame GameFrame `json:"lastFrame"`
 }

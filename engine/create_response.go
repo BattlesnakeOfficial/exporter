@@ -10,5 +10,5 @@
 package enginemodel
 
 type CreateResponse struct {
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 }

@@ -12,5 +12,5 @@ package enginemodel
 type SnakeOptions struct {
 	Name string `json:"name"`
 	Url string `json:"url"`
-	Id string `json:"id,omitempty"`
+	Id string `json:"id"`
 }

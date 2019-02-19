@@ -10,8 +10,8 @@
 package snakemodel
 
 type Snake struct {
-	Id string `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Health int32 `json:"health,omitempty"`
-	Body []Coords `json:"body,omitempty"`
+	Id string `json:"id"`
+	Name string `json:"name"`
+	Health int32 `json:"health"`
+	Body []Coords `json:"body"`
 }
