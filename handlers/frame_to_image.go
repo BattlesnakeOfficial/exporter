@@ -4,13 +4,11 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	"image/color"
 	gif_original "image/gif"
 	"io"
 	"strings"
 
 	"github.com/fogleman/gg"
-	"gopkg.in/go-playground/colors.v1"
 
 	engine "github.com/battlesnakeio/exporter/engine"
 	gif "github.com/battlesnakeio/exporter/gif"
@@ -163,73 +161,41 @@ func drawFood(dc *gg.Context, point *engine.Point, square int32) {
 	dc.Fill()
 }
 
-type changeable interface {
-	Set(x, y int, c color.Color)
-}
-
-func placeHead(dc *gg.Context, point *engine.Point, nextPoint *engine.Point, square int32, snakeColor string, backgroundColor string) {
-	h, err := GetSnakeHeadImage("beluga")
-	if err != nil {
-		panic(err)
+func getRotation(point *engine.Point, nextPoint *engine.Point) float64 {
+	direction := direction(point, nextPoint)
+	switch direction {
+	case "up":
+		return -90
+	case "down":
+		return 90
+	case "left":
+		return -180
+	case "right":
+		return 0
+	default:
+		return 0
 	}
-	placeHeadTailSegment(dc, point, nextPoint, square, snakeColor, backgroundColor, h)
 }
-
-func placeTail(dc *gg.Context, point *engine.Point, nextPoint *engine.Point, square int32, snakeColor string, backgroundColor string) {
-	h, err := GetSnakeTailImage("bolt")
+func placeHead(snake *engine.Snake, dc *gg.Context, point *engine.Point, nextPoint *engine.Point, square int32, backgroundColor string) {
+	segmentImage, err := GetOrCreateRotatedSnakeImage(HeadSegment, snake, backgroundColor, getRotation(point, nextPoint))
 	if err != nil {
-		panic(err)
+		fmt.Printf("Couldn't load head segment: %s\n", err)
+		return
 	}
-	placeHeadTailSegment(dc, point, nextPoint, square, snakeColor, backgroundColor, h)
+	drawSegment(dc, segmentImage, square, point)
 }
 
-func placeHeadTailSegment(dc *gg.Context, point *engine.Point, nextPoint *engine.Point, square int32, snakeColor string, backgroundColor string, h image.Image) {
+func placeTail(snake *engine.Snake, dc *gg.Context, point *engine.Point, nextPoint *engine.Point, square int32, backgroundColor string) {
+	segmentImage, err := GetOrCreateRotatedSnakeImage(TailSegment, snake, backgroundColor, getRotation(point, nextPoint))
+	if err != nil {
+		fmt.Printf("Couldn't load tail segment: %s\n", err)
+		return
+	}
+	drawSegment(dc, segmentImage, square, point)
+}
+func drawSegment(dc *gg.Context, segmentImage image.Image, square int32, point *engine.Point) {
 	border := float64(square) / float64(8)
-	backgroundColorHex, _ := colors.ParseHEX(backgroundColor)
-	bounds := h.Bounds()
-	if cimg, ok := h.(changeable); ok {
-		for x := 0; x < bounds.Max.X; x++ {
-			for y := 0; y < bounds.Max.Y; y++ {
-				currentPoint := h.At(x, y)
-				r, g, b, _ := currentPoint.RGBA()
-				ratio := (float64(r) + float64(g) + float64(b)) / float64(3*65535)
-				if !strings.HasPrefix(snakeColor, "#") {
-					snakeColor = "#" + snakeColor
-				}
-				snakeColorHex, err := colors.ParseHEX(snakeColor)
-				if err != nil {
-					panic(err)
-				}
-				newR := float64(snakeColorHex.ToRGBA().R) * (1 - ratio)
-				newG := float64(snakeColorHex.ToRGBA().G) * (1 - ratio)
-				newB := float64(snakeColorHex.ToRGBA().B) * (1 - ratio)
-				alpha := float64(255) * (1 - ratio)
-				isLight := (ratio < 0.5)
-				if !isLight {
-					newR = float64(backgroundColorHex.ToRGBA().R) * ratio
-					newG = float64(backgroundColorHex.ToRGBA().G) * ratio
-					newB = float64(backgroundColorHex.ToRGBA().B) * ratio
-					alpha = 255
-				}
-				cimg.Set(x, y, color.RGBA{uint8(newR), uint8(newG), uint8(newB), uint8(alpha)})
-			}
-		}
-		ic := gg.NewContext(h.Bounds().Max.X, h.Bounds().Max.Y)
-		direction := direction(point, nextPoint)
-		switch direction {
-		case "up":
-			ic.RotateAbout(gg.Radians(-90), 17, 17)
-		case "down":
-			ic.RotateAbout(gg.Radians(90), 17, 17)
-		case "left":
-			ic.RotateAbout(gg.Radians(-180), 17, 17)
-		case "right":
-			ic.RotateAbout(gg.Radians(0), 17, 17)
-		}
-		ic.DrawImage(h, 0, 0)
-		hr := ic.Image()
-		dc.DrawImage(hr, int(point.X*square+int32(border)), int(point.Y*square+int32(border)))
-	}
+	dc.DrawImage(segmentImage, int(point.X*square+int32(border)), int(point.Y*square+int32(border)))
 }
 
 func drawSnake(dc *gg.Context, snake *engine.Snake, square int32) {
@@ -246,14 +212,13 @@ func drawSnake(dc *gg.Context, snake *engine.Snake, square int32) {
 			nextPoint = nil
 		}
 		corner := corner(&previousPoint, &point, nextPoint)
-		color := snake.Color
 		if snake.Death.Cause != "" {
-			color = "#333333"
+			snake.Color = "#333333"
 		}
 		if i == 0 {
-			placeHead(dc, &point, nextPoint, square, color, "#111111")
+			placeHead(snake, dc, &point, nextPoint, square, "#111111")
 		} else if i == len(snake.Body)-1 {
-			placeTail(dc, &point, &previousPoint, square, color, "#111111")
+			placeTail(snake, dc, &point, &previousPoint, square, "#111111")
 		} else if corner == "none" {
 			dc.DrawRectangle(float64(point.X*square)+border, float64(point.Y*square)+border, float64(square)-border, float64(square)-border)
 		} else {
@@ -277,7 +242,7 @@ func drawSnake(dc *gg.Context, snake *engine.Snake, square int32) {
 				}
 			}
 		}
-		dc.SetHexColor(color)
+		dc.SetHexColor(snake.Color)
 		dc.Fill()
 		previousPoint = point
 	}

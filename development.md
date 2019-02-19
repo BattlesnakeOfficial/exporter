@@ -5,6 +5,7 @@ You will need to install:
 - Golang
 - Docker
 - gin (`go get github.com/codegangsta/gin`)
+- packr (`go get -u github.com/gobuffalo/packr/v2/packr2`)
 
 ## Run the service
 

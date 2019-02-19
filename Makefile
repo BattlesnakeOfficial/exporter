@@ -2,13 +2,17 @@ test:
 	go test -coverprofile coverage.txt -covermode=atomic ./...
 .PHONY: test
 
+build:
+	packr2 build
+.PHONY: build
+
 install:
-	go build
+	packr2 install
 .PHONY: install
 
-run: install
+run: build
 	./exporter 
-.PHONY: install
+.PHONY: run
 
 model:
 	./scripts/model.sh

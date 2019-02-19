@@ -22,7 +22,7 @@ func TestFrameToPNG(t *testing.T) {
 	w := bufio.NewWriter(&b)
 	ConvertFrameToPNG(w, frame, status)
 	w.Flush()
-	require.True(t, b.Len() == 0)
+	require.True(t, b.Len() > 0)
 }
 
 func TestGetGif(t *testing.T) {
