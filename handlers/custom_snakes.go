@@ -14,7 +14,7 @@ import (
 )
 
 // SnakeImages box of the custom snake parts.
-var SnakeImages = packr.NewBox("../snake-images")
+var SnakeImages = packr.New("imagebox", "../snake-images")
 
 var snakeImagesCache = make(map[string]image.Image)
 
@@ -64,7 +64,7 @@ func getSafeHexColour(color string, defaultColor string) *colors.HEXColor {
 }
 
 // GetOrCreateRotatedSnakeImage holds all the asked for coloured / rotated segments in a cache in memory
-func GetOrCreateRotatedSnakeImage(segmentType SegmentType, snake *engine.Snake, backgroundColor string, rotation float64) (image.Image, error) {
+func GetOrCreateRotatedSnakeImage(segmentType SegmentType, snake *engine.Snake, backgroundColor string, rotation float64, square float64) (image.Image, error) {
 	name := getHeadOrDefault(snake)
 	if segmentType == TailSegment {
 		name = getTailOrDefault(snake)
@@ -105,11 +105,18 @@ func GetOrCreateRotatedSnakeImage(segmentType SegmentType, snake *engine.Snake, 
 				cimg.Set(x, y, color.RGBA{uint8(newR), uint8(newG), uint8(newB), uint8(alpha)})
 			}
 		}
-		ic := gg.NewContext(h.Bounds().Max.X, h.Bounds().Max.Y)
-		ic.RotateAbout(gg.Radians(rotation), 17, 17)
-		ic.DrawImage(h, 0, 0)
+		x, y := float64(h.Bounds().Max.X), float64(h.Bounds().Max.Y)
+
+		ic := gg.NewContext(int(x), int(y))
+		if square > x {
+			ic = gg.NewContext(int(square), int(square))
+		}
 		hr := ic.Image()
-		// TODO remove the possible 6GB image cache and make it more sensible per game not global
+		ic.Scale((square-(square/8))/x, (square-(square/8))/x)
+		ic.RotateAbout(gg.Radians(rotation), x/float64(2), y/float64(2))
+		ic.DrawImage(h, 0, 0)
+		ic.Clip()
+		// TODO remove the possible 6TB image cache and make it more sensible per game not global
 		snakeImagesCache[key] = hr
 		return hr, nil
 	}
