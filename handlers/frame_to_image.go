@@ -75,14 +75,15 @@ func ConvertFrameToPNG(w io.Writer, gameFrame *engine.GameFrame, gameStatus *eng
 		}
 	}
 
-	drawWatermark(dc)
-
 	// draw dead snakes
 	for _, snake := range gameFrame.Snakes {
 		if snake.Death.Cause != "" {
 			drawSnake(dc, &snake, square)
 		}
 	}
+
+	drawWatermark(dc)
+
 	// draw alive snakes
 	for _, snake := range gameFrame.Snakes {
 		if snake.Death.Cause == "" {
