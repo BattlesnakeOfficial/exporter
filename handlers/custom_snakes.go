@@ -17,6 +17,14 @@ import (
 var SnakeImages = packr.New("imagebox", "../snake-images")
 
 var snakeImagesCache = make(map[string]image.Image)
+var watermarkeCache = make(map[string]*Watermark)
+
+// Watermark struct for cache map
+type Watermark struct {
+	logo   image.Image
+	height int
+	width  int
+}
 
 // SegmentType representing head or tail
 type SegmentType string
@@ -30,6 +38,63 @@ const (
 
 type changeable interface {
 	Set(x, y int, c color.Color)
+}
+
+// GetWatermarkImage Returns a transparent watermark image
+func GetWatermarkImage(width, height int) (int, int, image.Image) {
+	key := fmt.Sprintf("%d,%d", width, height)
+	cachedResult, ok := watermarkeCache[key]
+	if ok {
+		return cachedResult.width, cachedResult.height, cachedResult.logo
+	}
+	byteImage, err := SnakeImages.Find("watermark.png")
+	if err != nil {
+		panic(err)
+	}
+	r := bytes.NewReader(byteImage)
+	image, _, err := image.Decode(r)
+	if err != nil {
+		panic(err)
+	}
+
+	ic := gg.NewContext(image.Bounds().Max.X, image.Bounds().Max.Y)
+	ac := gg.NewContext(ic.Width(), ic.Height())
+	ac.DrawRectangle(0, 0, float64(ac.Width()), float64(ac.Height()))
+	ac.SetHexColor("#000000FF")
+	ac.Fill()
+	expectedWidth := float64(width)
+	scale := expectedWidth / float64(image.Bounds().Max.X)
+	expectedHeight := scale * float64(image.Bounds().Max.Y)
+	result := ic.Image()
+	ic.Scale(scale, scale)
+	ic.DrawImage(image, 0, 0)
+	ic.Clip()
+	result = setAlpha(result)
+	watermark := &Watermark{
+		width:  int(expectedWidth),
+		height: int(expectedHeight),
+		logo:   result,
+	}
+	watermarkeCache[key] = watermark
+	return int(expectedWidth), int(expectedHeight), result
+}
+
+func setAlpha(logo image.Image) image.Image {
+
+	bounds := logo.Bounds()
+	if cimg, ok := logo.(changeable); ok {
+		for x := 0; x < bounds.Max.X; x++ {
+			for y := 0; y < bounds.Max.Y; y++ {
+				currentPoint := logo.At(x, y)
+				r, g, b, _ := currentPoint.RGBA()
+				ratio := (float64(r) + float64(g) + float64(b)) / float64(3)
+				if ratio < 5000 {
+					cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(ratio)})
+				}
+			}
+		}
+	}
+	return logo
 }
 
 func getHeadOrDefault(snake *engine.Snake) string {
