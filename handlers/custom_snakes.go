@@ -47,7 +47,7 @@ func GetWatermarkImage(width, height int) (int, int, image.Image) {
 	if ok {
 		return cachedResult.width, cachedResult.height, cachedResult.logo
 	}
-	byteImage, err := SnakeImages.Find("watermark.png")
+	byteImage, err := SnakeImages.Find("watermark2.png")
 	if err != nil {
 		panic(err)
 	}
@@ -62,7 +62,7 @@ func GetWatermarkImage(width, height int) (int, int, image.Image) {
 	ac.DrawRectangle(0, 0, float64(ac.Width()), float64(ac.Height()))
 	ac.SetHexColor("#000000FF")
 	ac.Fill()
-	expectedWidth := float64(width)
+	expectedWidth := float64(width) / float64(1.4)
 	scale := expectedWidth / float64(image.Bounds().Max.X)
 	expectedHeight := scale * float64(image.Bounds().Max.Y)
 	result := ic.Image()
@@ -86,10 +86,10 @@ func setAlpha(logo image.Image) image.Image {
 		for x := 0; x < bounds.Max.X; x++ {
 			for y := 0; y < bounds.Max.Y; y++ {
 				currentPoint := logo.At(x, y)
-				r, g, b, _ := currentPoint.RGBA()
-				ratio := (float64(r) + float64(g) + float64(b)) / float64(3)
-				if ratio < 5000 {
-					cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(ratio)})
+				r, g, b, a := currentPoint.RGBA()
+				// ratio := (float64(r) + float64(g) + float64(b)) / float64(3)
+				if a > 200 {
+					cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(200)})
 				}
 			}
 		}
