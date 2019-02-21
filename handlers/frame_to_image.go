@@ -81,6 +81,9 @@ func ConvertFrameToPNG(w io.Writer, gameFrame *engine.GameFrame, gameStatus *eng
 			drawSnake(dc, &snake, square)
 		}
 	}
+
+	drawWatermark(dc)
+
 	// draw alive snakes
 	for _, snake := range gameFrame.Snakes {
 		if snake.Death.Cause == "" {
@@ -93,6 +96,14 @@ func ConvertFrameToPNG(w io.Writer, gameFrame *engine.GameFrame, gameStatus *eng
 	}
 
 	dc.EncodePNG(w)
+}
+
+func drawWatermark(dc *gg.Context) {
+	width, height := dc.Width(), dc.Height()
+	newWidth, newHeight, watermark := GetWatermarkImage(width, height)
+	centerX := float64(width) / float64(2)
+	centerY := float64(height) / float64(2)
+	dc.DrawImage(watermark, int(centerX)-(newWidth/2), int(centerY)-newHeight/2)
 }
 
 // ConvertGameToGif reads all frames from the engine and outputs an animated gif.
@@ -118,7 +129,6 @@ func getGifFrames(c chan gif.PalettAndDelay, firstSet *engine.ListGameFramesResp
 			gameFrames, _ = GetGameFramesWithLength(gameID, currentOffset, batchSize)
 		}
 		frameCount := 0
-
 		for _, frame := range gameFrames.Frames {
 			frameCount++
 			imageGif := createGif(&frame, gameStatus)
