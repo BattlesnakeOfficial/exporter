@@ -88,7 +88,19 @@ func getGIF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "image/gif")
-	err = ConvertGameToGif(w, gameStatus, params["id"], batchSize, offset, frameRange)
+	delay, err := strconv.Atoi(r.FormValue("frameDelay"))
+	if err != nil || delay == 0 {
+		delay = 8
+	}
+	loopDelay, err := strconv.Atoi(r.FormValue("loopDelay"))
+	if err != nil || loopDelay == 0 {
+		loopDelay = 500
+	}
+	if frameRange <= 10 && frameRange > 0 {
+		delay = 16
+		loopDelay = 100
+	}
+	err = ConvertGameToGif(w, gameStatus, params["id"], batchSize, offset, frameRange, delay, loopDelay)
 
 	if err != nil {
 		response(w, 500, "Could not export to gif: "+err.Error())

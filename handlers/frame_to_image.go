@@ -127,7 +127,7 @@ func drawWatermark(dc *gg.Context) {
 }
 
 // ConvertGameToGif reads all frames from the engine and outputs an animated gif.
-func ConvertGameToGif(w io.Writer, gameStatus *engine.StatusResponse, gameID string, batchSize, startFrame, frameRange int) error {
+func ConvertGameToGif(w io.Writer, gameStatus *engine.StatusResponse, gameID string, batchSize, startFrame, frameRange, frameDelay, loopDelay int) error {
 	outGif := &gif.GIF{}
 	c := make(chan gif.PalettAndDelay, 50)
 	outGif.Image = c
@@ -136,7 +136,7 @@ func ConvertGameToGif(w io.Writer, gameStatus *engine.StatusResponse, gameID str
 		return err
 	}
 	outGif.SampleImage = createGif(&gameFrames.Frames[0], gameStatus).(*image.Paletted)
-	go getGifFrames(c, gameFrames, outGif, gameStatus, gameID, startFrame, batchSize, frameRange)
+	go getGifFrames(c, gameFrames, outGif, gameStatus, gameID, startFrame, batchSize, frameRange, frameDelay, loopDelay)
 	outGif.LoopCount = 0
 	err = gif.EncodeAll(w, outGif)
 	if err != nil {
@@ -145,7 +145,7 @@ func ConvertGameToGif(w io.Writer, gameStatus *engine.StatusResponse, gameID str
 	return nil
 }
 
-func getGifFrames(c chan gif.PalettAndDelay, firstSet *engine.ListGameFramesResponse, outGif *gif.GIF, gameStatus *engine.StatusResponse, gameID string, startingOffset, batchSize, frameRange int) {
+func getGifFrames(c chan gif.PalettAndDelay, firstSet *engine.ListGameFramesResponse, outGif *gif.GIF, gameStatus *engine.StatusResponse, gameID string, startingOffset, batchSize, frameRange, frameDelay, loopDelay int) {
 	currentOffset := startingOffset
 	totalFrameCount := 0
 mainLoop:
@@ -161,24 +161,20 @@ mainLoop:
 			frameCount++
 			totalFrameCount++
 			imageGif := createGif(&frame, gameStatus)
-			delay := 8
-			if frameRange <= 10 {
-				delay = 16
-			}
 
 			if totalFrameCount == frameRange {
-				delay = 100
+				frameDelay = loopDelay
 			}
 
 			if gameStatus.LastFrame.Turn == frame.Turn {
-				delay = 500
+				frameDelay = loopDelay
 			}
 			outGif.Image <- gif.PalettAndDelay{
 				Palett: imageGif.(*image.Paletted),
-				Delay:  delay,
+				Delay:  frameDelay,
 				I:      frameCount + currentOffset - startingOffset,
 			}
-			if totalFrameCount >= frameRange {
+			if frameRange > 0 && totalFrameCount >= frameRange {
 				break mainLoop
 			}
 		}
