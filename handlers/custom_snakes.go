@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	_ "image/png"
 	"strings"
 
 	engine "github.com/battlesnakeio/exporter/engine"
@@ -47,27 +48,27 @@ func GetWatermarkImage(width, height int) (int, int, image.Image) {
 	if ok {
 		return cachedResult.width, cachedResult.height, cachedResult.logo
 	}
-	byteImage, err := SnakeImages.Find("watermark2.png")
+	byteImage, err := SnakeImages.Find("watermark.png")
 	if err != nil {
 		panic(err)
 	}
 	r := bytes.NewReader(byteImage)
-	image, _, err := image.Decode(r)
+	img, _, err := image.Decode(r)
 	if err != nil {
 		panic(err)
 	}
 
-	ic := gg.NewContext(image.Bounds().Max.X, image.Bounds().Max.Y)
+	ic := gg.NewContext(img.Bounds().Max.X, img.Bounds().Max.Y)
 	ac := gg.NewContext(ic.Width(), ic.Height())
 	ac.DrawRectangle(0, 0, float64(ac.Width()), float64(ac.Height()))
 	ac.SetHexColor("#000000FF")
 	ac.Fill()
 	expectedWidth := float64(width) / float64(1.4)
-	scale := expectedWidth / float64(image.Bounds().Max.X)
-	expectedHeight := scale * float64(image.Bounds().Max.Y)
+	scale := expectedWidth / float64(img.Bounds().Max.X)
+	expectedHeight := scale * float64(img.Bounds().Max.Y)
 	result := ic.Image()
 	ic.Scale(scale, scale)
-	ic.DrawImage(image, 0, 0)
+	ic.DrawImage(img, 0, 0)
 	ic.Clip()
 	result = setAlpha(result)
 	watermark := &Watermark{
@@ -89,7 +90,7 @@ func setAlpha(logo image.Image) image.Image {
 				r, g, b, a := currentPoint.RGBA()
 				// ratio := (float64(r) + float64(g) + float64(b)) / float64(3)
 				if a > 200 {
-					cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(200)})
+					cimg.Set(x, y, color.RGBA{uint8(r), uint8(g), uint8(b), uint8(140)})
 				}
 			}
 		}
@@ -157,7 +158,7 @@ func GetOrCreateRotatedSnakeImage(segmentType SegmentType, snake *engine.Snake, 
 				newG := float64(snakeColorHex.ToRGBA().G) * (1 - ratio)
 				newB := float64(snakeColorHex.ToRGBA().B) * (1 - ratio)
 				alpha := 255
-				isLight := (ratio < 0.5)
+				isLight := ratio < 0.5
 				if !isLight {
 					newR = float64(backgroundColorHex.ToRGBA().R) * ratio
 					newG = float64(backgroundColorHex.ToRGBA().G) * ratio
@@ -185,7 +186,7 @@ func GetOrCreateRotatedSnakeImage(segmentType SegmentType, snake *engine.Snake, 
 		snakeImagesCache[key] = hr
 		return hr, nil
 	}
-	return nil, fmt.Errorf("Not an image that can be modified. Type: %s", imageType)
+	return nil, fmt.Errorf("not an image that can be modified. Type: %s", imageType)
 
 }
 

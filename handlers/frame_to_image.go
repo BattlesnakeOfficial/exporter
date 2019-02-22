@@ -4,14 +4,20 @@ import (
 	"bytes"
 	"fmt"
 	"image"
-	gif_original "image/gif"
+	"image/color"
+	giforiginal "image/gif"
+	"image/png"
 	"io"
 	"strings"
 
-	"github.com/fogleman/gg"
-
 	engine "github.com/battlesnakeio/exporter/engine"
-	gif "github.com/battlesnakeio/exporter/gif"
+	"github.com/battlesnakeio/exporter/gif"
+	"github.com/fogleman/gg"
+	log "github.com/sirupsen/logrus"
+)
+
+const (
+	squareColor = "#f1f1f1"
 )
 
 // pP = previous point, p = current point, nP next point.
@@ -63,9 +69,10 @@ func ConvertFrameToPNG(w io.Writer, gameFrame *engine.GameFrame, gameStatus *eng
 	width, height := getDimensions(gameStatus)
 	square := int32(20)
 	border := int(square / 8)
-	dc := gg.NewContext(width*int(square)+border, height*int(square)+border)
-	dc.DrawRectangle(0, 0, float64(width*int(square)+border), float64(height*int(square)+border))
-	dc.SetHexColor("#000000")
+	textSize := 15
+	dc := gg.NewContext(width*int(square)+border, height*int(square)+border+textSize)
+	dc.DrawRectangle(0, 0, float64(width*int(square)+border), float64(height*int(square)+border+textSize))
+	dc.SetHexColor("#ffffff")
 	dc.Fill()
 
 	// create board
@@ -95,32 +102,53 @@ func ConvertFrameToPNG(w io.Writer, gameFrame *engine.GameFrame, gameStatus *eng
 		drawFood(dc, &point, square)
 	}
 
-	dc.EncodePNG(w)
+	dc.SetColor(color.Black)
+	dc.DrawString("play.battlesnake.io", float64(border), float64(height*int(square)+border+textSize-5))
+	dc.Fill()
+
+	err := dc.EncodePNG(w)
+	if err != nil {
+		log.WithError(err).Error("error while encoding PNG")
+	}
 }
 
 func drawWatermark(dc *gg.Context) {
 	width, height := dc.Width(), dc.Height()
-	newWidth, newHeight, watermark := GetWatermarkImage(width, height)
-	centerX := float64(width) / float64(2)
-	centerY := float64(height) / float64(2)
-	dc.DrawImage(watermark, int(centerX)-(newWidth/2), int(centerY)-newHeight/2)
+	//_, _, watermark := GetWatermarkImage(width, height)
+	centerX := width / 2
+	centerY := height / 2
+	byteImage, err := SnakeImages.Find("watermark3.png")
+	if err != nil {
+		panic(err)
+	}
+	r := bytes.NewReader(byteImage)
+	p, _ := png.Decode(r)
+	dc.DrawImageAnchored(p, centerX, centerY, 0.5, 0.5)
 }
 
 // ConvertGameToGif reads all frames from the engine and outputs an animated gif.
-func ConvertGameToGif(w io.Writer, gameStatus *engine.StatusResponse, gameID string, batchSize int) error {
+func ConvertGameToGif(w io.Writer, gameStatus *engine.StatusResponse, gameID string, batchSize, startFrame, frameRange int) error {
 	outGif := &gif.GIF{}
 	c := make(chan gif.PalettAndDelay, 50)
 	outGif.Image = c
-	gameFrames, _ := GetGameFramesWithLength(gameID, 0, batchSize)
+	gameFrames, err := GetGameFramesWithLength(gameID, startFrame, batchSize)
+	if err != nil {
+		return err
+	}
 	outGif.SampleImage = createGif(&gameFrames.Frames[0], gameStatus).(*image.Paletted)
-	go getGifFrames(c, gameFrames, outGif, gameStatus, gameID, batchSize)
+	go getGifFrames(c, gameFrames, outGif, gameStatus, gameID, startFrame, batchSize, frameRange)
 	outGif.LoopCount = 0
-	gif.EncodeAll(w, outGif)
+	err = gif.EncodeAll(w, outGif)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func getGifFrames(c chan gif.PalettAndDelay, firstSet *engine.ListGameFramesResponse, outGif *gif.GIF, gameStatus *engine.StatusResponse, gameID string, batchSize int) {
-	currentOffset := 0
+func getGifFrames(c chan gif.PalettAndDelay, firstSet *engine.ListGameFramesResponse, outGif *gif.GIF, gameStatus *engine.StatusResponse, gameID string, startingOffset, batchSize, frameRange int) {
+	currentOffset := startingOffset
+	totalFrameCount := 0
+mainLoop:
 	for {
 		var gameFrames *engine.ListGameFramesResponse
 		if currentOffset == 0 {
@@ -131,24 +159,37 @@ func getGifFrames(c chan gif.PalettAndDelay, firstSet *engine.ListGameFramesResp
 		frameCount := 0
 		for _, frame := range gameFrames.Frames {
 			frameCount++
+			totalFrameCount++
 			imageGif := createGif(&frame, gameStatus)
 			delay := 8
+			if frameRange <= 10 {
+				delay = 16
+			}
+
+			if totalFrameCount == frameRange {
+				delay = 100
+			}
+
 			if gameStatus.LastFrame.Turn == frame.Turn {
 				delay = 500
 			}
 			outGif.Image <- gif.PalettAndDelay{
 				Palett: imageGif.(*image.Paletted),
 				Delay:  delay,
-				I:      frameCount + currentOffset,
+				I:      frameCount + currentOffset - startingOffset,
+			}
+			if totalFrameCount >= frameRange {
+				break mainLoop
 			}
 		}
 		if frameCount < batchSize {
-			close(c)
-			break
+			break mainLoop
 		}
 		currentOffset += batchSize
 		fmt.Printf("giffing game: %s: frames: %d of %d\n", gameID, currentOffset, gameStatus.LastFrame.Turn)
 	}
+
+	close(c)
 }
 
 func createGif(frame *engine.GameFrame, gameStatus *engine.StatusResponse) image.Image {
@@ -156,7 +197,10 @@ func createGif(frame *engine.GameFrame, gameStatus *engine.StatusResponse) image
 	ConvertFrameToPNG(&framePng, frame, gameStatus)
 	imagePng, _, _ := image.Decode(&framePng)
 	var frameGif bytes.Buffer
-	gif_original.Encode(&frameGif, imagePng, nil)
+	err := giforiginal.Encode(&frameGif, imagePng, nil)
+	if err != nil {
+		log.WithError(err).Error("unable to encode gif")
+	}
 	imageGif, _, _ := image.Decode(&frameGif)
 	return imageGif
 }
@@ -164,14 +208,14 @@ func createGif(frame *engine.GameFrame, gameStatus *engine.StatusResponse) image
 func drawSquare(dc *gg.Context, x int32, y int32, square int32) {
 	border := float64(square / 8)
 	dc.DrawRectangle(float64(x*square)+border, float64(y*square)+border, float64(square)-border, float64(square)-border)
-	dc.SetHexColor("#111111")
+	dc.SetHexColor(squareColor)
 	dc.Fill()
 }
 
 func drawFood(dc *gg.Context, point *engine.Point, square int32) {
 	borderHalf := float64(square) / float64(20)
-	dc.DrawCircle(float64(point.X*square)+float64(square)/2.0+borderHalf, float64(point.Y*square+square/2.0)+borderHalf, float64(square)/float64(4))
-	dc.SetHexColor("#FFA500")
+	dc.DrawCircle(float64(point.X*square)+float64(square)/2.0+borderHalf, float64(point.Y*square+square/2.0)+borderHalf, float64(square)/3.0)
+	dc.SetHexColor("#ff5c75")
 	dc.Fill()
 }
 
@@ -220,19 +264,23 @@ func drawSnake(dc *gg.Context, snake *engine.Snake, square int32) {
 	var previousPoint engine.Point
 	var nextPoint *engine.Point
 	if snake.Death.Cause != "" {
-		snake.Color = "#333333"
+		snake.Color = "#cdcdcd"
 	}
 	for i, point := range snake.Body {
+
 		if i < len(snake.Body)-1 {
 			nextPoint = &snake.Body[i+1]
 		} else {
 			nextPoint = nil
 		}
+		if nextPoint != nil && (point.X == nextPoint.X && point.Y == nextPoint.Y) && i > 0 {
+			continue
+		}
 		corner := corner(&previousPoint, &point, nextPoint)
 		if i == 0 {
-			placeHead(snake, dc, &point, nextPoint, square, "#111111")
+			placeHead(snake, dc, &point, nextPoint, square, squareColor)
 		} else if i == len(snake.Body)-1 {
-			placeTail(snake, dc, &point, &previousPoint, square, "#111111")
+			placeTail(snake, dc, &point, &previousPoint, square, squareColor)
 		} else if corner == "none" {
 			dc.DrawRectangle(float64(point.X*square)+border, float64(point.Y*square)+border, float64(square)-border, float64(square)-border)
 		} else {
@@ -254,6 +302,20 @@ func drawSnake(dc *gg.Context, snake *engine.Snake, square int32) {
 				if strings.HasSuffix(corner, "right") {
 					dc.DrawRectangle(float64(point.X*square)+border, float64(point.Y*square)+border, float64(square)-border-halfSquare+borderHalf, float64(square)-border)
 				}
+			}
+		}
+
+		dir := direction(&point, nextPoint)
+		if nextPoint != nil {
+			switch dir {
+			case "up":
+				dc.DrawRectangle(float64(point.X*square)+border, float64((point.Y+1)*square), float64(square)-border, border)
+			case "down":
+				dc.DrawRectangle(float64(point.X*square)+border, float64(point.Y*square), float64(square)-border, border)
+			case "left":
+				dc.DrawRectangle(float64((point.X+1)*square), float64(point.Y*square)+border, border, float64(square)-border)
+			case "right":
+				dc.DrawRectangle(float64(point.X*square), float64(point.Y*square)+border, border, float64(square)-border)
 			}
 		}
 		dc.SetHexColor(snake.Color)

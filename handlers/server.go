@@ -3,10 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/gorilla/mux"
 )
@@ -16,20 +17,13 @@ const (
 	board         string = "board"
 	boardAnimated string = "board-animated"
 	move          string = "move"
-	png           string = "png"
+	pngOutputType string = "png"
 	gifImage      string = "gif"
 )
 
 // OutputTypes All the output types
 var OutputTypes = []string{
-	raw, board, boardAnimated, move, png, gifImage,
-}
-
-//  main function
-func main() {
-	router := mux.NewRouter()
-	SetupRoutes(router)
-	log.Fatal(http.ListenAndServe(":8000", router))
+	raw, board, boardAnimated, move, pngOutputType, gifImage,
 }
 
 // SetupRoutes defines all the routs that this server will handle.
@@ -57,6 +51,24 @@ func getGIF(w http.ResponseWriter, r *http.Request) {
 	if paramsNotOk(w, params) {
 		return
 	}
+	frames := strings.Split(r.FormValue("frames"), "-")
+	offset := 0
+	frameRange := -1
+	if len(frames) == 2 {
+		var err error
+		var endFrame int
+		offset, err = strconv.Atoi(frames[0])
+		if err != nil {
+			logrus.WithError(err).Errorf("unable to convert offset: %s", frames[0])
+			offset = 0
+		}
+		endFrame, err = strconv.Atoi(frames[1])
+		if err != nil {
+			logrus.WithError(err).Errorf("unable to convert ending frame: %s", frames[1])
+		} else {
+			frameRange = endFrame - offset + 1
+		}
+	}
 	batchSize, err := strconv.Atoi(r.FormValue("batchSize"))
 	if err != nil {
 		batchSize = 100
@@ -76,7 +88,8 @@ func getGIF(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "image/gif")
-	err = ConvertGameToGif(w, gameStatus, params["id"], batchSize)
+	err = ConvertGameToGif(w, gameStatus, params["id"], batchSize, offset, frameRange)
+
 	if err != nil {
 		response(w, 500, "Could not export to gif: "+err.Error())
 	}

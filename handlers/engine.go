@@ -36,7 +36,7 @@ func GetGameFrames(gameID string, offset int) (*engine.ListGameFramesResponse, e
 }
 
 // GetGameFramesWithLength returns a game frame object with length frames
-func GetGameFramesWithLength(gameID string, offset int, length int) (*engine.ListGameFramesResponse, error) {
+func GetGameFramesWithLength(gameID string, offset, length int) (*engine.ListGameFramesResponse, error) {
 	url := fmt.Sprintf("https://engine.battlesnake.io/games/%s/frames?offset=%d&limit=%d", gameID, offset, length)
 	body, err := MakeEngineCall(url)
 	if err != nil {
