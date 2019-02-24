@@ -21,6 +21,8 @@ func (s *Server) Run() {
 
 	router.GET("/", indexHandler)
 
+	router.GET("/games/:game/gif", handleGIFGame)
+
 	router.GET("/games/:game/frames/:frame/ascii", handleASCIIFrame)
 	router.GET("/games/:game/frames/:frame/gif", handleGIFFrame)
 

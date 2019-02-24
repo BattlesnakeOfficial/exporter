@@ -27,6 +27,22 @@ func apiCall(path string) ([]byte, error) {
 	return body, nil
 }
 
+func getFrames(gameID string, offset int, limit int) ([]*GameFrame, error) {
+	path := fmt.Sprintf("/games/%s/frames?offset=%d&limit=%d", gameID, offset, limit)
+	body, err := apiCall(path)
+	if err != nil {
+		return nil, err
+	}
+
+	response := gameFramesResponse{}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.Frames, nil
+}
+
 // GetGame is commented
 func GetGame(gameID string) (*Game, error) {
 	path := fmt.Sprintf("/games/%s", gameID)
@@ -46,19 +62,32 @@ func GetGame(gameID string) (*Game, error) {
 
 // GetGameFrame is commented
 func GetGameFrame(gameID string, frameNum int) (*GameFrame, error) {
-	path := fmt.Sprintf("/games/%s/frames?offset=%d&limit=1", gameID, frameNum)
-	body, err := apiCall(path)
+	gameFrames, err := getFrames(gameID, frameNum, 1)
 	if err != nil {
 		return nil, err
 	}
 
-	response := gameFramesResponse{}
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return nil, err
+	return gameFrames[0], nil
+}
+
+// GetGameFrames is commented
+func GetGameFrames(gameID string) ([]*GameFrame, error) {
+	var gameFrames []*GameFrame
+
+	batchSize := 100
+	for {
+		newFrames, err := getFrames(gameID, len(gameFrames), batchSize)
+		if err != nil {
+			return nil, err
+		}
+
+		gameFrames = append(gameFrames, newFrames...)
+		if len(newFrames) < batchSize {
+			break
+		}
 	}
 
-	return response.Frames[0], nil
+	return gameFrames, nil
 }
 
 // // EngineURL External URL of engine

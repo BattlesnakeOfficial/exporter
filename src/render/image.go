@@ -10,6 +10,7 @@ import (
 const (
 	SquareSizePixels   = 60
 	SquareBorderPixels = 3
+	SquareFoodRadius   = SquareSizePixels / 4
 )
 
 func drawWatermark(dc *gg.Context) {
@@ -43,7 +44,7 @@ func drawFood(dc *gg.Context, x int, y int) {
 	dc.DrawCircle(
 		float64(x*SquareSizePixels+SquareSizePixels/2),
 		float64(y*SquareSizePixels+SquareSizePixels/2),
-		SquareSizePixels/2-SquareBorderPixels,
+		SquareFoodRadius,
 	)
 	dc.Fill()
 }
@@ -59,7 +60,7 @@ func drawSnakeBody(dc *gg.Context, x int, y int, hexColor string) {
 	dc.Fill()
 }
 
-func BoardToImage(b *Board) image.Image {
+func drawBoard(b *Board) image.Image {
 	dc := gg.NewContext(SquareSizePixels*b.Width, SquareSizePixels*b.Height)
 
 	dc.SetRGB255(255, 255, 255)
