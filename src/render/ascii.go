@@ -11,33 +11,32 @@ import (
 const (
 	ASCIIEmpty     = " "
 	ASCIIFood      = "*"
+	ASCIISnakeHead = "H"
 	ASCIISnakeBody = "O"
+	ASCIISnakeTail = "T"
 )
 
 func GameFrameToASCII(w io.Writer, g *engine.Game, gf *engine.GameFrame) {
 	board := GameFrameToBoard(g, gf)
 
-	var result string
-
-	result += strings.Repeat("-", board.Width+2)
-	result += "\n"
-
+	fmt.Fprint(w, strings.Repeat("-", board.Width+2)+"\n")
 	for y := 0; y < board.Height; y++ {
-		result += "|"
+		fmt.Fprint(w, "|")
 		for x := 0; x < board.Width; x++ {
 			switch board.Squares[x][y].Content {
-			case BoardSquareSnake:
-				result += ASCIISnakeBody
+			case BoardSquareSnakeHead:
+				fmt.Fprint(w, ASCIISnakeHead)
+			case BoardSquareSnakeBody:
+				fmt.Fprint(w, ASCIISnakeBody)
+			case BoardSquareSnakeTail:
+				fmt.Fprint(w, ASCIISnakeTail)
 			case BoardSquareFood:
-				result += ASCIIFood
+				fmt.Fprint(w, ASCIIFood)
 			case BoardSquareEmpty:
-				result += ASCIIEmpty
+				fmt.Fprint(w, ASCIIEmpty)
 			}
 		}
-		result += "|\n"
+		fmt.Fprint(w, "|\n")
 	}
-
-	result += strings.Repeat("-", board.Width+2)
-
-	fmt.Fprint(w, result)
+	fmt.Fprint(w, strings.Repeat("-", board.Width+2)+"\n")
 }
