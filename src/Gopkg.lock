@@ -2,6 +2,14 @@
 
 
 [[projects]]
+  digest = "1:47cebe27e59e4e0c239d0bf2419d6a46f0364a56efc43be702c32b82710b6ecf"
+  name = "github.com/disintegration/imaging"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "5362c131d56305ce787e79a5b94ffc956df00d62"
+  version = "v1.6.0"
+
+[[projects]]
   digest = "1:f9d11d66e4157a72fb2f71f7e34d3e890c6b7fa80595d67e3e7b0fe5f7529f3a"
   name = "github.com/fogleman/gg"
   packages = ["."]
@@ -30,15 +38,18 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:eda82ccbd514caca092248d1facc1b2c43293876163a343473dd52c8ef12fbca"
+  digest = "1:49902396c72893b8ee1ffdfa17923ddda2741a673393a8ea9de25ee47689cbe9"
   name = "golang.org/x/image"
   packages = [
+    "bmp",
     "draw",
     "font",
     "font/basicfont",
     "font/plan9font",
     "math/f64",
     "math/fixed",
+    "tiff",
+    "tiff/lzw",
   ]
   pruneopts = "UT"
   revision = "31aff87c08e9a5e5d524279a564f96968336f886"
@@ -47,6 +58,7 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/disintegration/imaging",
     "github.com/fogleman/gg",
     "github.com/julienschmidt/httprouter",
   ]

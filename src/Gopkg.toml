@@ -36,3 +36,7 @@
 [[constraint]]
   name = "github.com/fogleman/gg"
   version = "1.2.0"
+
+[[constraint]]
+  name = "github.com/disintegration/imaging"
+  version = "1.6.0"
