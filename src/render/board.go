@@ -106,6 +106,8 @@ func getDirection(p engine.Point, nP engine.Point) string {
 		return "left"
 	case "0,-1":
 		return "up"
+	case "0,0":
+		return "right"
 	default:
 		panic(fmt.Errorf("Unable to deterine snake direction: %s", d))
 	}

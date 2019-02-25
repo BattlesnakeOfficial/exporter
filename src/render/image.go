@@ -7,6 +7,7 @@ import (
 	"image/draw"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
@@ -14,9 +15,12 @@ import (
 
 const (
 	SquareSizePixels   = 60
-	SquareBorderPixels = 3
+	SquareBorderPixels = 2
 	SquareFoodRadius   = SquareSizePixels / 4
 )
+
+var imageCache = make(map[string]*image.Image)
+var imageCacheLock sync.Mutex
 
 // From github.com/fogleman/gg
 func parseHexColor(x string) color.Color {
@@ -58,6 +62,15 @@ func loadRawImageAsset(filename string) *image.Image {
 }
 
 func loadImageAsset(filename string, w int, h int, rot int) *image.Image {
+	cacheKey := fmt.Sprintf("%s:%s:%s:%s", filename, w, h, rot)
+	cachedImage, ok := imageCache[cacheKey]
+	if ok {
+		return cachedImage
+	}
+
+	imageCacheLock.Lock()
+	defer imageCacheLock.Unlock()
+
 	srcImage := loadRawImageAsset(filename)
 
 	var dstImage image.Image
@@ -71,11 +84,13 @@ func loadImageAsset(filename string, w int, h int, rot int) *image.Image {
 		dstImage = imaging.Rotate270(dstImage)
 	}
 
+	imageCache[cacheKey] = &dstImage
+
 	return &dstImage
 }
 
 func drawWatermark(dc *gg.Context) {
-	watermarkImage := loadRawImageAsset("watermark.png")
+	watermarkImage := loadImageAsset("watermark.png", dc.Width()/2, dc.Height()/2, 0)
 	dc.DrawImageAnchored(*watermarkImage, dc.Width()/2, dc.Height()/2, 0.5, 0.5)
 }
 
@@ -101,8 +116,6 @@ func drawFood(dc *gg.Context, x int, y int) {
 }
 
 func drawSnakeImage(filename string, dc *gg.Context, x int, y int, hexColor string, direction string) {
-	drawEmptySquare(dc, x, y)
-
 	var rotation int
 	switch direction {
 	case "right":
@@ -155,10 +168,7 @@ func drawBoard(b *Board) image.Image {
 	// Draw empty squares under watermark
 	for y := 0; y < b.Height; y++ {
 		for x := 0; x < b.Width; x++ {
-			switch b.Squares[x][y].Content {
-			case BoardSquareFood:
-				drawEmptySquare(dc, x, y)
-			case BoardSquareEmpty:
+			if b.Squares[x][y].Content != BoardSquareSnakeBody {
 				drawEmptySquare(dc, x, y)
 			}
 		}
