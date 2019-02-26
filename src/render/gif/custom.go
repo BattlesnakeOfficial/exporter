@@ -1,3 +1,6 @@
+// This is our custom encoder for streaming gif frames to the browser.
+// These are the only changes we've made to the standard image/gif.
+
 package gif
 
 import (
@@ -14,8 +17,12 @@ type GIFFrame struct {
 
 func EncodeAllConcurrent(w io.Writer, c chan GIFFrame) error {
 	g := &GIF{}
-	e := encoder{g: *g, w: bufio.NewWriter(w)}
 
+	// This is a hack to trick the encoder into letting us loop the animation
+	// by making it think there's multiple images. Has no impact on frames rendered.
+	g.Image = []*image.Paletted{nil, nil}
+
+	e := encoder{g: *g, w: bufio.NewWriter(w)}
 	for f := range c {
 		if f.FrameNum == 0 {
 			// Write header on first frame
