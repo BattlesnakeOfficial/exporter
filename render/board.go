@@ -55,10 +55,10 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 
 		// Default snake types
 		if len(snake.Head) == 0 {
-			snake.Head = "tongue"
+			snake.Head = "regular"
 		}
 		if len(snake.Tail) == 0 {
-			snake.Tail = "bolt"
+			snake.Tail = "regular"
 		}
 
 		for i, point := range snake.Body {
