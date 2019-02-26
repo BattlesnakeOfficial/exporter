@@ -4,10 +4,10 @@ import (
 	"image"
 	"image/color/palette"
 	"image/draw"
-	"image/gif"
 	"io"
 
 	"github.com/battlesnakeio/exporter/engine"
+	"github.com/battlesnakeio/exporter/render/gif"
 )
 
 const (
@@ -36,12 +36,13 @@ func GameFrameToGIF(w io.Writer, g *engine.Game, gf *engine.GameFrame) {
 	gif.Encode(w, i, nil)
 }
 
-func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.GameFrame) {
-	animatedGIF := &gif.GIF{}
-	for _, gf := range gameFrames {
-		i := gameFrameToPalettedImage(g, gf)
-		animatedGIF.Image = append(animatedGIF.Image, i)
-		animatedGIF.Delay = append(animatedGIF.Delay, GIFFrameDelay)
-	}
-	gif.EncodeAll(w, animatedGIF)
+func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.GameFrame) error {
+	c := make(chan gif.GIFFrame)
+	go func() {
+		for i, gf := range gameFrames {
+			c <- gif.GIFFrame{gameFrameToPalettedImage(g, gf), i, GIFFrameDelay}
+		}
+		close(c)
+	}()
+	return gif.EncodeAllConcurrent(w, c)
 }

@@ -14,8 +14,8 @@ import (
 )
 
 const (
-	SquareSizePixels   = 60
-	SquareBorderPixels = 2
+	SquareSizePixels   = 20
+	SquareBorderPixels = 1
 	SquareFoodRadius   = SquareSizePixels / 4
 )
 

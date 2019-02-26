@@ -68,6 +68,6 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 		panic(err)
 	}
 
-	render.GameFramesToAnimatedGIF(w, game, gameFrames)
 	w.Header().Set("Content-Type", "image/gif")
+	render.GameFramesToAnimatedGIF(w, game, gameFrames)
 }
