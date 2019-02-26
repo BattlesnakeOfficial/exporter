@@ -1,0 +1,17 @@
+language: go
+
+go:
+  - 1.9.2
+
+sudo: false
+
+install:
+  - go get github.com/go-stack/stack
+  - go get github.com/sirupsen/logrus
+  - go get github.com/golang/lint/golint
+  - go get github.com/kr/pretty
+
+script:
+  - golint -set_exit_status
+  - go vet
+  - go test

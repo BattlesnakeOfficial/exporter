@@ -148,14 +148,107 @@ func drawSnakeImage(filename string, dc *gg.Context, x int, y int, hexColor stri
 	draw.DrawMask(dst, dstRect, srcImage, image.ZP, *maskImage, image.ZP, draw.Over)
 }
 
-func drawSnakeBody(dc *gg.Context, x int, y int, hexColor string) {
+func drawSnakeBody(dc *gg.Context, x int, y int, hexColor, corner string) {
 	dc.SetHexColor(hexColor)
-	dc.DrawRectangle(
-		float64(x*SquareSizePixels+SquareBorderPixels),
-		float64(y*SquareSizePixels+SquareBorderPixels),
-		float64(SquareSizePixels-SquareBorderPixels*2),
-		float64(SquareSizePixels-SquareBorderPixels*2),
-	)
+	if corner == "none" {
+		dc.DrawRectangle(
+			float64(x*SquareSizePixels+SquareBorderPixels),
+			float64(y*SquareSizePixels+SquareBorderPixels),
+			float64(SquareSizePixels-SquareBorderPixels*2),
+			float64(SquareSizePixels-SquareBorderPixels*2),
+		)
+	} else {
+		dc.DrawRoundedRectangle(
+			float64(x*SquareSizePixels+SquareBorderPixels),
+			float64(y*SquareSizePixels+SquareBorderPixels),
+			float64(SquareSizePixels-SquareBorderPixels*2),
+			float64(SquareSizePixels-SquareBorderPixels*2),
+			float64(SquareSizePixels/2),
+		)
+		if strings.HasPrefix(corner, "bottom") {
+			dc.DrawRectangle(
+				float64(x*SquareSizePixels+SquareBorderPixels),
+				float64(y*SquareSizePixels+SquareBorderPixels),
+				float64(SquareSizePixels-SquareBorderPixels*2),
+				float64(SquareSizePixels/2),
+			)
+			if strings.HasSuffix(corner, "left") {
+				dc.DrawRectangle(
+					float64(x*SquareSizePixels+SquareSizePixels/2),
+					float64(y*SquareSizePixels+SquareBorderPixels+SquareSizePixels/2),
+					float64(SquareSizePixels/2-SquareBorderPixels),
+					float64(SquareSizePixels/2-SquareBorderPixels*2),
+				)
+			}
+			if strings.HasSuffix(corner, "right") {
+				dc.DrawRectangle(
+					float64(x*SquareSizePixels+SquareBorderPixels),
+					float64(y*SquareSizePixels+SquareBorderPixels+SquareSizePixels/2),
+					float64(SquareSizePixels/2-SquareBorderPixels*2),
+					float64(SquareSizePixels/2-SquareBorderPixels*2),
+				)
+			}
+		}
+		if strings.HasPrefix(corner, "top") {
+			dc.DrawRectangle(
+				float64(x*SquareSizePixels+SquareBorderPixels),
+				float64(y*SquareSizePixels+SquareBorderPixels+SquareSizePixels/2),
+				float64(SquareSizePixels-SquareBorderPixels*2),
+				float64(SquareSizePixels/2),
+			)
+			if strings.HasSuffix(corner, "left") {
+				dc.DrawRectangle(
+					float64(x*SquareSizePixels+SquareSizePixels/2+SquareBorderPixels),
+					float64(y*SquareSizePixels+SquareBorderPixels),
+					float64(SquareSizePixels/2-SquareBorderPixels*2),
+					float64(SquareSizePixels/2-SquareBorderPixels*2),
+				)
+			}
+			if strings.HasSuffix(corner, "right") {
+				dc.DrawRectangle(
+					float64(x*SquareSizePixels+SquareBorderPixels),
+					float64(y*SquareSizePixels+SquareBorderPixels),
+					float64(SquareSizePixels/2-SquareBorderPixels*2),
+					float64(SquareSizePixels/2-SquareBorderPixels*2),
+				)
+			}
+		}
+	}
+	dc.Fill()
+}
+
+func drawGaps(dc *gg.Context, x, y int, direction, hexColor string) {
+	dc.SetHexColor(hexColor)
+	switch direction {
+	case "up":
+		dc.DrawRectangle(
+			float64(x*SquareSizePixels+SquareBorderPixels),
+			float64((y+1)*SquareSizePixels-SquareBorderPixels),
+			float64(SquareSizePixels-SquareBorderPixels*2),
+			float64(SquareBorderPixels*2),
+		)
+	case "down":
+		dc.DrawRectangle(
+			float64(x*SquareSizePixels+SquareBorderPixels),
+			float64(y*SquareSizePixels-SquareBorderPixels),
+			float64(SquareSizePixels-SquareBorderPixels*2),
+			float64(SquareBorderPixels*2),
+		)
+	case "right":
+		dc.DrawRectangle(
+			float64(x*SquareSizePixels-SquareBorderPixels),
+			float64(y*SquareSizePixels+SquareBorderPixels),
+			float64(SquareBorderPixels*2),
+			float64(SquareSizePixels-SquareBorderPixels*2),
+		)
+	case "left":
+		dc.DrawRectangle(
+			float64((x+1)*SquareSizePixels-SquareBorderPixels),
+			float64(y*SquareSizePixels+SquareBorderPixels),
+			float64(SquareBorderPixels*2),
+			float64(SquareSizePixels-SquareBorderPixels*2),
+		)
+	}
 	dc.Fill()
 }
 
@@ -184,8 +277,10 @@ func drawBoard(b *Board) image.Image {
 			case BoardSquareSnakeHead:
 				snakeAsset = fmt.Sprintf("heads/%s.png", square.SnakeType)
 				drawSnakeImage(snakeAsset, dc, x, y, square.HexColor, square.Direction)
+				drawGaps(dc, x, y, square.Direction, square.HexColor)
 			case BoardSquareSnakeBody:
-				drawSnakeBody(dc, x, y, square.HexColor)
+				drawSnakeBody(dc, x, y, square.HexColor, square.Corner)
+				drawGaps(dc, x, y, square.Direction, square.HexColor)
 			case BoardSquareSnakeTail:
 				snakeAsset = fmt.Sprintf("tails/%s.png", square.SnakeType)
 				drawSnakeImage(snakeAsset, dc, x, y, square.HexColor, square.Direction)

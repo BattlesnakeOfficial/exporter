@@ -31,16 +31,24 @@ func gameFrameToPalettedImage(g *engine.Game, gf *engine.GameFrame) *image.Palet
 	return palettedImage
 }
 
-func GameFrameToGIF(w io.Writer, g *engine.Game, gf *engine.GameFrame) {
+func GameFrameToGIF(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
 	i := gameFrameToPalettedImage(g, gf)
-	gif.Encode(w, i, nil)
+	err := gif.Encode(w, i, nil)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.GameFrame) error {
 	c := make(chan gif.GIFFrame)
 	go func() {
 		for i, gf := range gameFrames {
-			c <- gif.GIFFrame{gameFrameToPalettedImage(g, gf), i, GIFFrameDelay}
+			c <- gif.GIFFrame{
+				Image:    gameFrameToPalettedImage(g, gf),
+				FrameNum: i,
+				Delay:    GIFFrameDelay,
+			}
 		}
 		close(c)
 	}()

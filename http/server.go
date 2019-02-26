@@ -1,21 +1,18 @@
 package http
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	log "github.com/sirupsen/logrus"
 )
 
-// Server is commented
 type Server struct{}
 
-// NewServer is commented
 func NewServer() *Server {
 	return &Server{}
 }
 
-// Run is commented
 func (s *Server) Run() {
 	router := httprouter.New()
 
@@ -26,5 +23,9 @@ func (s *Server) Run() {
 	router.GET("/games/:game/frames/:frame/ascii", handleASCIIFrame)
 	router.GET("/games/:game/frames/:frame/gif", handleGIFFrame)
 
-	log.Fatal(http.ListenAndServe(":8000", router))
+	port := ":8000"
+	log.WithField("port", port).Info("http server listening")
+	if err := http.ListenAndServe(port, router); err != nil {
+		log.WithError(err).WithField("port", port).Error("error while trying to listen on port")
+	}
 }

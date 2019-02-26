@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/battlesnakeio/exporter/engine"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -22,6 +23,7 @@ type BoardSquare struct {
 	HexColor  string
 	SnakeType string
 	Direction string
+	Corner    string
 }
 
 type Board struct {
@@ -71,17 +73,24 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 				}
 				board.SetSquare(&point, square)
 			} else if i == (len(snake.Body) - 1) {
+				prev := snake.Body[i-1]
+				direction := getDirection(prev, point)
+				if prev.X == point.X && prev.Y == point.Y {
+					direction = getDirection(snake.Body[i-2], point)
+				}
 				square := BoardSquare{
 					Content:   BoardSquareSnakeTail,
 					HexColor:  snake.Color,
 					SnakeType: snake.Tail,
-					Direction: getDirection(snake.Body[i-1], point),
+					Direction: direction,
 				}
 				board.SetSquare(&point, square)
 			} else {
 				square := BoardSquare{
-					Content:  BoardSquareSnakeBody,
-					HexColor: snake.Color,
+					Content:   BoardSquareSnakeBody,
+					HexColor:  snake.Color,
+					Direction: getDirection(snake.Body[i+1], point),
+					Corner:    getCorner(snake.Body[i-1], point, snake.Body[i+1]),
 				}
 				board.SetSquare(&point, square)
 			}
@@ -109,6 +118,24 @@ func getDirection(p engine.Point, nP engine.Point) string {
 	case "0,0":
 		return "right"
 	default:
-		panic(fmt.Errorf("Unable to deterine snake direction: %s", d))
+		log.Errorf("Unable to deterine snake direction: %s", d)
+		return "up"
+	}
+}
+
+// pP = previous point, p = current point, nP next point.
+func getCorner(pP engine.Point, p engine.Point, nP engine.Point) string {
+	coords := fmt.Sprintf("%d,%d:%d,%d", pP.X-p.X, pP.Y-p.Y, nP.X-p.X, nP.Y-p.Y)
+	switch coords {
+	case "0,-1:1,0", "1,0:0,-1":
+		return "bottom-left"
+	case "-1,0:0,-1", "0,-1:-1,0":
+		return "bottom-right"
+	case "-1,0:0,1", "0,1:-1,0":
+		return "top-right"
+	case "0,1:1,0", "1,0:0,1":
+		return "top-left"
+	default:
+		return "none"
 	}
 }

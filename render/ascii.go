@@ -16,27 +16,55 @@ const (
 	ASCIISnakeTail = "T"
 )
 
-func GameFrameToASCII(w io.Writer, g *engine.Game, gf *engine.GameFrame) {
+func GameFrameToASCII(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
 	board := GameFrameToBoard(g, gf)
 
-	fmt.Fprint(w, strings.Repeat("-", board.Width+2)+"\n")
+	_, err := fmt.Fprint(w, strings.Repeat("-", board.Width+2)+"\n")
+	if err != nil {
+		return err
+	}
 	for y := 0; y < board.Height; y++ {
-		fmt.Fprint(w, "|")
+		_, err := fmt.Fprint(w, "|")
+		if err != nil {
+			return err
+		}
 		for x := 0; x < board.Width; x++ {
 			switch board.Squares[x][y].Content {
 			case BoardSquareSnakeHead:
-				fmt.Fprint(w, ASCIISnakeHead)
+				_, err := fmt.Fprint(w, ASCIISnakeHead)
+				if err != nil {
+					return err
+				}
 			case BoardSquareSnakeBody:
-				fmt.Fprint(w, ASCIISnakeBody)
+				_, err = fmt.Fprint(w, ASCIISnakeBody)
+				if err != nil {
+					return err
+				}
 			case BoardSquareSnakeTail:
-				fmt.Fprint(w, ASCIISnakeTail)
+				_, err = fmt.Fprint(w, ASCIISnakeTail)
+				if err != nil {
+					return err
+				}
 			case BoardSquareFood:
-				fmt.Fprint(w, ASCIIFood)
+				_, err = fmt.Fprint(w, ASCIIFood)
+				if err != nil {
+					return err
+				}
 			case BoardSquareEmpty:
-				fmt.Fprint(w, ASCIIEmpty)
+				_, err = fmt.Fprint(w, ASCIIEmpty)
+				if err != nil {
+					return err
+				}
 			}
 		}
-		fmt.Fprint(w, "|\n")
+		_, err = fmt.Fprint(w, "|\n")
+		if err != nil {
+			return err
+		}
 	}
-	fmt.Fprint(w, strings.Repeat("-", board.Width+2)+"\n")
+	_, err = fmt.Fprint(w, strings.Repeat("-", board.Width+2)+"\n")
+	if err != nil {
+		return err
+	}
+	return nil
 }
