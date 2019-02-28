@@ -12,6 +12,7 @@ import (
 
 const (
 	GIFFrameDelay = 8
+	GIFLoopDelay  = 200
 )
 
 func gameFrameToPalettedImage(g *engine.Game, gf *engine.GameFrame) *image.Paletted {
@@ -40,14 +41,18 @@ func GameFrameToGIF(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
 	return nil
 }
 
-func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.GameFrame) error {
+func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.GameFrame, frameDelay, loopDelay int) error {
 	c := make(chan gif.GIFFrame)
 	go func() {
 		for i, gf := range gameFrames {
+			delay := frameDelay
+			if i == len(gameFrames)-1 {
+				delay = loopDelay
+			}
 			c <- gif.GIFFrame{
 				Image:    gameFrameToPalettedImage(g, gf),
 				FrameNum: i,
-				Delay:    GIFFrameDelay,
+				Delay:    delay,
 			}
 		}
 		close(c)

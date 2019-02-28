@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/battlesnakeio/exporter/engine"
 	"github.com/battlesnakeio/exporter/render"
@@ -69,21 +70,49 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 
 func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	gameID := p.ByName("game")
-
 	game, err := engine.GetGame(gameID)
 	if err != nil {
 		handleError(w, r, err)
 		return
 	}
 
-	gameFrames, err := engine.GetGameFrames(game.ID)
+	frames := strings.Split(r.URL.Query().Get("frames"), "-")
+	offset := 0
+	frameRange := -1
+	if len(frames) == 2 {
+		var err error
+		var endFrame int
+		offset, err = strconv.Atoi(frames[0])
+		if err != nil {
+			log.WithError(err).Errorf("unable to convert offset: %s", frames[0])
+			offset = 0
+		}
+		endFrame, err = strconv.Atoi(frames[1])
+		if err != nil {
+			log.WithError(err).Errorf("unable to convert ending frame: %s", frames[1])
+		} else {
+			frameRange = endFrame - offset + 1
+		}
+	}
+
+	gameFrames, err := engine.GetGameFrames(game.ID, offset, frameRange)
 	if err != nil {
 		handleError(w, r, err)
 		return
 	}
 
+	frameDelay, err := strconv.Atoi(r.URL.Query().Get("frameDelay"))
+	if err != nil {
+		frameDelay = render.GIFFrameDelay
+	}
+
+	loopDelay, err := strconv.Atoi(r.URL.Query().Get("loopDelay"))
+	if err != nil {
+		loopDelay = render.GIFLoopDelay
+	}
+
 	w.Header().Set("Content-Type", "image/gif")
-	err = render.GameFramesToAnimatedGIF(w, game, gameFrames)
+	err = render.GameFramesToAnimatedGIF(w, game, gameFrames, frameDelay, loopDelay)
 	if err != nil {
 		handleError(w, r, err)
 		return

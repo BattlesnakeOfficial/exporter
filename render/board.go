@@ -51,8 +51,12 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 	board := NewBoard(g.Width, g.Height)
 
 	for _, snake := range gf.Snakes {
+		color := snake.Color
 		if snake.Death != nil {
-			continue
+			if gf.Turn-snake.Death.Turn > 10 {
+				continue
+			}
+			color = "#cdcdcd"
 		}
 
 		// Default snake types
@@ -67,7 +71,7 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 			if i == 0 {
 				square := BoardSquare{
 					Content:   BoardSquareSnakeHead,
-					HexColor:  snake.Color,
+					HexColor:  color,
 					SnakeType: snake.Head,
 					Direction: getDirection(snake.Body[i+1], point),
 				}
@@ -80,7 +84,7 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 				}
 				square := BoardSquare{
 					Content:   BoardSquareSnakeTail,
-					HexColor:  snake.Color,
+					HexColor:  color,
 					SnakeType: snake.Tail,
 					Direction: direction,
 				}
@@ -88,7 +92,7 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 			} else {
 				square := BoardSquare{
 					Content:   BoardSquareSnakeBody,
-					HexColor:  snake.Color,
+					HexColor:  color,
 					Direction: getDirection(snake.Body[i+1], point),
 					Corner:    getCorner(snake.Body[i-1], point, snake.Body[i+1]),
 				}

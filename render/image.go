@@ -253,7 +253,7 @@ func drawGaps(dc *gg.Context, x, y int, direction, hexColor string) {
 }
 
 func drawBoard(b *Board) image.Image {
-	dc := gg.NewContext(SquareSizePixels*b.Width, SquareSizePixels*b.Height)
+	dc := gg.NewContext(SquareSizePixels*b.Width, SquareSizePixels*b.Height+15)
 
 	dc.SetRGB255(255, 255, 255)
 	dc.Clear()
@@ -289,6 +289,10 @@ func drawBoard(b *Board) image.Image {
 			}
 		}
 	}
+
+	dc.SetColor(color.Black)
+	dc.DrawString("play.battlesnake.io", float64(SquareBorderPixels), float64(SquareSizePixels*int(b.Height)+SquareBorderPixels+10))
+	dc.Fill()
 
 	return dc.Image()
 }
