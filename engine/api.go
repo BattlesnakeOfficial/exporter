@@ -71,24 +71,36 @@ func GetGameFrame(gameID string, frameNum int) (*GameFrame, error) {
 }
 
 // GetGameFrames is commented
-func GetGameFrames(gameID string, offset, frameCount int) ([]*GameFrame, error) {
+func GetGameFrames(gameID string, offset int, limit int) ([]*GameFrame, error) {
 	var gameFrames []*GameFrame
+
+	if limit <= 0 {
+		return gameFrames, nil
+	}
 
 	batchSize := 100
 	for {
-		if frameCount > 0 && frameCount < batchSize {
-			batchSize = frameCount
+		if (limit - len(gameFrames)) < batchSize {
+			batchSize = (limit - len(gameFrames))
 		}
+
 		newFrames, err := getFrames(gameID, offset, batchSize)
 		if err != nil {
 			return nil, err
 		}
-
 		gameFrames = append(gameFrames, newFrames...)
-		if len(newFrames) < batchSize || len(newFrames) == frameCount {
+
+		// Do we have enough frames?
+		if len(gameFrames) >= limit {
 			break
 		}
-		frameCount -= batchSize
+
+		// Are there more frames to get?
+		if len(newFrames) < batchSize {
+			break
+		}
+
+		offset += len(newFrames)
 	}
 
 	return gameFrames, nil

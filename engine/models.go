@@ -36,9 +36,6 @@ type Game struct {
 	Height int    `json:"Height"`
 }
 
-type GameStatus struct {
-}
-
 // API Response Structs //
 
 type gameStatusResponse struct {

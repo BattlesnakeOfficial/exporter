@@ -1,6 +1,8 @@
 package http
 
 import (
+	"fmt"
+	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -76,26 +78,21 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 		return
 	}
 
-	frames := strings.Split(r.URL.Query().Get("frames"), "-")
 	offset := 0
-	frameRange := -1
+	limit := math.MaxInt32
+	frames := strings.Split(r.URL.Query().Get("frames"), "-")
 	if len(frames) == 2 {
-		var err error
-		var endFrame int
-		offset, err = strconv.Atoi(frames[0])
-		if err != nil {
-			log.WithError(err).Errorf("unable to convert offset: %s", frames[0])
-			offset = 0
+		valOne, errOne := strconv.Atoi(frames[0])
+		valTwo, errTwo := strconv.Atoi(frames[1])
+		if errOne != nil || errTwo != nil {
+			handleBadRequest(w, r, fmt.Errorf("invalid frames parameter: %s", r.URL.Query().Get("frames")))
 		}
-		endFrame, err = strconv.Atoi(frames[1])
-		if err != nil {
-			log.WithError(err).Errorf("unable to convert ending frame: %s", frames[1])
-		} else {
-			frameRange = endFrame - offset + 1
-		}
+
+		offset = valOne
+		limit = valTwo - valOne + 1
 	}
 
-	gameFrames, err := engine.GetGameFrames(game.ID, offset, frameRange)
+	gameFrames, err := engine.GetGameFrames(game.ID, offset, limit)
 	if err != nil {
 		handleError(w, r, err)
 		return
@@ -119,6 +116,14 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	}
 }
 
+func handleBadRequest(w http.ResponseWriter, r *http.Request, e error) {
+	w.WriteHeader(http.StatusBadRequest)
+	_, err := w.Write([]byte(e.Error()))
+	if err != nil {
+		log.WithError(err).Error("unable to write to response stream")
+	}
+}
+
 func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	log.WithError(err).
 		WithFields(log.Fields{
@@ -133,5 +138,4 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 	if _, err := w.Write([]byte(err.Error())); err != nil {
 		log.WithError(err).Error("unable to write to response stream")
 	}
-	return
 }

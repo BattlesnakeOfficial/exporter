@@ -32,83 +32,11 @@ type Board struct {
 	Squares [][]BoardSquare
 }
 
-func (b *Board) SetSquare(p *engine.Point, s BoardSquare) {
+func (b *Board) setSquare(p *engine.Point, s BoardSquare) {
 	b.Squares[p.X][p.Y] = s
 }
 
-func NewBoard(w int, h int) *Board {
-	b := Board{Width: w, Height: h}
-
-	b.Squares = make([][]BoardSquare, w)
-	for i := range b.Squares {
-		b.Squares[i] = make([]BoardSquare, h)
-	}
-
-	return &b
-}
-
-func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
-	board := NewBoard(g.Width, g.Height)
-
-	for _, snake := range gf.Snakes {
-		color := snake.Color
-		if snake.Death != nil {
-			if gf.Turn-snake.Death.Turn > 10 {
-				continue
-			}
-			color = "#cdcdcd"
-		}
-
-		// Default snake types
-		if len(snake.Head) == 0 {
-			snake.Head = "regular"
-		}
-		if len(snake.Tail) == 0 {
-			snake.Tail = "regular"
-		}
-
-		for i, point := range snake.Body {
-			if i == 0 {
-				square := BoardSquare{
-					Content:   BoardSquareSnakeHead,
-					HexColor:  color,
-					SnakeType: snake.Head,
-					Direction: getDirection(snake.Body[i+1], point),
-				}
-				board.SetSquare(&point, square)
-			} else if i == (len(snake.Body) - 1) {
-				prev := snake.Body[i-1]
-				direction := getDirection(prev, point)
-				if prev.X == point.X && prev.Y == point.Y {
-					direction = getDirection(snake.Body[i-2], point)
-				}
-				square := BoardSquare{
-					Content:   BoardSquareSnakeTail,
-					HexColor:  color,
-					SnakeType: snake.Tail,
-					Direction: direction,
-				}
-				board.SetSquare(&point, square)
-			} else {
-				square := BoardSquare{
-					Content:   BoardSquareSnakeBody,
-					HexColor:  color,
-					Direction: getDirection(snake.Body[i+1], point),
-					Corner:    getCorner(snake.Body[i-1], point, snake.Body[i+1]),
-				}
-				board.SetSquare(&point, square)
-			}
-		}
-	}
-
-	for _, point := range gf.Food {
-		board.SetSquare(&point, BoardSquare{Content: BoardSquareFood})
-	}
-
-	return board
-}
-
-func getDirection(p engine.Point, nP engine.Point) string {
+func (b *Board) getDirection(p engine.Point, nP engine.Point) string {
 	d := fmt.Sprintf("%d,%d", nP.X-p.X, nP.Y-p.Y)
 	switch d {
 	case "1,0":
@@ -128,7 +56,7 @@ func getDirection(p engine.Point, nP engine.Point) string {
 }
 
 // pP = previous point, p = current point, nP next point.
-func getCorner(pP engine.Point, p engine.Point, nP engine.Point) string {
+func (b *Board) getCorner(pP engine.Point, p engine.Point, nP engine.Point) string {
 	coords := fmt.Sprintf("%d,%d:%d,%d", pP.X-p.X, pP.Y-p.Y, nP.X-p.X, nP.Y-p.Y)
 	switch coords {
 	case "0,-1:1,0", "1,0:0,-1":
@@ -142,4 +70,101 @@ func getCorner(pP engine.Point, p engine.Point, nP engine.Point) string {
 	default:
 		return "none"
 	}
+}
+
+func (b *Board) placeSnake(snake engine.Snake) {
+	// Default head type
+	head := "regular"
+	if len(snake.Head) > 0 {
+		head = snake.Head
+	}
+
+	// Default tail type
+	tail := "regular"
+	if len(snake.Tail) > 0 {
+		tail = snake.Tail
+	}
+
+	// Death color
+	color := snake.Color
+	if snake.Death != nil {
+		color = "#cdcdcd"
+	}
+
+	for i, point := range snake.Body {
+		if i == 0 {
+			// Snake heads can exist off-board after colliding with a wall
+			if point.X < 0 || point.X >= b.Width {
+				continue
+			}
+			if point.Y < 0 || point.X >= b.Height {
+				continue
+			}
+
+			square := BoardSquare{
+				Content:   BoardSquareSnakeHead,
+				HexColor:  color,
+				SnakeType: head,
+				Direction: b.getDirection(snake.Body[i+1], point),
+			}
+			b.setSquare(&point, square)
+		} else if i == (len(snake.Body) - 1) {
+			prev := snake.Body[i-1]
+			direction := b.getDirection(prev, point)
+			if prev.X == point.X && prev.Y == point.Y {
+				direction = b.getDirection(snake.Body[i-2], point)
+			}
+			square := BoardSquare{
+				Content:   BoardSquareSnakeTail,
+				HexColor:  color,
+				SnakeType: tail,
+				Direction: direction,
+			}
+			b.setSquare(&point, square)
+		} else {
+			square := BoardSquare{
+				Content:   BoardSquareSnakeBody,
+				HexColor:  color,
+				Direction: b.getDirection(snake.Body[i+1], point),
+				Corner:    b.getCorner(snake.Body[i-1], point, snake.Body[i+1]),
+			}
+			b.setSquare(&point, square)
+		}
+	}
+}
+
+func NewBoard(w int, h int) *Board {
+	b := Board{Width: w, Height: h}
+
+	b.Squares = make([][]BoardSquare, w)
+	for i := range b.Squares {
+		b.Squares[i] = make([]BoardSquare, h)
+	}
+
+	return &b
+}
+
+func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
+	board := NewBoard(g.Width, g.Height)
+
+	// Second, place dead snakes (up to 10 turns after death)
+	for _, snake := range gf.Snakes {
+		if snake.Death != nil && (gf.Turn-snake.Death.Turn) <= 10 {
+			board.placeSnake(snake)
+		}
+	}
+
+	// Third, place food
+	for _, point := range gf.Food {
+		board.setSquare(&point, BoardSquare{Content: BoardSquareFood})
+	}
+
+	// Fourth, place alive snakes
+	for _, snake := range gf.Snakes {
+		if snake.Death == nil {
+			board.placeSnake(snake)
+		}
+	}
+
+	return board
 }
