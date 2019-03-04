@@ -147,19 +147,19 @@ func NewBoard(w int, h int) *Board {
 func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 	board := NewBoard(g.Width, g.Height)
 
-	// Second, place dead snakes (up to 10 turns after death)
+	// First place dead snakes (up to 10 turns after death)
 	for _, snake := range gf.Snakes {
 		if snake.Death != nil && (gf.Turn-snake.Death.Turn) <= 10 {
 			board.placeSnake(snake)
 		}
 	}
 
-	// Third, place food
+	// Second, place food
 	for _, point := range gf.Food {
 		board.setSquare(&point, BoardSquare{Content: BoardSquareFood})
 	}
 
-	// Fourth, place alive snakes
+	// Third, place alive snakes
 	for _, snake := range gf.Snakes {
 		if snake.Death == nil {
 			board.placeSnake(snake)
