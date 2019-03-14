@@ -19,19 +19,20 @@ func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func handleASCIIFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	gameID := p.ByName("game")
+	engineURL := r.URL.Query().Get("engine_url")
 	frameID, err := strconv.Atoi(p.ByName("frame"))
 	if err != nil {
 		handleError(w, r, err)
 		return
 	}
 
-	game, err := engine.GetGame(gameID)
+	game, err := engine.GetGame(gameID, engineURL)
 	if err != nil {
 		handleError(w, r, err)
 		return
 	}
 
-	gameFrame, err := engine.GetGameFrame(game.ID, frameID)
+	gameFrame, err := engine.GetGameFrame(game.ID, engineURL, frameID)
 	if err != nil {
 		handleError(w, r, err)
 		return
@@ -51,13 +52,14 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		return
 	}
 
-	game, err := engine.GetGame(gameID)
+	engineURL := r.URL.Query().Get("engine_url")
+	game, err := engine.GetGame(gameID, engineURL)
 	if err != nil {
 		handleError(w, r, err)
 		return
 	}
 
-	gameFrame, err := engine.GetGameFrame(game.ID, frameID)
+	gameFrame, err := engine.GetGameFrame(game.ID, engineURL, frameID)
 	if err != nil {
 		handleError(w, r, err)
 		return
@@ -72,7 +74,8 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 
 func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	gameID := p.ByName("game")
-	game, err := engine.GetGame(gameID)
+	engineURL := r.URL.Query().Get("engine_url")
+	game, err := engine.GetGame(gameID, engineURL)
 	if err != nil {
 		handleError(w, r, err)
 		return
@@ -92,7 +95,7 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 		limit = valTwo - valOne + 1
 	}
 
-	gameFrames, err := engine.GetGameFrames(game.ID, offset, limit)
+	gameFrames, err := engine.GetGameFrames(game.ID, engineURL, offset, limit)
 	if err != nil {
 		handleError(w, r, err)
 		return

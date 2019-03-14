@@ -7,8 +7,11 @@ import (
 	"net/http"
 )
 
-func apiCall(path string) ([]byte, error) {
-	url := fmt.Sprintf("https://engine.battlesnake.io/%s", path)
+func apiCall(path, host string) ([]byte, error) {
+	if len(host) == 0 {
+		host = "https://engine.battlesnake.io"
+	}
+	url := fmt.Sprintf("%s/%s", host, path)
 	client := http.Client{}
 
 	response, err := client.Get(url)
@@ -27,9 +30,9 @@ func apiCall(path string) ([]byte, error) {
 	return body, nil
 }
 
-func getFrames(gameID string, offset int, limit int) ([]*GameFrame, error) {
+func getFrames(gameID, host string, offset int, limit int) ([]*GameFrame, error) {
 	path := fmt.Sprintf("games/%s/frames?offset=%d&limit=%d", gameID, offset, limit)
-	body, err := apiCall(path)
+	body, err := apiCall(path, host)
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +47,9 @@ func getFrames(gameID string, offset int, limit int) ([]*GameFrame, error) {
 }
 
 // GetGame is commented
-func GetGame(gameID string) (*Game, error) {
+func GetGame(gameID, host string) (*Game, error) {
 	path := fmt.Sprintf("games/%s", gameID)
-	body, err := apiCall(path)
+	body, err := apiCall(path, host)
 	if err != nil {
 		return nil, err
 	}
@@ -61,8 +64,8 @@ func GetGame(gameID string) (*Game, error) {
 }
 
 // GetGameFrame is commented
-func GetGameFrame(gameID string, frameNum int) (*GameFrame, error) {
-	gameFrames, err := getFrames(gameID, frameNum, 1)
+func GetGameFrame(gameID, host string, frameNum int) (*GameFrame, error) {
+	gameFrames, err := getFrames(gameID, host, frameNum, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +74,7 @@ func GetGameFrame(gameID string, frameNum int) (*GameFrame, error) {
 }
 
 // GetGameFrames is commented
-func GetGameFrames(gameID string, offset int, limit int) ([]*GameFrame, error) {
+func GetGameFrames(gameID, host string, offset int, limit int) ([]*GameFrame, error) {
 	var gameFrames []*GameFrame
 
 	if limit <= 0 {
@@ -84,7 +87,7 @@ func GetGameFrames(gameID string, offset int, limit int) ([]*GameFrame, error) {
 			batchSize = (limit - len(gameFrames))
 		}
 
-		newFrames, err := getFrames(gameID, offset, batchSize)
+		newFrames, err := getFrames(gameID, host, offset, batchSize)
 		if err != nil {
 			return nil, err
 		}
