@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
@@ -23,7 +24,10 @@ func (s *Server) Run() {
 	router.GET("/games/:game/frames/:frame/ascii", handleASCIIFrame)
 	router.GET("/games/:game/frames/:frame/gif", handleGIFFrame)
 
-	port := ":8000"
+	port := os.Getenv("PORT")
+	if len(port) == 0 {
+		port = ":8000"
+	}
 	log.WithField("port", port).Info("http server listening")
 	if err := http.ListenAndServe(port, router); err != nil {
 		log.WithError(err).WithField("port", port).Error("error while trying to listen on port")
