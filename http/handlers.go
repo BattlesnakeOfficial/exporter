@@ -14,7 +14,7 @@ import (
 )
 
 func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	http.Redirect(w, r, "https://battlesnake.io", 302)
+	http.Redirect(w, r, "https://battlesnake.com", 302)
 }
 
 func handleASCIIFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {

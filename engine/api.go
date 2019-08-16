@@ -9,7 +9,7 @@ import (
 
 func apiCall(path, host string) ([]byte, error) {
 	if len(host) == 0 {
-		host = "https://engine.battlesnake.io"
+		host = "https://engine.battlesnake.com"
 	}
 	url := fmt.Sprintf("%s/%s", host, path)
 	client := http.Client{}

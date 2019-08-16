@@ -292,7 +292,7 @@ func createBoardContext(b *Board) *gg.Context {
 	// Draw subtitle
 	dc.SetColor(color.Black)
 	dc.DrawStringAnchored(
-		"play.battlesnake.io",
+		"play.battlesnake.com",
 		float64(dc.Width()/2),
 		float64(dc.Height()-10),
 		0.5, 0.5,
