@@ -142,3 +142,11 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 		log.WithError(err).Error("unable to write to response stream")
 	}
 }
+
+func handleAlive(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	fmt.Fprint(w, "alive")
+}
+
+func handleReady(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	fmt.Fprint(w, "ready")
+}

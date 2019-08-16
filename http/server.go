@@ -24,6 +24,9 @@ func (s *Server) Run() {
 	router.GET("/games/:game/frames/:frame/ascii", handleASCIIFrame)
 	router.GET("/games/:game/frames/:frame/gif", handleGIFFrame)
 
+	router.GET("/healthz/alive", handleAlive)
+	router.GET("/healthz/ready", handleReady)
+
 	port := os.Getenv("PORT")
 	if len(port) == 0 {
 		port = ":8000"
