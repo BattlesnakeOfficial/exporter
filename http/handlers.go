@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
@@ -13,8 +14,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	http.Redirect(w, r, "https://battlesnake.com", 302)
+func versionHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	version := os.Getenv("APP_VERSION")
+	if len(version) == 0 {
+		version = "unknown"
+	}
+	fmt.Fprint(w, version)
 }
 
 func handleASCIIFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
@@ -52,6 +57,8 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		return
 	}
 
+	log.Infof("exporting frame %s:%d", gameID, frameID)
+
 	engineURL := r.URL.Query().Get("engine_url")
 	game, err := engine.GetGame(gameID, engineURL)
 	if err != nil {
@@ -74,6 +81,9 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 
 func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	gameID := p.ByName("game")
+
+	log.Infof("exporting game %s", gameID)
+
 	engineURL := r.URL.Query().Get("engine_url")
 	game, err := engine.GetGame(gameID, engineURL)
 	if err != nil {

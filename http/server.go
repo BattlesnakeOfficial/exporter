@@ -17,7 +17,8 @@ func NewServer() *Server {
 func (s *Server) Run() {
 	router := httprouter.New()
 
-	router.GET("/", indexHandler)
+	router.GET("/", versionHandler)
+	router.GET("/version", versionHandler)
 
 	router.GET("/games/:game/gif", handleGIFGame)
 
