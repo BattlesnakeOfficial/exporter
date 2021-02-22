@@ -6,8 +6,8 @@ import (
 	"image/draw"
 	"io"
 
-	"github.com/battlesnakeio/exporter/engine"
-	"github.com/battlesnakeio/exporter/render/gif"
+	"github.com/BattlesnakeOfficial/exporter/engine"
+	"github.com/BattlesnakeOfficial/exporter/render/gif"
 )
 
 const (

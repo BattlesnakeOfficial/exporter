@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/battlesnakeio/exporter/engine"
-	"github.com/battlesnakeio/exporter/render"
+	"github.com/BattlesnakeOfficial/exporter/engine"
+	"github.com/BattlesnakeOfficial/exporter/render"
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 )

@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/battlesnakeio/exporter/engine"
+	"github.com/BattlesnakeOfficial/exporter/engine"
 )
 
 const (

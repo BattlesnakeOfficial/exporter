@@ -19,8 +19,8 @@ type Snake struct {
 	Death *Death `json:"Death"`
 
 	Color string `json:"Color"`    // Hex Code
-	Head  string `json:"HeadType"` // https://github.com/battlesnakeio/board/tree/master/public/images/snake/head
-	Tail  string `json:"TailType"` // https://github.com/battlesnakeio/board/tree/master/public/images/snake/tail
+	Head  string `json:"HeadType"` // https://github.com/BattlesnakeOfficial/board/tree/master/public/images/snake/head
+	Tail  string `json:"TailType"` // https://github.com/BattlesnakeOfficial/board/tree/master/public/images/snake/tail
 }
 
 type GameFrame struct {

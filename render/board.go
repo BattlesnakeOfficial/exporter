@@ -3,7 +3,7 @@ package render
 import (
 	"fmt"
 
-	"github.com/battlesnakeio/exporter/engine"
+	"github.com/BattlesnakeOfficial/exporter/engine"
 	log "github.com/sirupsen/logrus"
 )
 

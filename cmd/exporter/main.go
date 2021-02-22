@@ -1,14 +1,10 @@
 package main
 
 import (
-	"github.com/TV4/logrus-stackdriver-formatter"
-	"github.com/battlesnakeio/exporter/http"
-	log "github.com/sirupsen/logrus"
+	"github.com/BattlesnakeOfficial/exporter/http"
 )
 
 func main() {
-	log.SetFormatter(stackdriver.NewFormatter())
-
 	httpServer := http.NewServer()
 	httpServer.Run()
 }
