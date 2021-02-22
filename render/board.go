@@ -33,11 +33,11 @@ type Board struct {
 }
 
 func (b *Board) setSquare(p *engine.Point, s BoardSquare) {
-	b.Squares[p.X][p.Y] = s
+	b.Squares[p.X][b.Height-1-p.Y] = s
 }
 
 func (b *Board) getDirection(p engine.Point, nP engine.Point) string {
-	d := fmt.Sprintf("%d,%d", nP.X-p.X, nP.Y-p.Y)
+	d := fmt.Sprintf("%d,%d", nP.X-p.X, p.Y-nP.Y)
 	switch d {
 	case "1,0":
 		return "right"
@@ -57,7 +57,7 @@ func (b *Board) getDirection(p engine.Point, nP engine.Point) string {
 
 // pP = previous point, p = current point, nP next point.
 func (b *Board) getCorner(pP engine.Point, p engine.Point, nP engine.Point) string {
-	coords := fmt.Sprintf("%d,%d:%d,%d", pP.X-p.X, pP.Y-p.Y, nP.X-p.X, nP.Y-p.Y)
+	coords := fmt.Sprintf("%d,%d:%d,%d", pP.X-p.X, p.Y-pP.Y, nP.X-p.X, p.Y-nP.Y)
 	switch coords {
 	case "0,-1:1,0", "1,0:0,-1":
 		return "bottom-left"
@@ -108,7 +108,16 @@ func (b *Board) placeSnake(snake engine.Snake) {
 				Direction: b.getDirection(snake.Body[i+1], point),
 			}
 			b.setSquare(&point, square)
-		} else if i == (len(snake.Body) - 1) {
+
+			continue
+		}
+
+		// Skip any body parts which overlap the head
+		if point == snake.Body[0] {
+			continue
+		}
+
+		if i == (len(snake.Body) - 1) {
 			prev := snake.Body[i-1]
 			direction := b.getDirection(prev, point)
 			if prev.X == point.X && prev.Y == point.Y {

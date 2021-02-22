@@ -11,14 +11,18 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
-	BoardBorder        = 2
-	BoardBorderBottom  = 15
-	SquareSizePixels   = 20
-	SquareBorderPixels = 1
-	SquareFoodRadius   = SquareSizePixels / 3
+	AssetFallbackHead        = "heads/regular.png"
+	AssetFallbackTail        = "tails/regular.png"
+	AssetFallbackUnspecified = ""
+	BoardBorder              = 2
+	BoardBorderBottom        = 15
+	SquareSizePixels         = 20
+	SquareBorderPixels       = 1
+	SquareFoodRadius         = SquareSizePixels / 3
 )
 
 var boardImageCache = make(map[string]image.Image)
@@ -66,7 +70,28 @@ func loadRawImageAsset(filename string) image.Image {
 	return assetImage
 }
 
-func loadImageAsset(filename string, w int, h int, rot int) image.Image {
+func loadRawImageAssetWithFallback(filename string, fallbackFilename string) image.Image {
+	if fallbackFilename == AssetFallbackUnspecified {
+		return loadRawImageAsset(filename)
+	}
+
+	f, err := os.Open(fmt.Sprintf("render/assets/%s", filename))
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"fallback": fallbackFilename}).Warn("unable to open image asset file")
+		return loadRawImageAsset(fallbackFilename)
+	}
+	defer f.Close()
+
+	assetImage, _, err := image.Decode(f)
+	if err != nil {
+		log.WithError(err).WithFields(log.Fields{"fallback": fallbackFilename}).Warn("unable to decode image asset")
+		return loadRawImageAsset(fallbackFilename)
+	}
+
+	return assetImage
+}
+
+func loadImageAsset(filename string, fallbackFilename string, w int, h int, rot int) image.Image {
 	cacheKey := fmt.Sprintf("%s:%s:%s:%s", filename, w, h, rot)
 	cachedImage, ok := assetImageCache[cacheKey]
 	if ok {
@@ -76,7 +101,7 @@ func loadImageAsset(filename string, w int, h int, rot int) image.Image {
 	assetImageCacheLock.Lock()
 	defer assetImageCacheLock.Unlock()
 
-	srcImage := loadRawImageAsset(filename)
+	srcImage := loadRawImageAssetWithFallback(filename, fallbackFilename)
 
 	var dstImage image.Image
 	dstImage = imaging.Resize(srcImage, w, h, imaging.Lanczos)
@@ -95,7 +120,7 @@ func loadImageAsset(filename string, w int, h int, rot int) image.Image {
 }
 
 func drawWatermark(dc *gg.Context) {
-	watermarkImage := loadImageAsset("watermark.png", dc.Width()*2/3, dc.Height()*2/3, 0)
+	watermarkImage := loadImageAsset("watermark.png", AssetFallbackUnspecified, dc.Width()*2/3, dc.Height()*2/3, 0)
 	dc.DrawImageAnchored(watermarkImage, dc.Width()/2, dc.Height()/2, 0.5, 0.5)
 }
 
@@ -120,7 +145,7 @@ func drawFood(dc *gg.Context, x int, y int) {
 	dc.Fill()
 }
 
-func drawSnakeImage(filename string, dc *gg.Context, x int, y int, hexColor string, direction string) {
+func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, x int, y int, hexColor string, direction string) {
 	var rotation int
 	switch direction {
 	case "right":
@@ -135,6 +160,7 @@ func drawSnakeImage(filename string, dc *gg.Context, x int, y int, hexColor stri
 
 	maskImage := loadImageAsset(
 		filename,
+		fallbackFilename,
 		SquareSizePixels-SquareBorderPixels*2,
 		SquareSizePixels-SquareBorderPixels*2,
 		rotation,
@@ -317,14 +343,14 @@ func drawBoard(b *Board) image.Image {
 			switch square.Content {
 			case BoardSquareSnakeHead:
 				snakeAsset = fmt.Sprintf("heads/%s.png", square.SnakeType)
-				drawSnakeImage(snakeAsset, dc, x, y, square.HexColor, square.Direction)
+				drawSnakeImage(snakeAsset, AssetFallbackHead, dc, x, y, square.HexColor, square.Direction)
 				drawGaps(dc, x, y, square.Direction, square.HexColor)
 			case BoardSquareSnakeBody:
 				drawSnakeBody(dc, x, y, square.HexColor, square.Corner)
 				drawGaps(dc, x, y, square.Direction, square.HexColor)
 			case BoardSquareSnakeTail:
 				snakeAsset = fmt.Sprintf("tails/%s.png", square.SnakeType)
-				drawSnakeImage(snakeAsset, dc, x, y, square.HexColor, square.Direction)
+				drawSnakeImage(snakeAsset, AssetFallbackTail, dc, x, y, square.HexColor, square.Direction)
 			case BoardSquareFood:
 				drawFood(dc, x, y)
 			}
