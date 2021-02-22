@@ -15,14 +15,14 @@ import (
 )
 
 const (
-	AssetFallbackHead  = "heads/regular.png"
-	AssetFallbackTail  = "tails/regular.png"
+	AssetFallbackHead        = "heads/regular.png"
+	AssetFallbackTail        = "tails/regular.png"
 	AssetFallbackUnspecified = ""
-	BoardBorder        = 2
-	BoardBorderBottom  = 15
-	SquareSizePixels   = 20
-	SquareBorderPixels = 1
-	SquareFoodRadius   = SquareSizePixels / 3
+	BoardBorder              = 2
+	BoardBorderBottom        = 15
+	SquareSizePixels         = 20
+	SquareBorderPixels       = 1
+	SquareFoodRadius         = SquareSizePixels / 3
 )
 
 var boardImageCache = make(map[string]image.Image)
@@ -71,7 +71,7 @@ func loadRawImageAsset(filename string) image.Image {
 }
 
 func loadRawImageAssetWithFallback(filename string, fallbackFilename string) image.Image {
-	if (fallbackFilename == AssetFallbackUnspecified) {
+	if fallbackFilename == AssetFallbackUnspecified {
 		return loadRawImageAsset(filename)
 	}
 

@@ -33,7 +33,7 @@ type Board struct {
 }
 
 func (b *Board) setSquare(p *engine.Point, s BoardSquare) {
-	b.Squares[p.X][b.Height - 1 - p.Y] = s
+	b.Squares[p.X][b.Height-1-p.Y] = s
 }
 
 func (b *Board) getDirection(p engine.Point, nP engine.Point) string {
