@@ -440,7 +440,7 @@ func Encode(w io.Writer, m image.Image, o *Options) error {
 		if opts.Quantizer != nil {
 			pm.Palette = opts.Quantizer.Quantize(make(color.Palette, 0, opts.NumColors), m)
 		}
-		opts.Drawer.Draw(pm, b, m, image.ZP)
+		opts.Drawer.Draw(pm, b, m, image.Point{})
 	}
 
 	// When calling Encode instead of EncodeAll, the single-frame image is

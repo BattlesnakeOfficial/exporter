@@ -25,7 +25,7 @@ func gameFrameToPalettedImage(g *engine.Game, gf *engine.GameFrame) *image.Palet
 	palettedImage := image.NewPaletted(rgbaImage.Bounds(), palette.Plan9)
 
 	// No Dithering
-	draw.Draw(palettedImage, rgbaImage.Bounds(), rgbaImage, image.ZP, draw.Src)
+	draw.Draw(palettedImage, rgbaImage.Bounds(), rgbaImage, image.Point{}, draw.Src)
 	// FloydSteinberg Dithering (for future reference)
 	// draw.FloydSteinberg.Draw(palettedImage, rgbaImage.Bounds(), rgbaImage, image.ZP)
 

@@ -92,7 +92,7 @@ func loadRawImageAssetWithFallback(filename string, fallbackFilename string) ima
 }
 
 func loadImageAsset(filename string, fallbackFilename string, w int, h int, rot int) image.Image {
-	cacheKey := fmt.Sprintf("%s:%s:%s:%s", filename, w, h, rot)
+	cacheKey := fmt.Sprintf("%s:%d:%d:%d", filename, w, h, rot)
 	cachedImage, ok := assetImageCache[cacheKey]
 	if ok {
 		return cachedImage
@@ -176,7 +176,7 @@ func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, x 
 
 	srcImage := &image.Uniform{parseHexColor(hexColor)}
 
-	draw.DrawMask(dst, dstRect, srcImage, image.ZP, maskImage, image.ZP, draw.Over)
+	draw.DrawMask(dst, dstRect, srcImage, image.Point{}, maskImage, image.Point{}, draw.Over)
 }
 
 func drawSnakeBody(dc *gg.Context, x int, y int, hexColor, corner string) {
