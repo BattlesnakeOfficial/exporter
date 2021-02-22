@@ -108,7 +108,16 @@ func (b *Board) placeSnake(snake engine.Snake) {
 				Direction: b.getDirection(snake.Body[i+1], point),
 			}
 			b.setSquare(&point, square)
-		} else if i == (len(snake.Body) - 1) {
+
+			continue
+		}
+
+		// Skip any body parts which overlap the head
+		if point == snake.Body[0] {
+			continue
+		}
+
+		if i == (len(snake.Body) - 1) {
 			prev := snake.Body[i-1]
 			direction := b.getDirection(prev, point)
 			if prev.X == point.X && prev.Y == point.Y {
