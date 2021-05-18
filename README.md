@@ -15,3 +15,7 @@ Exports a specific frame as a gif (no animation).
 #### `/games/{game id}/frames/{frame number}/ascii`
 
 Exports a specific frame as an ASCII string.
+
+### Feedback
+
+* **Do you have an issue or suggestions for this repository?** Head over to our [Feedback Repository](https://play.battlesnake.com/feedback) today and let us know!
