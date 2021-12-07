@@ -5,6 +5,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -159,4 +160,17 @@ func handleAlive(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func handleReady(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprint(w, "ready")
+}
+
+func panicHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
+	source := "unknown"
+	if _, filename, line, ok := runtime.Caller(3); ok {
+		source = fmt.Sprintf("%s:%d", filename, line)
+	}
+	log.WithField("err", err).
+		WithField("url", r.URL.String()).
+		WithField("source", source).
+		Error("unhandled panic")
+
+	w.WriteHeader(http.StatusInternalServerError)
 }
