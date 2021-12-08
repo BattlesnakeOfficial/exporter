@@ -2,6 +2,33 @@
 
 Converts a game or frame of a game into a different format (mostly images).
 
+## Local Development
+
+### Install
+```
+brew install go@1.15
+```
+
+Or install manually from https://go.dev/dl/.
+
+### Building
+Installing to `$GOPATH/bin/`: (defaults to `$HOME/go/bin` if you don't have GOPATH set):
+```
+go install -v ./cmd/exporter
+```
+
+### Running the server
+```
+export PORT=8000 # optional port override
+
+exporter
+```
+
+### Running the tests
+```
+go test ./...
+```
+
 ## Endpoints
 
 #### `/games/{game id}/gif`
