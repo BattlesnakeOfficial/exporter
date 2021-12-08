@@ -11,12 +11,12 @@ import (
 
 func TestHandlesPanic(t *testing.T) {
 	server := NewServer()
-	server.Router.GET("/fake/panic", httprouter.Handle(func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	server.router.GET("/fake/panic", httprouter.Handle(func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		panic("an unexpected error")
 	}))
 
 	req, res := fixtures.TestRequest(t, "GET", "http://localhost/fake/panic", nil)
 
-	server.Router.ServeHTTP(res, req)
+	server.router.ServeHTTP(res, req)
 	require.Equal(t, http.StatusInternalServerError, res.Code)
 }

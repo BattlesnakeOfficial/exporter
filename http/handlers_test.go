@@ -18,7 +18,7 @@ func TestVersion(t *testing.T) {
 
 	req, res := fixtures.TestRequest(t, "GET", "http://localhost/version", nil)
 
-	server.Router.ServeHTTP(res, req)
+	server.router.ServeHTTP(res, req)
 	require.Equal(t, http.StatusOK, res.Code)
 	require.Equal(t, "1.2.3", res.Body.String())
 }
@@ -35,7 +35,7 @@ func TestHandleGIFGame_NotFound(t *testing.T) {
 	query.Set("engine_url", engineServer.URL)
 	req.URL.RawQuery = query.Encode()
 
-	server.Router.ServeHTTP(res, req)
+	server.router.ServeHTTP(res, req)
 	require.Equal(t, http.StatusNotFound, res.Code)
 }
 
@@ -56,7 +56,7 @@ func TestHandleGIFGame_Success(t *testing.T) {
 	query.Set("engine_url", engineServer.URL)
 	req.URL.RawQuery = query.Encode()
 
-	server.Router.ServeHTTP(res, req)
+	server.router.ServeHTTP(res, req)
 
 	require.Equal(t, http.StatusOK, res.Code)
 	require.Equal(t, "image/gif", res.Result().Header.Get("Content-Type"))

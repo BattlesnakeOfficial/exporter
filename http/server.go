@@ -1,17 +1,23 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
+	"strings"
+	"syscall"
+	"time"
 
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
 )
 
 type Server struct {
-	Router *httprouter.Router
+	router     *httprouter.Router
+	httpServer *http.Server
 }
 
 func NewServer() *Server {
@@ -30,7 +36,12 @@ func NewServer() *Server {
 
 	router.PanicHandler = panicHandler
 
-	return &Server{router}
+	return &Server{
+		router: router,
+		httpServer: &http.Server{
+			Handler: router,
+		},
+	}
 }
 
 func (s *Server) Run() {
@@ -38,10 +49,45 @@ func (s *Server) Run() {
 	if len(port) == 0 {
 		port = ":8000"
 	}
-	log.WithField("port", port).Info("http server listening")
-	if err := http.ListenAndServe(port, s.Router); err != nil {
-		log.WithError(err).WithField("port", port).Error("error while trying to listen on port")
+	if !strings.HasPrefix(port, ":") {
+		port = ":" + port
 	}
+	s.httpServer.Addr = port
+	logger := log.WithField("listen", port)
+
+	sigHandler := make(chan os.Signal, 1)
+	signal.Notify(sigHandler, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+
+	connectionsClosed := make(chan struct{})
+	go func() {
+		receivedSignal := <-sigHandler
+		logger.WithField("signal", receivedSignal.String()).
+			Warn("Exporter shutdown signal received")
+		if err := s.Shutdown(time.Second * 20); err != nil {
+			logger.WithError(err).
+				Fatal("Failed to shut down exporter gracefully")
+		}
+		close(connectionsClosed)
+	}()
+
+	logger.Info("Exporter serving")
+	err := s.WaitForExit()
+	if err != nil && err != http.ErrServerClosed {
+		logger.WithError(err).
+			Fatal("Exporter failed to start")
+	}
+	<-connectionsClosed
+	logger.Info("Exporter shutdown successfully")
+}
+
+// WaitForExit starts up the server and blocks until the server shuts down.
+func (s *Server) WaitForExit() error { return s.httpServer.ListenAndServe() }
+
+// Shutdown gracefully shuts down the server, waiting until a timeout for active requests to complete.
+func (s *Server) Shutdown(timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return s.httpServer.Shutdown(ctx)
 }
 
 func panicHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
