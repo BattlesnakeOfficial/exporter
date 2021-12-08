@@ -1,11 +1,11 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"net/http"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -28,24 +28,32 @@ func handleASCIIFrame(w http.ResponseWriter, r *http.Request, p httprouter.Param
 	engineURL := r.URL.Query().Get("engine_url")
 	frameID, err := strconv.Atoi(p.ByName("frame"))
 	if err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
 	game, err := engine.GetGame(gameID, engineURL)
 	if err != nil {
-		handleError(w, r, err)
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
 		return
 	}
 
 	gameFrame, err := engine.GetGameFrame(game.ID, engineURL, frameID)
 	if err != nil {
-		handleError(w, r, err)
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
 		return
 	}
 
 	if err = render.GameFrameToASCII(w, game, gameFrame); err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 }
@@ -54,7 +62,7 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	gameID := p.ByName("game")
 	frameID, err := strconv.Atoi(p.ByName("frame"))
 	if err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, http.StatusBadRequest)
 		return
 	}
 
@@ -63,32 +71,44 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	engineURL := r.URL.Query().Get("engine_url")
 	game, err := engine.GetGame(gameID, engineURL)
 	if err != nil {
-		handleError(w, r, err)
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
 		return
 	}
 
 	gameFrame, err := engine.GetGameFrame(game.ID, engineURL, frameID)
 	if err != nil {
-		handleError(w, r, err)
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
 		return
 	}
 
 	w.Header().Set("Content-Type", "image/gif")
 	if err = render.GameFrameToGIF(w, game, gameFrame); err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 }
 
 func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	gameID := p.ByName("game")
-
-	log.Infof("exporting game %s", gameID)
-
 	engineURL := r.URL.Query().Get("engine_url")
+
+	log.WithField("game", gameID).WithField("engine_url", engineURL).Info("exporting game")
+
 	game, err := engine.GetGame(gameID, engineURL)
 	if err != nil {
-		handleError(w, r, err)
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -108,7 +128,11 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 
 	gameFrames, err := engine.GetGameFrames(game.ID, engineURL, offset, limit)
 	if err != nil {
-		handleError(w, r, err)
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -125,7 +149,7 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	w.Header().Set("Content-Type", "image/gif")
 	err = render.GameFramesToAnimatedGIF(w, game, gameFrames, frameDelay, loopDelay)
 	if err != nil {
-		handleError(w, r, err)
+		handleError(w, r, err, http.StatusInternalServerError)
 		return
 	}
 }
@@ -138,7 +162,7 @@ func handleBadRequest(w http.ResponseWriter, r *http.Request, e error) {
 	}
 }
 
-func handleError(w http.ResponseWriter, r *http.Request, err error) {
+func handleError(w http.ResponseWriter, r *http.Request, err error, statusCode int) {
 	log.WithError(err).
 		WithFields(log.Fields{
 			"httpRequest": map[string]interface{}{
@@ -148,7 +172,9 @@ func handleError(w http.ResponseWriter, r *http.Request, err error) {
 				"referrer":  r.Header.Get("Referer"),
 			},
 		}).Error("unable to process request")
-	w.WriteHeader(http.StatusInternalServerError)
+
+	w.WriteHeader(statusCode)
+
 	if _, err := w.Write([]byte(err.Error())); err != nil {
 		log.WithError(err).Error("unable to write to response stream")
 	}
@@ -160,17 +186,4 @@ func handleAlive(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func handleReady(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprint(w, "ready")
-}
-
-func panicHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
-	source := "unknown"
-	if _, filename, line, ok := runtime.Caller(3); ok {
-		source = fmt.Sprintf("%s:%d", filename, line)
-	}
-	log.WithField("err", err).
-		WithField("url", r.URL.String()).
-		WithField("source", source).
-		Error("unhandled panic")
-
-	w.WriteHeader(http.StatusInternalServerError)
 }

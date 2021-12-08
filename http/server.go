@@ -1,8 +1,10 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"os"
+	"runtime"
 
 	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
@@ -40,4 +42,17 @@ func (s *Server) Run() {
 	if err := http.ListenAndServe(port, s.Router); err != nil {
 		log.WithError(err).WithField("port", port).Error("error while trying to listen on port")
 	}
+}
+
+func panicHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
+	source := "unknown"
+	if _, filename, line, ok := runtime.Caller(3); ok {
+		source = fmt.Sprintf("%s:%d", filename, line)
+	}
+	log.WithField("err", err).
+		WithField("url", r.URL.String()).
+		WithField("source", source).
+		Error("unhandled panic")
+
+	w.WriteHeader(http.StatusInternalServerError)
 }
