@@ -30,7 +30,7 @@ func TestHandleGIFGame_NotFound(t *testing.T) {
 		res.WriteHeader(http.StatusNotFound)
 	})
 
-	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/EXAMPLE/gif", nil)
+	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/gif", nil)
 	query := req.URL.Query()
 	query.Set("engine_url", engineServer.URL)
 	req.URL.RawQuery = query.Encode()
@@ -51,7 +51,7 @@ func TestHandleGIFGame_Success(t *testing.T) {
 		}
 	})
 
-	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/EXAMPLE/gif", nil)
+	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/gif", nil)
 	query := req.URL.Query()
 	query.Set("engine_url", engineServer.URL)
 	req.URL.RawQuery = query.Encode()
@@ -60,4 +60,82 @@ func TestHandleGIFGame_Success(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, res.Code)
 	require.Equal(t, "image/gif", res.Result().Header.Get("Content-Type"))
+}
+
+func TestHandleGIFFrame_NotFound(t *testing.T) {
+	server := NewServer()
+
+	engineServer := fixtures.StubEngineServer(func(res http.ResponseWriter, req *http.Request) {
+		res.WriteHeader(http.StatusNotFound)
+	})
+
+	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/1/gif", nil)
+	query := req.URL.Query()
+	query.Set("engine_url", engineServer.URL)
+	req.URL.RawQuery = query.Encode()
+
+	server.router.ServeHTTP(res, req)
+	require.Equal(t, http.StatusNotFound, res.Code)
+}
+
+func TestHandleGIFFrame_Success(t *testing.T) {
+	fixtures.TestInRootDir()
+	server := NewServer()
+
+	engineServer := fixtures.StubEngineServer(func(res http.ResponseWriter, req *http.Request) {
+		if strings.HasSuffix(req.URL.Path, "/frames") {
+			_, _ = res.Write([]byte(fixtures.ExampleGameFramesResponse))
+		} else {
+			_, _ = res.Write([]byte(fixtures.ExampleGameResponse))
+		}
+	})
+
+	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/0/gif", nil)
+	query := req.URL.Query()
+	query.Set("engine_url", engineServer.URL)
+	req.URL.RawQuery = query.Encode()
+
+	server.router.ServeHTTP(res, req)
+
+	require.Equal(t, http.StatusOK, res.Code)
+	require.Equal(t, "image/gif", res.Result().Header.Get("Content-Type"))
+}
+
+func TestHandleASCIIFrame_NotFound(t *testing.T) {
+	server := NewServer()
+
+	engineServer := fixtures.StubEngineServer(func(res http.ResponseWriter, req *http.Request) {
+		res.WriteHeader(http.StatusNotFound)
+	})
+
+	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/1/ascii", nil)
+	query := req.URL.Query()
+	query.Set("engine_url", engineServer.URL)
+	req.URL.RawQuery = query.Encode()
+
+	server.router.ServeHTTP(res, req)
+	require.Equal(t, http.StatusNotFound, res.Code)
+}
+
+func TestHandleASCIIFrame_Success(t *testing.T) {
+	fixtures.TestInRootDir()
+	server := NewServer()
+
+	engineServer := fixtures.StubEngineServer(func(res http.ResponseWriter, req *http.Request) {
+		if strings.HasSuffix(req.URL.Path, "/frames") {
+			_, _ = res.Write([]byte(fixtures.ExampleGameFramesResponse))
+		} else {
+			_, _ = res.Write([]byte(fixtures.ExampleGameResponse))
+		}
+	})
+
+	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/0/ascii", nil)
+	query := req.URL.Query()
+	query.Set("engine_url", engineServer.URL)
+	req.URL.RawQuery = query.Encode()
+
+	server.router.ServeHTTP(res, req)
+
+	require.Equal(t, http.StatusOK, res.Code)
+	require.Equal(t, "text/plain; charset=utf-8", res.Result().Header.Get("Content-Type"))
 }
