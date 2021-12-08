@@ -97,7 +97,7 @@ func (b *Board) placeSnake(snake engine.Snake) {
 			if point.X < 0 || point.X >= b.Width {
 				continue
 			}
-			if point.Y < 0 || point.X >= b.Height {
+			if point.Y < 0 || point.Y >= b.Height {
 				continue
 			}
 

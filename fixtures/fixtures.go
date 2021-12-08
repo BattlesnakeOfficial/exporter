@@ -62,20 +62,24 @@ const ExampleGameResponse = `
                 "URL": "",
                 "Body": [
                     {
-                        "X": 1,
-                        "Y": 1
+                        "X": 10,
+                        "Y": 11
                     },
                     {
-                        "X": 2,
-                        "Y": 1
+                        "X": 10,
+                        "Y": 10
                     },
                     {
-                        "X": 2,
-                        "Y": 1
+                        "X": 10,
+                        "Y": 10
                     }
                 ],
                 "Health": 99,
-                "Death": null,
+                "Death": {
+                    "Cause":"wall-collision",
+                    "Turn":1,
+                    "EliminatedBy":""
+                },
                 "Color": "#123456",
                 "HeadType": "silly",
                 "TailType": "bolt",
@@ -121,16 +125,16 @@ const ExampleGameFramesResponse = `
                     "URL": "",
                     "Body": [
                         {
-                            "X": 2,
-                            "Y": 1
+                            "X": 10,
+                            "Y": 10
                         },
                         {
-                            "X": 2,
-                            "Y": 1
+                            "X": 10,
+                            "Y": 10
                         },
                         {
-                            "X": 2,
-                            "Y": 1
+                            "X": 10,
+                            "Y": 10
                         }
                     ],
                     "Health": 100,
@@ -173,20 +177,24 @@ const ExampleGameFramesResponse = `
                     "URL": "",
                     "Body": [
                         {
-                            "X": 1,
-                            "Y": 1
+                            "X": 10,
+                            "Y": 11
                         },
                         {
-                            "X": 2,
-                            "Y": 1
+                            "X": 10,
+                            "Y": 10
                         },
                         {
-                            "X": 2,
-                            "Y": 1
+                            "X": 10,
+                            "Y": 10
                         }
                     ],
                     "Health": 99,
-                    "Death": null,
+                    "Death": {
+                        "Cause":"wall-collision",
+                        "Turn":1,
+                        "EliminatedBy":""
+                    },
                     "Color": "#123456",
                     "HeadType": "silly",
                     "TailType": "bolt",
