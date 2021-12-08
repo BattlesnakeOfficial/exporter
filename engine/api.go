@@ -2,10 +2,13 @@ package engine
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 )
+
+var ErrNotFound = errors.New("resource not found")
 
 func apiCall(path, host string) ([]byte, error) {
 	if len(host) == 0 {
@@ -17,6 +20,9 @@ func apiCall(path, host string) ([]byte, error) {
 	response, err := client.Get(url)
 	if err != nil {
 		return nil, err
+	}
+	if response.StatusCode == http.StatusNotFound {
+		return nil, ErrNotFound
 	}
 	if response.StatusCode != 200 {
 		return nil, fmt.Errorf("Got non 200 from engine: %d", response.StatusCode)

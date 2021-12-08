@@ -13,6 +13,7 @@ type GIFFrame struct {
 	Image    *image.Paletted
 	FrameNum int
 	Delay    int
+	Error    error
 }
 
 func EncodeAllConcurrent(w io.Writer, c chan GIFFrame) error {
@@ -24,6 +25,9 @@ func EncodeAllConcurrent(w io.Writer, c chan GIFFrame) error {
 
 	e := encoder{g: *g, w: bufio.NewWriter(w)}
 	for f := range c {
+		if f.Error != nil {
+			return f.Error
+		}
 		if f.FrameNum == 0 {
 			// Write header on first frame
 			p := f.Image.Bounds().Max
