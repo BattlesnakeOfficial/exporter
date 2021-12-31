@@ -1,12 +1,16 @@
 FROM golang:1.15.6-alpine as builder
 
-
 COPY . /go/src/github.com/BattlesnakeOfficial/exporter/
 WORKDIR /go/src/github.com/BattlesnakeOfficial/exporter
 
 RUN CGO_ENABLED=0 GOOS=linux go install -installsuffix cgo ./cmd/...
 
+# -----
+
 FROM alpine:latest
+
+ARG APP_VERSION=0.0.0
+ENV APP_VERSION=$APP_VERSION
 
 RUN apk add --no-cache ca-certificates
 
