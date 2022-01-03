@@ -37,7 +37,7 @@ func (a AvatarSettings) Validate() bool {
 	return true
 }
 
-const avatarTemplate = `<svg id="root" xmlns="http://www.w3.org/2000/svg" fill="{{ .Color }}" width="{{ .Width }}" height="{{ .Height }}" shape-rendering="crispEdges">
+const avatarTemplate = `<svg id="root" xmlns="http://www.w3.org/2000/svg" fill="{{ .Color }}" width="{{ .Width }}" height="{{ .Height }}">
 <g transform="scale(-1, 1) translate(-{{ .Height }}, 0)">
 	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="{{ .Height }}" height="{{ .Height }}">
 		{{ .TailSVG }}
