@@ -23,14 +23,14 @@ type Server struct {
 func NewServer() *Server {
 	router := httprouter.New()
 
-	router.GET("/", versionHandler)
-	router.GET("/version", versionHandler)
-
+	router.GET("/", handleVersion)
+	router.GET("/avatars/*params", handleAvatar)
 	router.GET("/games/:game/gif", handleGIFGame)
-
 	router.GET("/games/:game/frames/:frame/ascii", handleASCIIFrame)
 	router.GET("/games/:game/frames/:frame/gif", handleGIFFrame)
 
+	// System routes
+	router.GET("/version", handleVersion)
 	router.GET("/healthz/alive", handleAlive)
 	router.GET("/healthz/ready", handleReady)
 
