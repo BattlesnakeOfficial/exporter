@@ -6,7 +6,7 @@ Generate images and animations from Battlesnake games and snakes.
 
 ### Install
 ```
-brew install go@1.15
+brew install go@1.17
 ```
 
 Or install manually from https://go.dev/dl/.
