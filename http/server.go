@@ -23,16 +23,17 @@ type Server struct {
 func NewServer() *Server {
 	router := httprouter.New()
 
-	router.GET("/", handleVersion)
-	router.GET("/avatars/*params", handleAvatar)
-	router.GET("/games/:game/gif", handleGIFGame)
-	router.GET("/games/:game/frames/:frame/ascii", handleASCIIFrame)
-	router.GET("/games/:game/frames/:frame/gif", handleGIFFrame)
-
 	// System routes
+	router.GET("/", handleVersion)
 	router.GET("/version", handleVersion)
 	router.GET("/healthz/alive", handleAlive)
 	router.GET("/healthz/ready", handleReady)
+
+	// Export routes
+	router.GET("/avatars/*params", withCaching(handleAvatar))
+	router.GET("/games/:game/gif", withCaching(handleGIFGame))
+	router.GET("/games/:game/frames/:frame/ascii", withCaching(handleASCIIFrame))
+	router.GET("/games/:game/frames/:frame/gif", withCaching(handleGIFFrame))
 
 	router.PanicHandler = panicHandler
 
@@ -41,6 +42,14 @@ func NewServer() *Server {
 		httpServer: &http.Server{
 			Handler: router,
 		},
+	}
+}
+
+func withCaching(wrappedHandler httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+		maxAgeSeconds := 60 * 60 * 24 // 24 Hours
+		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age:%d", maxAgeSeconds))
+		wrappedHandler(w, r, p)
 	}
 }
 
