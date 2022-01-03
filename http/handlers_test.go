@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -10,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestVersion(t *testing.T) {
+func TestHandleVersion(t *testing.T) {
 	server := NewServer()
 
 	os.Setenv("APP_VERSION", "1.2.3")
@@ -21,6 +22,37 @@ func TestVersion(t *testing.T) {
 	server.router.ServeHTTP(res, req)
 	require.Equal(t, http.StatusOK, res.Code)
 	require.Equal(t, "1.2.3", res.Body.String())
+}
+
+func TestHandleAvatar_BadRequest(t *testing.T) {
+	server := NewServer()
+
+	// Fow now we're careful to not construct tests that will pull .svg resources from media
+	badRequestPaths := []string{
+		"/garbage", // Invalid pattern
+
+		"/1x1.svg",       // Invalid dimension
+		"/1x9.svg",       // Invalid dimension
+		"/9x1.svg",       // Invalid dimension
+		"/1x100.svg",     // Invalid dimension
+		"/100x1.svg",     // Invalid dimension
+		"/abcx100.svg",   // Missing dimension
+		"/100xqwer.svg",  // Missing dimension
+		"/500x100.png",   // Invalid extension
+		"/500x99999.svg", // Invalid extension
+
+		"/color:00FF00/500x100.svg", // Invalid color value
+		"/head:/500x100.svg",        // Missing value
+		"/HEAD:default/500x100.svg", // Invalid characters
+		"/barf:true/500x100.svg",    // Unrecognized param
+
+	}
+
+	for _, path := range badRequestPaths {
+		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", path), nil)
+		server.router.ServeHTTP(res, req)
+		require.Equal(t, http.StatusBadRequest, res.Code)
+	}
 }
 
 func TestHandleGIFGame_NotFound(t *testing.T) {
