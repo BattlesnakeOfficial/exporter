@@ -9,18 +9,10 @@ import (
 
 var ErrNotFound = errors.New("resource not found")
 
-func GetAvatarHeadSVG(id string) (string, error) {
-	return getAvatarSVG("heads", id)
-}
+func getMediaResource(path string) (string, error) {
+	url := fmt.Sprintf("https://media.battlesnake.com/%s", path)
 
-func GetAvatarTailSVG(id string) (string, error) {
-	return getAvatarSVG("tails", id)
-}
-
-func getAvatarSVG(folder, id string) (string, error) {
-	url := fmt.Sprintf("https://media.battlesnake.com/snakes/%s/%s.svg", folder, id)
 	client := http.Client{}
-
 	response, err := client.Get(url)
 	if err != nil {
 		return "", err
@@ -38,4 +30,12 @@ func getAvatarSVG(folder, id string) (string, error) {
 	}
 
 	return string(body), nil
+}
+
+func GetHeadSVG(id string) (string, error) {
+	return getCachedMediaResource(fmt.Sprintf("snakes/heads/%s.svg", id))
+}
+
+func GetTailSVG(id string) (string, error) {
+	return getCachedMediaResource(fmt.Sprintf("snakes/tails/%s.svg", id))
 }

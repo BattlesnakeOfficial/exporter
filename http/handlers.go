@@ -66,7 +66,7 @@ func handleAvatar(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 		cKey, cValue := match[1], match[2]
 		switch cKey {
 		case "head":
-			avatarSettings.HeadSVG, err = media.GetAvatarHeadSVG(cValue)
+			avatarSettings.HeadSVG, err = media.GetHeadSVG(cValue)
 			if err != nil {
 				if errors.Is(err, media.ErrNotFound) {
 					handleBadRequest(w, r, errBadRequest)
@@ -76,7 +76,7 @@ func handleAvatar(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 				return
 			}
 		case "tail":
-			avatarSettings.TailSVG, err = media.GetAvatarTailSVG(cValue)
+			avatarSettings.TailSVG, err = media.GetTailSVG(cValue)
 			if err != nil {
 				if errors.Is(err, media.ErrNotFound) {
 					handleBadRequest(w, r, errBadRequest)

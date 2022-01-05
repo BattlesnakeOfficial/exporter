@@ -6,6 +6,7 @@ require (
 	github.com/disintegration/imaging v1.6.2
 	github.com/fogleman/gg v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 )
