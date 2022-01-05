@@ -3,8 +3,10 @@ package render
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"regexp"
 	"text/template"
+	"time"
 )
 
 var ErrInvalidAvatarSettings = errors.New("invalid avatar settings")
@@ -25,6 +27,11 @@ func (a AvatarSettings) CalculateHeadOffset() int {
 	return a.Width - a.Height
 }
 
+func (a AvatarSettings) CopyrightNotice() string {
+	year, _, _ := time.Now().Date()
+	return fmt.Sprintf("Copyright (c) %d Battlesnake Inc.", year)
+}
+
 func (a AvatarSettings) Validate() bool {
 	// Nothing larger than 10000x10000
 	if a.Height > 10000 || a.Width > 10000 {
@@ -38,19 +45,20 @@ func (a AvatarSettings) Validate() bool {
 }
 
 const avatarTemplate = `<svg id="root" xmlns="http://www.w3.org/2000/svg" fill="{{ .Color }}" width="{{ .Width }}" height="{{ .Height }}">
-<g transform="scale(-1, 1) translate(-{{ .Height }}, 0)">
-	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="{{ .Height }}" height="{{ .Height }}">
-		{{ .TailSVG }}
-	</svg>
-</g>
-<g transform="translate({{ .Height }}, 0)">
-	<rect width="{{ .CalculateBodyWidth }}" height="{{ .Height }}" />
-</g>
-<g transform="translate({{ .CalculateHeadOffset }}, 0)">
-	<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="{{ .Height }}" height="{{ .Height }}">
-		{{ .HeadSVG }}
-	</svg>
-</g>
+	<!-- {{ .CopyrightNotice }} -->
+	<g transform="scale(-1, 1) translate(-{{ .Height }}, 0)">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="{{ .Height }}" height="{{ .Height }}">
+			{{ .TailSVG }}
+		</svg>
+	</g>
+	<g transform="translate({{ .Height }}, 0)">
+		<rect width="{{ .CalculateBodyWidth }}" height="{{ .Height }}" />
+	</g>
+	<g transform="translate({{ .CalculateHeadOffset }}, 0)">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="{{ .Height }}" height="{{ .Height }}">
+			{{ .HeadSVG }}
+		</svg>
+	</g>
 </svg>`
 
 func AvatarSVG(settings AvatarSettings) (string, error) {
@@ -60,11 +68,11 @@ func AvatarSVG(settings AvatarSettings) (string, error) {
 
 	t := template.Must(template.New("avatar").Parse(avatarTemplate))
 
-	re := regexp.MustCompile(`^<svg ([^>]*)>`)
+	re := regexp.MustCompile(`^<svg ([^>]*)>\s*`)
 	settings.HeadSVG = re.ReplaceAllString(settings.HeadSVG, "")
 	settings.TailSVG = re.ReplaceAllString(settings.TailSVG, "")
 
-	re = regexp.MustCompile(`</svg>\s*$`)
+	re = regexp.MustCompile(`\s*</svg>\s*$`)
 	settings.HeadSVG = re.ReplaceAllString(settings.HeadSVG, "")
 	settings.TailSVG = re.ReplaceAllString(settings.TailSVG, "")
 
