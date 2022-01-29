@@ -35,6 +35,24 @@ go test ./...
 
 Exports a Battlesnake avatar with the provided customizations.
 
+Currently there are 3 customizations possible:
+
+- `head` allows you to pick from one of the [available head options](./render/assets/heads)
+- `tail` allows you to pick from one of the [available tail options](./render/assets/tails)
+- `color` allows you to choose any valid hex code colour. The value must be passed in as a 7 character value like `#cc0033`. Note that the `#` character must be url encoded as `%23`
+
+`curl` example of requesting a single customization
+
+```bash
+curl -i http://localhost:8000/avatars/head:beluga/500x100.svg
+```
+
+`curl` example of requesting all customization keys
+
+```bash
+curl -i http://localhost:8000/avatars/head:beluga/tail:fish/color:%2331688e/500x100.svg
+```
+
 #### `/games/{game id}/gif`
 
 Exports the game as an animated gif.
