@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	BoardSquareEmpty BoardSquareContent = iota // Zero State (Default)
-	BoardSquareFood
+	BoardSquareFood BoardSquareContentType = iota
 	BoardSquareSnakeBody
 	BoardSquareSnakeHead
 	BoardSquareSnakeTail
@@ -17,27 +16,91 @@ const (
 	BoardSquareHazard
 )
 
-type BoardSquareContent int
+// BoardSquareContentType works like an enum.
+// It provides a restricted set of types of content that can be placed in a board square.
+type BoardSquareContentType int
 
-type BoardSquare struct {
-	Content   BoardSquareContent
+// BoardSquareContent represents a single piece of content in a single square of the game board.
+// Examples of content are food, snake body parts and hazard squares
+type BoardSquareContent struct {
+	Type      BoardSquareContentType
 	HexColor  string
 	SnakeType string
 	Direction string
 	Corner    string
 }
 
+// BoardSquare represents a unique location on the game board.
+type BoardSquare struct {
+	Contents []BoardSquareContent
+}
+
+// Board is the root datastructure that represents a game board
 type Board struct {
 	Width   int
 	Height  int
-	Squares [][]BoardSquare
+	squares [][]BoardSquare
 }
 
-func (b *Board) setSquare(p *engine.Point, s BoardSquare) {
-	b.Squares[p.X][b.Height-1-p.Y] = s
+func (b *Board) getSquare(x, y int) *BoardSquare {
+	// We are making the layout of the 2D array match the visual representation of the board
+	// Because the board starts at the bottom left, we have to invert the y-axis.
+	rowIdx := b.Height - 1 - y // invert y
+
+	// Also, when accessing 2D arrays, rows (y) are the first index
+	// and columns (x) are the second index
+	return &b.squares[rowIdx][x]
 }
 
-func (b *Board) getDirection(p engine.Point, nP engine.Point) string {
+func (b *Board) addContent(p *engine.Point, c BoardSquareContent) {
+	s := b.getSquare(p.X, p.Y)
+	s.Contents = append(s.Contents, c)
+}
+
+func (b Board) getContents(x, y int) []BoardSquareContent {
+	return b.getSquare(x, y).Contents
+}
+
+func (b *Board) addFood(p *engine.Point) {
+	b.addContent(p, BoardSquareContent{
+		Type: BoardSquareFood,
+	})
+}
+
+func (b *Board) addSnakeTail(p *engine.Point, color, snakeType, direction string) {
+	b.addContent(p, BoardSquareContent{
+		Type:      BoardSquareSnakeTail,
+		HexColor:  color,
+		SnakeType: snakeType,
+		Direction: direction,
+	})
+}
+
+func (b *Board) addSnakeHead(p *engine.Point, color, snakeType, direction string) {
+	b.addContent(p, BoardSquareContent{
+		Type:      BoardSquareSnakeHead,
+		HexColor:  color,
+		SnakeType: snakeType,
+		Direction: direction,
+	})
+}
+
+func (b *Board) addSnakeBody(p *engine.Point, color, direction, corner string) {
+	b.addContent(p, BoardSquareContent{
+		Type:      BoardSquareSnakeBody,
+		HexColor:  color,
+		Direction: direction,
+		Corner:    corner,
+	})
+}
+
+func (b *Board) addHazard(p *engine.Point) {
+	b.addContent(p, BoardSquareContent{
+		Type: BoardSquareHazard,
+	})
+}
+
+func getDirection(p engine.Point, nP engine.Point) string {
 	d := fmt.Sprintf("%d,%d", nP.X-p.X, p.Y-nP.Y)
 	switch d {
 	case "1,0":
@@ -57,7 +120,7 @@ func (b *Board) getDirection(p engine.Point, nP engine.Point) string {
 }
 
 // pP = previous point, p = current point, nP next point.
-func (b *Board) getCorner(pP engine.Point, p engine.Point, nP engine.Point) string {
+func getCorner(pP engine.Point, p engine.Point, nP engine.Point) string {
 	coords := fmt.Sprintf("%d,%d:%d,%d", pP.X-p.X, p.Y-pP.Y, nP.X-p.X, p.Y-nP.Y)
 	switch coords {
 	case "0,-1:1,0", "1,0:0,-1":
@@ -102,14 +165,7 @@ func (b *Board) placeSnake(snake engine.Snake) {
 				continue
 			}
 
-			square := BoardSquare{
-				Content:   BoardSquareSnakeHead,
-				HexColor:  color,
-				SnakeType: head,
-				Direction: b.getDirection(snake.Body[i+1], point),
-			}
-			b.setSquare(&point, square)
-
+			b.addSnakeHead(&point, color, head, getDirection(snake.Body[i+1], point))
 			continue
 		}
 
@@ -120,25 +176,15 @@ func (b *Board) placeSnake(snake engine.Snake) {
 
 		if i == (len(snake.Body) - 1) {
 			prev := snake.Body[i-1]
-			direction := b.getDirection(prev, point)
+			direction := getDirection(prev, point)
 			if prev.X == point.X && prev.Y == point.Y {
-				direction = b.getDirection(snake.Body[i-2], point)
+				direction = getDirection(snake.Body[i-2], point)
 			}
-			square := BoardSquare{
-				Content:   BoardSquareSnakeTail,
-				HexColor:  color,
-				SnakeType: tail,
-				Direction: direction,
-			}
-			b.setSquare(&point, square)
+			b.addSnakeTail(&point, color, tail, direction)
 		} else {
-			square := BoardSquare{
-				Content:   BoardSquareSnakeBody,
-				HexColor:  color,
-				Direction: b.getDirection(snake.Body[i+1], point),
-				Corner:    b.getCorner(snake.Body[i-1], point, snake.Body[i+1]),
-			}
-			b.setSquare(&point, square)
+			direction := getDirection(snake.Body[i+1], point)
+			corner := getCorner(snake.Body[i-1], point, snake.Body[i+1])
+			b.addSnakeBody(&point, color, direction, corner)
 		}
 	}
 }
@@ -146,9 +192,9 @@ func (b *Board) placeSnake(snake engine.Snake) {
 func NewBoard(w int, h int) *Board {
 	b := Board{Width: w, Height: h}
 
-	b.Squares = make([][]BoardSquare, w)
-	for i := range b.Squares {
-		b.Squares[i] = make([]BoardSquare, h)
+	b.squares = make([][]BoardSquare, h)
+	for i := range b.squares {
+		b.squares[i] = make([]BoardSquare, w)
 	}
 
 	return &b
@@ -166,7 +212,7 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 
 	// Second, place food
 	for _, point := range gf.Food {
-		board.setSquare(&point, BoardSquare{Content: BoardSquareFood})
+		board.addFood(&point)
 	}
 
 	// Third, place alive snakes
@@ -178,7 +224,7 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 
 	// Fourth, place hazards
 	for _, point := range gf.Hazards {
-		board.setSquare(&point, BoardSquare{Content: BoardSquareHazard})
+		board.addHazard(&point)
 	}
 
 	return board

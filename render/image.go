@@ -317,7 +317,7 @@ func createBoardContext(b *Board) *gg.Context {
 	// Draw empty squares
 	for y := 0; y < b.Height; y++ {
 		for x := 0; x < b.Width; x++ {
-			if b.Squares[x][y].Content != BoardSquareSnakeBody {
+			if len(b.getContents(x, y)) == 0 {
 				drawEmptySquare(dc, x, y)
 			}
 		}
@@ -349,29 +349,25 @@ func drawBoard(b *Board) image.Image {
 
 	// Draw food and snakes over watermark
 	var snakeAsset string
-	for x, row := range b.Squares {
-		for y, square := range row {
-			switch square.Content {
-			case BoardSquareSnakeHead:
-				snakeAsset = fmt.Sprintf("heads/%s.png", square.SnakeType)
-				drawSnakeImage(snakeAsset, AssetFallbackHead, dc, x, y, square.HexColor, square.Direction)
-				drawGaps(dc, x, y, square.Direction, square.HexColor)
-			case BoardSquareSnakeBody:
-				drawSnakeBody(dc, x, y, square.HexColor, square.Corner)
-				drawGaps(dc, x, y, square.Direction, square.HexColor)
-			case BoardSquareSnakeTail:
-				snakeAsset = fmt.Sprintf("tails/%s.png", square.SnakeType)
-				drawSnakeImage(snakeAsset, AssetFallbackTail, dc, x, y, square.HexColor, square.Direction)
-			case BoardSquareFood:
-				drawFood(dc, x, y)
-			case BoardSquareHazard:
-				drawHazard(dc, x, y)
-			case BoardSquareEmpty:
-				// no-op
-			default:
-				// TODO: check with the Battlesnake team whether they want this logged...
-				// this could be pretty spammy, but it's also probably good to know when we don't handle new content types
-				// log.Warnf("Unhandled square content type: %d at (%d,%d)", square.Content, x, y)
+	for y := 0; y < b.Height; y++ {
+		for x := 0; x < b.Width; x++ {
+			for _, c := range b.getContents(x, y) {
+				switch c.Type {
+				case BoardSquareSnakeHead:
+					snakeAsset = fmt.Sprintf("heads/%s.png", c.SnakeType)
+					drawSnakeImage(snakeAsset, AssetFallbackHead, dc, x, y, c.HexColor, c.Direction)
+					drawGaps(dc, x, y, c.Direction, c.HexColor)
+				case BoardSquareSnakeBody:
+					drawSnakeBody(dc, x, y, c.HexColor, c.Corner)
+					drawGaps(dc, x, y, c.Direction, c.HexColor)
+				case BoardSquareSnakeTail:
+					snakeAsset = fmt.Sprintf("tails/%s.png", c.SnakeType)
+					drawSnakeImage(snakeAsset, AssetFallbackTail, dc, x, y, c.HexColor, c.Direction)
+				case BoardSquareFood:
+					drawFood(dc, x, y)
+				case BoardSquareHazard:
+					drawHazard(dc, x, y)
+				}
 			}
 		}
 	}
