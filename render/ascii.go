@@ -14,6 +14,7 @@ const (
 	ASCIISnakeHead = "H"
 	ASCIISnakeBody = "O"
 	ASCIISnakeTail = "T"
+	ASCIIHazard    = "."
 )
 
 func GameFrameToASCII(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
@@ -30,7 +31,7 @@ func GameFrameToASCII(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
 		}
 		for x := 0; x < board.Width; x++ {
 			// empty squares
-			if len(board.getContents(x, y)) == 0 {
+			if board.getSquare(x, y) == nil {
 				_, err = fmt.Fprint(w, ASCIIEmpty)
 				if err != nil {
 					return err
@@ -40,6 +41,13 @@ func GameFrameToASCII(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
 
 			contents := board.getContents(x, y)
 			last := contents[len(contents)-1] // since ascii can't have overlapping items, we take the last thing on the square
+
+			// Don't render hazards when they overlap other things.
+			// It's more important to see those things than the hazard.
+			if last.Type == BoardSquareHazard && len(contents) > 1 {
+				last = contents[len(contents)-2]
+			}
+
 			switch last.Type {
 			case BoardSquareSnakeHead:
 				_, err := fmt.Fprint(w, ASCIISnakeHead)
@@ -53,6 +61,11 @@ func GameFrameToASCII(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
 				}
 			case BoardSquareSnakeTail:
 				_, err = fmt.Fprint(w, ASCIISnakeTail)
+				if err != nil {
+					return err
+				}
+			case BoardSquareHazard:
+				_, err = fmt.Fprint(w, ASCIIHazard)
 				if err != nil {
 					return err
 				}
