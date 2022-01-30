@@ -40,7 +40,9 @@ func GameFrameToASCII(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
 			}
 
 			contents := board.getContents(x, y)
-			last := contents[len(contents)-1] // since ascii can't have overlapping items, we take the last thing on the square
+
+			// since ascii can't have overlapping items, we take the last thing on the square
+			last := contents[len(contents)-1]
 
 			// Don't render hazards when they overlap other things.
 			// It's more important to see those things than the hazard.
