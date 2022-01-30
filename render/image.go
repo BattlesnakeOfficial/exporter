@@ -136,11 +136,22 @@ func drawEmptySquare(dc *gg.Context, x int, y int) {
 }
 
 func drawFood(dc *gg.Context, x int, y int) {
-	dc.SetRGB255(255, 92, 117)
+	dc.SetRGBA255(255, 92, 117, 255)
 	dc.DrawCircle(
 		float64(x*SquareSizePixels+SquareSizePixels/2+BoardBorder),
 		float64(y*SquareSizePixels+SquareSizePixels/2+BoardBorder),
 		SquareFoodRadius,
+	)
+	dc.Fill()
+}
+
+func drawHazard(dc *gg.Context, x int, y int) {
+	dc.SetRGBA255(0, 0, 0, 102)
+	dc.DrawRectangle(
+		float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
+		float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
+		float64(SquareSizePixels-SquareBorderPixels*2),
+		float64(SquareSizePixels-SquareBorderPixels*2),
 	)
 	dc.Fill()
 }
@@ -353,6 +364,14 @@ func drawBoard(b *Board) image.Image {
 				drawSnakeImage(snakeAsset, AssetFallbackTail, dc, x, y, square.HexColor, square.Direction)
 			case BoardSquareFood:
 				drawFood(dc, x, y)
+			case BoardSquareHazard:
+				drawHazard(dc, x, y)
+			case BoardSquareEmpty:
+				// no-op
+			default:
+				// TODO: check with the Battlesnake team whether they want this logged...
+				// this could be pretty spammy, but it's also probably good to know when we don't handle new content types
+				// log.Warnf("Unhandled square content type: %d at (%d,%d)", square.Content, x, y)
 			}
 		}
 	}

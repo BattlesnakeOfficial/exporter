@@ -8,12 +8,13 @@ import (
 )
 
 const (
-	BoardSquareEmpty     = 0 // Zero State (Default)
-	BoardSquareFood      = 1
-	BoardSquareSnakeBody = 2
-	BoardSquareSnakeHead = 3
-	BoardSquareSnakeTail = 4
-	BoardSquareDeadSnake = 5
+	BoardSquareEmpty BoardSquareContent = iota // Zero State (Default)
+	BoardSquareFood
+	BoardSquareSnakeBody
+	BoardSquareSnakeHead
+	BoardSquareSnakeTail
+	BoardSquareDeadSnake
+	BoardSquareHazard
 )
 
 type BoardSquareContent int
@@ -173,6 +174,11 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 		if snake.Death == nil {
 			board.placeSnake(snake)
 		}
+	}
+
+	// Fourth, place hazards
+	for _, point := range gf.Hazards {
+		board.setSquare(&point, BoardSquare{Content: BoardSquareHazard})
 	}
 
 	return board
