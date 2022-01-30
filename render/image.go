@@ -124,39 +124,39 @@ func drawWatermark(dc *gg.Context) {
 	dc.DrawImageAnchored(watermarkImage, dc.Width()/2, dc.Height()/2, 0.5, 0.5)
 }
 
-func drawEmptySquare(dc *gg.Context, x int, y int) {
+func drawEmptySquare(dc *gg.Context, bx int, by int) {
 	dc.SetRGB255(240, 240, 240)
 	dc.DrawRectangle(
-		float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-		float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
-		float64(SquareSizePixels-SquareBorderPixels*2),
-		float64(SquareSizePixels-SquareBorderPixels*2),
+		boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+		boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
+		SquareSizePixels-SquareBorderPixels*2,
+		SquareSizePixels-SquareBorderPixels*2,
 	)
 	dc.Fill()
 }
 
-func drawFood(dc *gg.Context, x int, y int) {
+func drawFood(dc *gg.Context, bx int, by int) {
 	dc.SetRGBA255(255, 92, 117, 255)
 	dc.DrawCircle(
-		float64(x*SquareSizePixels+SquareSizePixels/2+BoardBorder),
-		float64(y*SquareSizePixels+SquareSizePixels/2+BoardBorder),
+		boardXToDrawX(dc, bx)+SquareSizePixels/2+BoardBorder,
+		boardYToDrawY(dc, by)+SquareSizePixels/2+BoardBorder,
 		SquareFoodRadius,
 	)
 	dc.Fill()
 }
 
-func drawHazard(dc *gg.Context, x int, y int) {
+func drawHazard(dc *gg.Context, bx int, by int) {
 	dc.SetRGBA255(0, 0, 0, 102)
 	dc.DrawRectangle(
-		float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-		float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
-		float64(SquareSizePixels-SquareBorderPixels*2),
-		float64(SquareSizePixels-SquareBorderPixels*2),
+		boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+		boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
+		SquareSizePixels-SquareBorderPixels*2,
+		SquareSizePixels-SquareBorderPixels*2,
 	)
 	dc.Fill()
 }
 
-func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, x int, y int, hexColor string, direction string) {
+func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, bx int, by int, hexColor string, direction string) {
 	var rotation int
 	switch direction {
 	case "right":
@@ -179,10 +179,10 @@ func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, x 
 
 	dst := dc.Image().(draw.Image)
 	dstRect := image.Rect(
-		x*SquareSizePixels+SquareBorderPixels+BoardBorder,
-		y*SquareSizePixels+SquareBorderPixels+BoardBorder,
-		(x+1)*SquareSizePixels-SquareBorderPixels+BoardBorder,
-		(y+1)*SquareSizePixels-SquareBorderPixels+BoardBorder,
+		int(boardXToDrawX(dc, bx))+SquareBorderPixels+BoardBorder,
+		int(boardYToDrawY(dc, by))+SquareBorderPixels+BoardBorder,
+		int(boardXToDrawX(dc, bx+1))-SquareBorderPixels+BoardBorder,
+		int(boardYToDrawY(dc, by-1))-SquareBorderPixels+BoardBorder,
 	)
 
 	srcImage := &image.Uniform{parseHexColor(hexColor)}
@@ -190,68 +190,68 @@ func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, x 
 	draw.DrawMask(dst, dstRect, srcImage, image.Point{}, maskImage, image.Point{}, draw.Over)
 }
 
-func drawSnakeBody(dc *gg.Context, x int, y int, hexColor, corner string) {
+func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor, corner string) {
 	dc.SetHexColor(hexColor)
 	if corner == "none" {
 		dc.DrawRectangle(
-			float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-			float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
-			float64(SquareSizePixels-SquareBorderPixels*2),
-			float64(SquareSizePixels-SquareBorderPixels*2),
+			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
+			SquareSizePixels-SquareBorderPixels*2,
+			SquareSizePixels-SquareBorderPixels*2,
 		)
 	} else {
 		dc.DrawRoundedRectangle(
-			float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-			float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
-			float64(SquareSizePixels-SquareBorderPixels*2),
-			float64(SquareSizePixels-SquareBorderPixels*2),
-			float64(SquareSizePixels/2),
+			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
+			SquareSizePixels-SquareBorderPixels*2,
+			SquareSizePixels-SquareBorderPixels*2,
+			SquareSizePixels/2,
 		)
 		if strings.HasPrefix(corner, "bottom") {
 			dc.DrawRectangle(
-				float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-				float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
-				float64(SquareSizePixels-SquareBorderPixels*2),
-				float64(SquareSizePixels/2),
+				boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+				boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
+				SquareSizePixels-SquareBorderPixels*2,
+				SquareSizePixels/2,
 			)
 			if strings.HasSuffix(corner, "left") {
 				dc.DrawRectangle(
-					float64(x*SquareSizePixels+SquareSizePixels/2+BoardBorder),
-					float64(y*SquareSizePixels+SquareBorderPixels+SquareSizePixels/2+BoardBorder),
-					float64(SquareSizePixels/2-SquareBorderPixels),
-					float64(SquareSizePixels/2-SquareBorderPixels*2),
+					boardXToDrawX(dc, bx)+SquareSizePixels/2+BoardBorder,
+					boardYToDrawY(dc, by)+SquareBorderPixels+SquareSizePixels/2+BoardBorder,
+					SquareSizePixels/2-SquareBorderPixels,
+					SquareSizePixels/2-SquareBorderPixels*2,
 				)
 			}
 			if strings.HasSuffix(corner, "right") {
 				dc.DrawRectangle(
-					float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-					float64(y*SquareSizePixels+SquareBorderPixels+SquareSizePixels/2+BoardBorder),
-					float64(SquareSizePixels/2-SquareBorderPixels*2),
-					float64(SquareSizePixels/2-SquareBorderPixels*2),
+					boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+					boardYToDrawY(dc, by)+SquareBorderPixels+SquareSizePixels/2+BoardBorder,
+					SquareSizePixels/2-SquareBorderPixels*2,
+					SquareSizePixels/2-SquareBorderPixels*2,
 				)
 			}
 		}
 		if strings.HasPrefix(corner, "top") {
 			dc.DrawRectangle(
-				float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-				float64(y*SquareSizePixels+SquareBorderPixels+SquareSizePixels/2+BoardBorder),
-				float64(SquareSizePixels-SquareBorderPixels*2),
-				float64(SquareSizePixels/2),
+				boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+				boardYToDrawY(dc, by)+SquareBorderPixels+SquareSizePixels/2+BoardBorder,
+				SquareSizePixels-SquareBorderPixels*2,
+				SquareSizePixels/2,
 			)
 			if strings.HasSuffix(corner, "left") {
 				dc.DrawRectangle(
-					float64(x*SquareSizePixels+SquareSizePixels/2+SquareBorderPixels+BoardBorder),
-					float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
-					float64(SquareSizePixels/2-SquareBorderPixels*2),
-					float64(SquareSizePixels/2-SquareBorderPixels*2),
+					boardXToDrawX(dc, bx)+SquareSizePixels/2+SquareBorderPixels+BoardBorder,
+					boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
+					SquareSizePixels/2-SquareBorderPixels*2,
+					SquareSizePixels/2-SquareBorderPixels*2,
 				)
 			}
 			if strings.HasSuffix(corner, "right") {
 				dc.DrawRectangle(
-					float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-					float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
-					float64(SquareSizePixels/2-SquareBorderPixels*2),
-					float64(SquareSizePixels/2-SquareBorderPixels*2),
+					boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+					boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
+					SquareSizePixels/2-SquareBorderPixels*2,
+					SquareSizePixels/2-SquareBorderPixels*2,
 				)
 			}
 		}
@@ -259,36 +259,36 @@ func drawSnakeBody(dc *gg.Context, x int, y int, hexColor, corner string) {
 	dc.Fill()
 }
 
-func drawGaps(dc *gg.Context, x, y int, direction, hexColor string) {
+func drawGaps(dc *gg.Context, bx, by int, direction, hexColor string) {
 	dc.SetHexColor(hexColor)
 	switch direction {
 	case "up":
 		dc.DrawRectangle(
-			float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-			float64((y+1)*SquareSizePixels-SquareBorderPixels+BoardBorder),
-			float64(SquareSizePixels-SquareBorderPixels*2),
-			float64(SquareBorderPixels*2),
+			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+			boardYToDrawY(dc, by-1)-SquareBorderPixels+BoardBorder,
+			SquareSizePixels-SquareBorderPixels*2,
+			SquareBorderPixels*2,
 		)
 	case "down":
 		dc.DrawRectangle(
-			float64(x*SquareSizePixels+SquareBorderPixels+BoardBorder),
-			float64(y*SquareSizePixels-SquareBorderPixels+BoardBorder),
-			float64(SquareSizePixels-SquareBorderPixels*2),
-			float64(SquareBorderPixels*2),
+			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
+			boardYToDrawY(dc, by)-SquareBorderPixels+BoardBorder,
+			SquareSizePixels-SquareBorderPixels*2,
+			SquareBorderPixels*2,
 		)
 	case "right":
 		dc.DrawRectangle(
-			float64(x*SquareSizePixels-SquareBorderPixels+BoardBorder),
-			float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
-			float64(SquareBorderPixels*2),
-			float64(SquareSizePixels-SquareBorderPixels*2),
+			boardXToDrawX(dc, bx)-SquareBorderPixels+BoardBorder,
+			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
+			SquareBorderPixels*2,
+			SquareSizePixels-SquareBorderPixels*2,
 		)
 	case "left":
 		dc.DrawRectangle(
-			float64((x+1)*SquareSizePixels-SquareBorderPixels+BoardBorder),
-			float64(y*SquareSizePixels+SquareBorderPixels+BoardBorder),
-			float64(SquareBorderPixels*2),
-			float64(SquareSizePixels-SquareBorderPixels*2),
+			boardXToDrawX(dc, bx+1)-SquareBorderPixels+BoardBorder,
+			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
+			SquareBorderPixels*2,
+			SquareSizePixels-SquareBorderPixels*2,
 		)
 	}
 	dc.Fill()
@@ -317,9 +317,7 @@ func createBoardContext(b *Board) *gg.Context {
 	// Draw empty squares
 	for y := 0; y < b.Height; y++ {
 		for x := 0; x < b.Width; x++ {
-			if len(b.getContents(x, y)) == 0 {
-				drawEmptySquare(dc, x, y)
-			}
+			drawEmptySquare(dc, x, y)
 		}
 	}
 
@@ -373,4 +371,21 @@ func drawBoard(b *Board) image.Image {
 	}
 
 	return dc.Image()
+}
+
+// boardXToDrawX converts an x coordinate in "board space" to the x coordinate used by graphics.
+// More specifically, it assumes the board coordinates are the indexes of squares and it returns the upper left
+// corner for that square.
+func boardXToDrawX(dc *gg.Context, x int) float64 {
+	return float64(x * SquareSizePixels)
+}
+
+// boardXToDrawY converts an x coordinate in "board space" to the x coordinate used by graphics.
+// More specifically, it assumes the board coordinates are the indexes of squares and it returns the upper left
+// corner for that square.
+func boardYToDrawY(dc *gg.Context, y int) float64 {
+	// Note: the Battlesnake board coordinates have (0,0) at the bottom left
+	// so we need to flip the y-axis to convert to the graphics, which follows the convention
+	// of (0,0) being the top left.
+	return float64((dc.Height() - BoardBorderBottom - BoardBorder*2 - SquareSizePixels) - (y * SquareSizePixels)) // flip!
 }
