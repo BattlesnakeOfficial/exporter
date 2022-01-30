@@ -12,14 +12,11 @@ func TestBoard(t *testing.T) {
 	b := NewBoard(11, 11)
 
 	// ensure initial state is clean and correct
-	require.Equal(t, 11, b.Width)
-	require.Equal(t, 11, b.Height)
-	require.Len(t, b.squares, 11)
-	for y := 0; y < 11; y++ {
-		require.Len(t, b.squares[y], 11, "row %d should have length 11", y)
-		for x := 0; x < 11; x++ {
+	require.Len(t, b.squares, 0)
+	for x := 0; x < 11; x++ {
+		for y := 0; y < 11; y++ {
 			s := b.getSquare(x, y)
-			require.Len(t, s.Contents, 0, "board square (%d,%d) should be empty", x, y)
+			require.Nil(t, s, 0, "board square (%d,%d) should be empty", x, y)
 		}
 	}
 

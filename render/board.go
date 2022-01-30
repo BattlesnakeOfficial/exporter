@@ -39,26 +39,37 @@ type BoardSquare struct {
 type Board struct {
 	Width   int
 	Height  int
-	squares [][]BoardSquare
+	squares map[engine.Point]*BoardSquare
 }
 
+// getSquare gets the BoardSquare at the given coordinates.
+// It returns nil if the square is empty (or if the coordinate is out of bounds).
 func (b *Board) getSquare(x, y int) *BoardSquare {
-	// We are making the layout of the 2D array match the visual representation of the board
-	// Because the board starts at the bottom left, we have to invert the y-axis.
-	rowIdx := b.Height - 1 - y // invert y
-
-	// Also, when accessing 2D arrays, rows (y) are the first index
-	// and columns (x) are the second index
-	return &b.squares[rowIdx][x]
+	return b.squares[engine.Point{X: x, Y: y}]
 }
 
 func (b *Board) addContent(p *engine.Point, c BoardSquareContent) {
 	s := b.getSquare(p.X, p.Y)
+
+	// initialise squares for empty locations
+	if s == nil {
+		s = &BoardSquare{}
+		b.squares[*p] = s
+	}
+
 	s.Contents = append(s.Contents, c)
 }
 
+// getContents gets the contents of the board at the specified position.
+// It is safe to call for any position.
+// Empty squares will have an empty list.
 func (b Board) getContents(x, y int) []BoardSquareContent {
-	return b.getSquare(x, y).Contents
+	s := b.getSquare(x, y)
+	if s == nil {
+		return nil
+	}
+
+	return s.Contents
 }
 
 func (b *Board) addFood(p *engine.Point) {
@@ -190,13 +201,7 @@ func (b *Board) placeSnake(snake engine.Snake) {
 }
 
 func NewBoard(w int, h int) *Board {
-	b := Board{Width: w, Height: h}
-
-	b.squares = make([][]BoardSquare, h)
-	for i := range b.squares {
-		b.squares[i] = make([]BoardSquare, w)
-	}
-
+	b := Board{Width: w, Height: h, squares: make(map[engine.Point]*BoardSquare)}
 	return &b
 }
 
