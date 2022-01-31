@@ -15,6 +15,9 @@ const (
 	BoardSquareHazard
 )
 
+// ColorDeadSnake is the default hex colour used for displaying snakes that have died
+const ColorDeadSnake = "#cdcdcd"
+
 // BoardSquareContentType works like an enum.
 // It provides a restricted set of types of content that can be placed in a board square.
 type BoardSquareContentType int
@@ -162,7 +165,7 @@ func (b *Board) placeSnake(snake engine.Snake) {
 	// Death color
 	color := snake.Color
 	if snake.Death != nil {
-		color = "#cdcdcd"
+		color = ColorDeadSnake
 	}
 
 	for i, point := range snake.Body {

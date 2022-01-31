@@ -94,14 +94,14 @@ func TestPlaceSnake(t *testing.T) {
 	require.Len(t, c, 1, "there should only be a head here")
 	assert.Equal(t, BoardSquareSnakeHead, c[0].Type, "this should be a head")
 	assert.Equal(t, "up", c[0].Direction, "the head should be pointing up")
-	assert.Equal(t, "#cdcdcd", c[0].HexColor, "the head should have the dead snake colour")
+	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the head should have the dead snake colour")
 	assert.Equal(t, "regular", c[0].SnakeType, "the head should be default")
 
 	// BODY
 	c = b.getContents(5, 8)
 	require.Len(t, c, 1, "there should only be a body here")
 	assert.Equal(t, BoardSquareSnakeBody, c[0].Type, "this should be a body")
-	assert.Equal(t, "#cdcdcd", c[0].HexColor, "the body should have the dead snake colour")
+	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the body should have the dead snake colour")
 	assert.Equal(t, "", c[0].SnakeType, "the body should not have a customization")
 
 	// TAIL
@@ -109,6 +109,6 @@ func TestPlaceSnake(t *testing.T) {
 	require.Len(t, c, 1, "there should only be a tail here")
 	assert.Equal(t, BoardSquareSnakeTail, c[0].Type, "this should be a tail")
 	assert.Equal(t, "left", c[0].Direction, "the tail should be pointing left")
-	assert.Equal(t, "#cdcdcd", c[0].HexColor, "the tail should have the dead snake colour")
+	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the tail should have the dead snake colour")
 	assert.Equal(t, "regular", c[0].SnakeType, "the tail should be default")
 }
