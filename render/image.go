@@ -380,12 +380,13 @@ func boardXToDrawX(dc *gg.Context, x int) float64 {
 	return float64(x * SquareSizePixels)
 }
 
-// boardXToDrawY converts an x coordinate in "board space" to the x coordinate used by graphics.
+// boardYToDrawY converts a y coordinate in "board space" to the y coordinate used by graphics.
 // More specifically, it assumes the board coordinates are the indexes of squares and it returns the upper left
 // corner for that square.
 func boardYToDrawY(dc *gg.Context, y int) float64 {
 	// Note: the Battlesnake board coordinates have (0,0) at the bottom left
 	// so we need to flip the y-axis to convert to the graphics, which follows the convention
 	// of (0,0) being the top left.
+	// ALSO, there is a gap at the bottom and some borders that need to get offset.
 	return float64((dc.Height() - BoardBorderBottom - BoardBorder*2 - SquareSizePixels) - (y * SquareSizePixels)) // flip!
 }
