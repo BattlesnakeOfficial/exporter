@@ -23,6 +23,9 @@ const (
 	SquareSizePixels         = 20
 	SquareBorderPixels       = 1
 	SquareFoodRadius         = SquareSizePixels / 3
+	ColorEmptySquare         = "#f0f0f0"
+	ColorFood                = "#ff5c75"
+	ColorHazard              = "#00000066"
 )
 
 var boardImageCache = make(map[string]image.Image)
@@ -125,7 +128,7 @@ func drawWatermark(dc *gg.Context) {
 }
 
 func drawEmptySquare(dc *gg.Context, bx int, by int) {
-	dc.SetRGB255(240, 240, 240)
+	dc.SetHexColor(ColorEmptySquare)
 	dc.DrawRectangle(
 		boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 		boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
@@ -136,7 +139,7 @@ func drawEmptySquare(dc *gg.Context, bx int, by int) {
 }
 
 func drawFood(dc *gg.Context, bx int, by int) {
-	dc.SetRGBA255(255, 92, 117, 255)
+	dc.SetHexColor(ColorFood)
 	dc.DrawCircle(
 		boardXToDrawX(dc, bx)+SquareSizePixels/2+BoardBorder,
 		boardYToDrawY(dc, by)+SquareSizePixels/2+BoardBorder,
@@ -146,7 +149,7 @@ func drawFood(dc *gg.Context, bx int, by int) {
 }
 
 func drawHazard(dc *gg.Context, bx int, by int) {
-	dc.SetRGBA255(0, 0, 0, 102)
+	dc.SetHexColor(ColorHazard)
 	dc.DrawRectangle(
 		boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 		boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
