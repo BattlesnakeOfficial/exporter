@@ -12,7 +12,6 @@ const (
 	BoardSquareSnakeBody
 	BoardSquareSnakeHead
 	BoardSquareSnakeTail
-	BoardSquareDeadSnake
 	BoardSquareHazard
 )
 
