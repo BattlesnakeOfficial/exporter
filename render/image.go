@@ -347,27 +347,26 @@ func drawBoard(b *Board) image.Image {
 
 	// Draw food and snakes over watermark
 	var snakeAsset string
-	for y := 0; y < b.Height; y++ {
-		for x := 0; x < b.Width; x++ {
-			for _, c := range b.getContents(x, y) {
-				switch c.Type {
-				case BoardSquareSnakeHead:
-					snakeAsset = fmt.Sprintf("heads/%s.png", c.SnakeType)
-					drawSnakeImage(snakeAsset, AssetFallbackHead, dc, x, y, c.HexColor, c.Direction)
-					drawGaps(dc, x, y, c.Direction, c.HexColor)
-				case BoardSquareSnakeBody:
-					drawSnakeBody(dc, x, y, c.HexColor, c.Corner)
-					drawGaps(dc, x, y, c.Direction, c.HexColor)
-				case BoardSquareSnakeTail:
-					snakeAsset = fmt.Sprintf("tails/%s.png", c.SnakeType)
-					drawSnakeImage(snakeAsset, AssetFallbackTail, dc, x, y, c.HexColor, c.Direction)
-				case BoardSquareFood:
-					drawFood(dc, x, y)
-				case BoardSquareHazard:
-					drawHazard(dc, x, y)
-				}
+	for p, s := range b.squares { // cool, we can iterate ONLY the non-empty squares!
+		for _, c := range s.Contents {
+			switch c.Type {
+			case BoardSquareSnakeHead:
+				snakeAsset = fmt.Sprintf("heads/%s.png", c.SnakeType)
+				drawSnakeImage(snakeAsset, AssetFallbackHead, dc, p.X, p.Y, c.HexColor, c.Direction)
+				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
+			case BoardSquareSnakeBody:
+				drawSnakeBody(dc, p.X, p.Y, c.HexColor, c.Corner)
+				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
+			case BoardSquareSnakeTail:
+				snakeAsset = fmt.Sprintf("tails/%s.png", c.SnakeType)
+				drawSnakeImage(snakeAsset, AssetFallbackTail, dc, p.X, p.Y, c.HexColor, c.Direction)
+			case BoardSquareFood:
+				drawFood(dc, p.X, p.Y)
+			case BoardSquareHazard:
+				drawHazard(dc, p.X, p.Y)
 			}
 		}
+
 	}
 
 	return dc.Image()
