@@ -15,7 +15,7 @@ func TestGameFrameToBoard(t *testing.T) {
 	}
 	gf := engine.GameFrame{
 		Turn: 50,
-		Food: []engine.Point{{3, 3}},
+		Food: []engine.Point{{X: 3, Y: 3}},
 		Snakes: []engine.Snake{
 			// alive corner snake
 			{
@@ -32,7 +32,7 @@ func TestGameFrameToBoard(t *testing.T) {
 				Body:  []engine.Point{{X: 4, Y: 2}, {X: 3, Y: 2}},
 			},
 		},
-		Hazards: []engine.Point{{0, 6}, {1, 6}, {2, 6}, {3, 6}, {4, 6}, {5, 6}, {6, 6}},
+		Hazards: []engine.Point{{X: 0, Y: 6}, {X: 1, Y: 6}, {X: 2, Y: 6}, {X: 3, Y: 6}, {X: 4, Y: 6}, {X: 5, Y: 6}, {X: 6, Y: 6}},
 	}
 	b := GameFrameToBoard(&g, &gf)
 	require.NotNil(t, b)
