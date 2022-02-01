@@ -8,9 +8,11 @@ import (
 	"io"
 	"runtime"
 	"sort"
+	"time"
 
 	"github.com/BattlesnakeOfficial/exporter/engine"
 	"github.com/BattlesnakeOfficial/exporter/render/gif"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -74,6 +76,7 @@ func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.G
 				}
 			}
 		}()
+		start := time.Now()
 		for i, gf := range gameFrames {
 			delay := frameDelay
 			if i == len(gameFrames)-1 {
@@ -85,6 +88,13 @@ func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.G
 				Delay:    delay,
 			}
 		}
+		elapsed := time.Since(start)
+		fps := float64(len(gameFrames)) / elapsed.Seconds()
+		logrus.WithFields(logrus.Fields{
+			"game":     g.ID,
+			"duration": elapsed,
+			"fps":      fps,
+		}).Infof("render complete")
 		close(c)
 	}()
 	return gif.EncodeAllConcurrent(w, c)
@@ -112,7 +122,6 @@ func getPallete(img image.Image) color.Palette {
 			colors[img.At(x, y)]++
 		}
 	}
-	fmt.Println(len(colors))
 
 	p := make(PairList, len(colors))
 
