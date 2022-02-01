@@ -3,10 +3,11 @@ package render
 import (
 	"fmt"
 	"image"
-	"image/color/palette"
+	"image/color"
 	"image/draw"
 	"io"
 	"runtime"
+	"sort"
 
 	"github.com/BattlesnakeOfficial/exporter/engine"
 	"github.com/BattlesnakeOfficial/exporter/render/gif"
@@ -24,7 +25,26 @@ func gameFrameToPalettedImage(g *engine.Game, gf *engine.GameFrame) *image.Palet
 	// First, Board is rendered to RGBA Image
 	// Second, RGBA Image converted to Paletted Image (lossy)
 	rgbaImage := drawBoard(board)
-	palettedImage := image.NewPaletted(rgbaImage.Bounds(), palette.Plan9)
+
+	// pallete := []color.Color{
+	// 	parseHexColor(ColorFood),
+	// 	parseHexColor(ColorEmptySquare),
+	// 	parseHexColor(ColorHazard),
+	// 	parseHexColor(ColorDeadSnake),
+	// 	color.RGBA{136, 136, 136, 255},
+	// 	color.RGBA{136, 68, 68, 255},
+	// 	color.RGBA{238, 238, 238, 255},
+	// 	color.RGBA{61, 47, 144, 255},
+	// }
+	// printPallete(rgbaImage)
+	// for _, s := range gf.Snakes {
+	// 	// GIFS can't support more than 256 colours per-frame
+	// 	// if len(pallete) >= 256 {
+	// 	// 	break
+	// 	// }
+	// 	pallete = append(pallete, parseHexColor(s.Color))
+	// }
+	palettedImage := image.NewPaletted(rgbaImage.Bounds(), getPallete(rgbaImage))
 
 	// No Dithering
 	draw.Draw(palettedImage, rgbaImage.Bounds(), rgbaImage, image.Point{}, draw.Src)
@@ -84,3 +104,48 @@ func recoverToError(panicArg interface{}) error {
 	err = fmt.Errorf("panic at %s: %w", source, err)
 	return err
 }
+
+func getPallete(img image.Image) color.Palette {
+	colors := map[color.Color]int{}
+	for x := 0; x < img.Bounds().Max.X; x++ {
+		for y := 0; y < img.Bounds().Max.Y; y++ {
+			colors[img.At(x, y)]++
+		}
+	}
+	fmt.Println(len(colors))
+
+	p := make(PairList, len(colors))
+
+	i := 0
+	for k, v := range colors {
+		p[i] = Pair{k, v}
+		i++
+	}
+
+	sort.Sort(p)
+
+	pal := make(color.Palette, min(256, len(p)))
+	for i := 0; i < len(pal); i++ {
+		pal[i] = p[i].Key
+	}
+
+	return pal
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+type Pair struct {
+	Key   color.Color
+	Value int
+}
+
+type PairList []Pair
+
+func (p PairList) Len() int           { return len(p) }
+func (p PairList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p PairList) Less(i, j int) bool { return p[i].Value > p[j].Value }
