@@ -114,9 +114,8 @@ func (b *Board) addHazard(p *engine.Point) {
 }
 
 func getDirection(p engine.Point, nP engine.Point) string {
-	d := fmt.Sprintf("%d,%d", nP.X-p.X, p.Y-nP.Y)
-	switch d {
-	case "1,0":
+	// handle cases where we aren't wrapping around the board
+	if p.X+1 == nP.X {
 		return "right"
 	}
 
