@@ -159,16 +159,16 @@ func drawHazard(dc *gg.Context, bx int, by int) {
 	dc.Fill()
 }
 
-func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, bx int, by int, hexColor string, direction string) {
+func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, bx int, by int, hexColor string, dir snakeDirection) {
 	var rotation int
-	switch direction {
-	case "right":
+	switch dir {
+	case right:
 		rotation = 0
-	case "down":
+	case down:
 		rotation = 270
-	case "left":
+	case left:
 		rotation = 180
-	case "up":
+	case up:
 		rotation = 90
 	}
 
@@ -193,7 +193,7 @@ func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, bx
 	draw.DrawMask(dst, dstRect, srcImage, image.Point{}, maskImage, image.Point{}, draw.Over)
 }
 
-func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor, corner string) {
+func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor string, corner snakeCorner) {
 	dc.SetHexColor(hexColor)
 	if corner == "none" {
 		dc.DrawRectangle(
@@ -210,14 +210,14 @@ func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor, corner string) {
 			SquareSizePixels-SquareBorderPixels*2,
 			SquareSizePixels/2,
 		)
-		if strings.HasPrefix(corner, "bottom") {
+		if corner.isBottom() {
 			dc.DrawRectangle(
 				boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 				boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
 				SquareSizePixels-SquareBorderPixels*2,
 				SquareSizePixels/2,
 			)
-			if strings.HasSuffix(corner, "left") {
+			if corner.isLeft() {
 				dc.DrawRectangle(
 					boardXToDrawX(dc, bx)+SquareSizePixels/2+BoardBorder,
 					boardYToDrawY(dc, by)+SquareBorderPixels+SquareSizePixels/2+BoardBorder,
@@ -225,7 +225,7 @@ func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor, corner string) {
 					SquareSizePixels/2-SquareBorderPixels*2,
 				)
 			}
-			if strings.HasSuffix(corner, "right") {
+			if !corner.isLeft() {
 				dc.DrawRectangle(
 					boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 					boardYToDrawY(dc, by)+SquareBorderPixels+SquareSizePixels/2+BoardBorder,
@@ -234,14 +234,14 @@ func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor, corner string) {
 				)
 			}
 		}
-		if strings.HasPrefix(corner, "top") {
+		if !corner.isBottom() {
 			dc.DrawRectangle(
 				boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 				boardYToDrawY(dc, by)+SquareBorderPixels+SquareSizePixels/2+BoardBorder,
 				SquareSizePixels-SquareBorderPixels*2,
 				SquareSizePixels/2,
 			)
-			if strings.HasSuffix(corner, "left") {
+			if corner.isLeft() {
 				dc.DrawRectangle(
 					boardXToDrawX(dc, bx)+SquareSizePixels/2+SquareBorderPixels+BoardBorder,
 					boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
@@ -249,7 +249,7 @@ func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor, corner string) {
 					SquareSizePixels/2-SquareBorderPixels*2,
 				)
 			}
-			if strings.HasSuffix(corner, "right") {
+			if !corner.isLeft() {
 				dc.DrawRectangle(
 					boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 					boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
@@ -262,31 +262,31 @@ func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor, corner string) {
 	dc.Fill()
 }
 
-func drawGaps(dc *gg.Context, bx, by int, direction, hexColor string) {
+func drawGaps(dc *gg.Context, bx, by int, dir snakeDirection, hexColor string) {
 	dc.SetHexColor(hexColor)
-	switch direction {
-	case "up":
+	switch dir {
+	case up:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by-1)-SquareBorderPixels+BoardBorder,
 			SquareSizePixels-SquareBorderPixels*2,
 			SquareBorderPixels*2,
 		)
-	case "down":
+	case down:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)-SquareBorderPixels+BoardBorder,
 			SquareSizePixels-SquareBorderPixels*2,
 			SquareBorderPixels*2,
 		)
-	case "right":
+	case right:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)-SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
 			SquareBorderPixels*2,
 			SquareSizePixels-SquareBorderPixels*2,
 		)
-	case "left":
+	case left:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx+1)-SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
@@ -345,7 +345,7 @@ func createBoardContext(b *Board) *gg.Context {
 	return dc
 }
 
-func drawBoard(b *Board) image.Image {
+func DrawBoard(b *Board) image.Image {
 	dc := createBoardContext(b)
 
 	// Draw food and snakes over watermark
@@ -392,3 +392,54 @@ func boardYToDrawY(dc *gg.Context, y int) float64 {
 	// ALSO, there is a gap at the bottom and some borders that need to get offset.
 	return float64((dc.Height() - BoardBorderBottom - BoardBorder*2 - SquareSizePixels) - (y * SquareSizePixels)) // flip!
 }
+
+// // SnakeBuilder is a builder pattern to make it easy to construct snakes in code
+// type SnakeBuilder struct {
+// 	start *engine.Point
+// 	cmds  []builderCmds
+// }
+
+// type builderCmds int
+
+// const (
+// 	buildLeft builderCmds = iota
+// 	buildRight
+// 	buildUp
+// 	buildDown
+// )
+
+// // BuildSnake starts a new snake builder, with the head at the given x,y coordinates
+// func BuildSnake(x, y int) *SnakeBuilder {
+// 	return &SnakeBuilder{start: &engine.Point{X: x, Y: y}}
+// }
+
+// // Left adds a new body segment to the left of the last segment
+// func (sb *SnakeBuilder) Left() *SnakeBuilder {
+// 	sb.cmds = append(sb.cmds, buildLeft)
+// 	return sb
+// }
+
+// // Right adds a new body segment to the Right of the last segment
+// func (sb *SnakeBuilder) Right() *SnakeBuilder {
+// 	sb.cmds = append(sb.cmds, buildRight)
+// 	return sb
+// }
+
+// // Up adds a new body segment to the Up of the last segment
+// func (sb *SnakeBuilder) Up() *SnakeBuilder {
+// 	sb.cmds = append(sb.cmds, buildUp)
+// 	return sb
+// }
+
+// // Down adds a new body segment to the Down of the last segment
+// func (sb *SnakeBuilder) Down() *SnakeBuilder {
+// 	sb.cmds = append(sb.cmds, buildDown)
+// 	return sb
+// }
+
+// func (sb SnakeBuilder) AddToBoard(b *Board) error {
+// 	b.AddSnakeHead(sb.start, "#01a66f","regular",)
+// 	for _, c := range sb.cmds {
+
+// 	}
+// }

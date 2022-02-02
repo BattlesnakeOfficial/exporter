@@ -2,9 +2,37 @@ package render
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/BattlesnakeOfficial/exporter/engine"
 	log "github.com/sirupsen/logrus"
+)
+
+type snakeCorner string
+
+const (
+	cornerBottomLeft  snakeCorner = "bottom-left"  // ╚
+	cornerBottomRight snakeCorner = "bottom-right" // ╝
+	cornerTopLeft     snakeCorner = "top-left"     // ╔
+	cornerTopRight    snakeCorner = "top-right"    // ╗
+	cornerNone        snakeCorner = "none"
+)
+
+func (c snakeCorner) isBottom() bool {
+	return strings.HasPrefix(string(c), "bottom")
+}
+
+func (c snakeCorner) isLeft() bool {
+	return strings.HasSuffix(string(c), "left")
+}
+
+type snakeDirection int
+
+const (
+	up snakeDirection = iota
+	down
+	left
+	right
 )
 
 const (
@@ -28,8 +56,8 @@ type BoardSquareContent struct {
 	Type      BoardSquareContentType
 	HexColor  string
 	SnakeType string
-	Direction string
-	Corner    string
+	Direction snakeDirection
+	Corner    snakeCorner
 }
 
 // BoardSquare represents a unique location on the game board.
@@ -80,7 +108,7 @@ func (b *Board) addFood(p *engine.Point) {
 	})
 }
 
-func (b *Board) addSnakeTail(p *engine.Point, color, snakeType, direction string) {
+func (b *Board) AddSnakeTail(p *engine.Point, color, snakeType string, direction snakeDirection) {
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeTail,
 		HexColor:  color,
@@ -89,20 +117,20 @@ func (b *Board) addSnakeTail(p *engine.Point, color, snakeType, direction string
 	})
 }
 
-func (b *Board) addSnakeHead(p *engine.Point, color, snakeType, direction string) {
+func (b *Board) AddSnakeHead(p *engine.Point, color, snakeType string, dir snakeDirection) {
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeHead,
 		HexColor:  color,
 		SnakeType: snakeType,
-		Direction: direction,
+		Direction: dir,
 	})
 }
 
-func (b *Board) addSnakeBody(p *engine.Point, color, direction, corner string) {
+func (b *Board) AddSnakeBody(p *engine.Point, color string, dir snakeDirection, corner snakeCorner) {
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeBody,
 		HexColor:  color,
-		Direction: direction,
+		Direction: dir,
 		Corner:    corner,
 	})
 }
@@ -113,61 +141,89 @@ func (b *Board) addHazard(p *engine.Point) {
 	})
 }
 
-func getDirection(p engine.Point, nP engine.Point) string {
+func getDirection(p engine.Point, nP engine.Point) snakeDirection {
 	// handle cases where we aren't wrapping around the board
 	if p.X+1 == nP.X {
-		return "right"
+		return right
 	}
 
 	if p.X-1 == nP.X {
-		return "left"
+		return left
 	}
 
 	if p.Y+1 == nP.Y {
-		return "up"
+		return up
 	}
 
 	if p.Y-1 == nP.Y {
-		return "down"
+		return down
 	}
 
 	// handle cases where we are wrapping around the board
 	if p.X > nP.X && nP.X == 0 {
-		return "right"
+		return right
 	}
 
 	if p.X < nP.X && p.X == 0 {
-		return "left"
+		return left
 	}
 
 	if p.Y > nP.Y && nP.Y == 0 {
-		return "up"
+		return up
 	}
 
 	if p.Y < nP.Y && p.Y == 0 {
-		return "down"
+		return down
 	}
 
 	// default to "up" when invalid moves are passed
 	log.Errorf("Unable to determine snake direction: %v to %v", p, nP)
-	return "up"
+	return up
 }
 
 // pP = previous point, p = current point, nP next point.
-func getCorner(pP engine.Point, p engine.Point, nP engine.Point) string {
-	coords := fmt.Sprintf("%d,%d:%d,%d", pP.X-p.X, p.Y-pP.Y, nP.X-p.X, p.Y-nP.Y)
-	switch coords {
-	case "0,-1:1,0", "1,0:0,-1":
-		return "bottom-left"
-	case "-1,0:0,-1", "0,-1:-1,0":
-		return "bottom-right"
-	case "-1,0:0,1", "0,1:-1,0":
-		return "top-right"
-	case "0,1:1,0", "1,0:0,1":
-		return "top-left"
-	default:
-		return "none"
+func getCorner(pP engine.Point, p engine.Point, nP engine.Point) snakeCorner {
+
+	// for a corner, there needs to be an X AND a Y change
+	if (pP.X == p.X && pP.X == nP.X) || (pP.Y == p.Y && pP.Y == nP.Y) {
+		// either X or Y hasn't changed, so no corner
+		return cornerNone
 	}
+
+	// okay, we have a corner
+	yType := "top"
+	xType := "right"
+
+	// it's a bottom corner if next point is "above" current point
+	// wrapped mode makes "above" a bit trickier ;)
+	// NOTE: "above" means a smaller Y value
+	if abs(p.Y-nP.Y) <= 1 {
+		// non-wrapped
+		if p.Y > nP.Y {
+			yType = "bottom"
+		}
+	} else {
+		// wrapped
+		if p.Y < nP.Y {
+			yType = "bottom"
+		}
+	}
+
+	// it's a left corner if the current point is "right" of previous point
+	// wrapped mode also makes this trickier ;)
+	if abs(pP.X-p.X) <= 1 {
+		// non-wrapped
+		if p.X > pP.X {
+			xType = "left"
+		}
+	} else {
+		// wrapped
+		if p.X < pP.X {
+			xType = "left"
+		}
+	}
+
+	return snakeCorner(fmt.Sprintf("%s-%s", yType, xType))
 }
 
 func (b *Board) placeSnake(snake engine.Snake) {
@@ -199,7 +255,7 @@ func (b *Board) placeSnake(snake engine.Snake) {
 				continue
 			}
 
-			b.addSnakeHead(&point, color, head, getDirection(snake.Body[i+1], point))
+			b.AddSnakeHead(&point, color, head, getDirection(snake.Body[i+1], point))
 			continue
 		}
 
@@ -214,11 +270,11 @@ func (b *Board) placeSnake(snake engine.Snake) {
 			if prev.X == point.X && prev.Y == point.Y {
 				direction = getDirection(snake.Body[i-2], point)
 			}
-			b.addSnakeTail(&point, color, tail, direction)
+			b.AddSnakeTail(&point, color, tail, direction)
 		} else {
 			direction := getDirection(snake.Body[i+1], point)
 			corner := getCorner(snake.Body[i-1], point, snake.Body[i+1])
-			b.addSnakeBody(&point, color, direction, corner)
+			b.AddSnakeBody(&point, color, direction, corner)
 		}
 	}
 }

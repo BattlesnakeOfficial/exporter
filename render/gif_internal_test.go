@@ -10,14 +10,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMin(t *testing.T) {
-	assert.Equal(t, 0, min(0, 1))
-	assert.Equal(t, 1, min(1, 1))
-	assert.Equal(t, 1, min(2, 1))
-	assert.Equal(t, 1, min(1, 2))
-	assert.Equal(t, -1, min(-1, 1))
-}
-
 func TestGetColorCounts(t *testing.T) {
 	cases := []struct {
 		name string
