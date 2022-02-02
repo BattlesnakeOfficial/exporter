@@ -11,14 +11,20 @@ import (
 func TestGetCorner(t *testing.T) {
 
 	t.Log("non-wrapped")
+	// none
+	assert.Equal(t, cornerNone, getCorner(engine.Point{X: 0, Y: 0}, engine.Point{X: 0, Y: 1}, engine.Point{X: 0, Y: 2}))
+	assert.Equal(t, cornerNone, getCorner(engine.Point{X: 0, Y: 2}, engine.Point{X: 0, Y: 1}, engine.Point{X: 0, Y: 0}))
+	assert.Equal(t, cornerNone, getCorner(engine.Point{X: 0, Y: 0}, engine.Point{X: 1, Y: 0}, engine.Point{X: 2, Y: 0}))
+	assert.Equal(t, cornerNone, getCorner(engine.Point{X: 2, Y: 0}, engine.Point{X: 1, Y: 0}, engine.Point{X: 0, Y: 0}))
+
 	// ╔
 	assert.Equal(t, cornerTopLeft, getCorner(engine.Point{X: 0, Y: 0}, engine.Point{X: 0, Y: 1}, engine.Point{X: 1, Y: 1}))
 	// ╗
-	assert.Equal(t, cornerTopRight, getCorner(engine.Point{X: 1, Y: 1}, engine.Point{X: 2, Y: 1}, engine.Point{X: 2, Y: 0}))
-	// ╚
-	assert.Equal(t, cornerBottomLeft, getCorner(engine.Point{X: 1, Y: 1}, engine.Point{X: 1, Y: 0}, engine.Point{X: 2, Y: 0}))
+	assert.Equal(t, cornerTopRight, getCorner(engine.Point{X: 0, Y: 1}, engine.Point{X: 1, Y: 1}, engine.Point{X: 1, Y: 0}))
 	// ╝
-	assert.Equal(t, cornerBottomRight, getCorner(engine.Point{X: 1, Y: 1}, engine.Point{X: 1, Y: 0}, engine.Point{X: 2, Y: 0}))
+	assert.Equal(t, cornerBottomRight, getCorner(engine.Point{X: 1, Y: 1}, engine.Point{X: 1, Y: 0}, engine.Point{X: 0, Y: 0}))
+	// ╚
+	assert.Equal(t, cornerBottomLeft, getCorner(engine.Point{X: 1, Y: 0}, engine.Point{X: 0, Y: 0}, engine.Point{X: 0, Y: 1}))
 
 	t.Log("wrapped")
 }

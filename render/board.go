@@ -181,7 +181,9 @@ func getDirection(p engine.Point, nP engine.Point) snakeDirection {
 	return up
 }
 
+// getCorner gets the corner type for the given 3 segments.
 // pP = previous point, p = current point, nP next point.
+// note: p is also the "corner point" ;)
 func getCorner(pP engine.Point, p engine.Point, nP engine.Point) snakeCorner {
 
 	// for a corner, there needs to be an X AND a Y change
@@ -190,35 +192,47 @@ func getCorner(pP engine.Point, p engine.Point, nP engine.Point) snakeCorner {
 		return cornerNone
 	}
 
-	// okay, we have a corner
+	// okay, we have a corner - time to figure out what kind!
 	yType := "top"
 	xType := "right"
 
-	// it's a bottom corner if next point is "above" current point
+	yDiff := p.Y - pP.Y
+	if yDiff == 0 {
+		yDiff = p.Y - nP.Y
+	}
+
+	// it's a bottom corner if one point is above the corner
 	// wrapped mode makes "above" a bit trickier ;)
-	// NOTE: "above" means a smaller Y value
-	if abs(p.Y-nP.Y) <= 1 {
+	// NOTE: "above" means a larger Y value on the Battlesnake board
+	if abs(yDiff) == 1 {
 		// non-wrapped
-		if p.Y > nP.Y {
+		if yDiff < 0 {
+			// corner is below a point
 			yType = "bottom"
 		}
 	} else {
 		// wrapped
-		if p.Y < nP.Y {
+		if yDiff > 0 {
 			yType = "bottom"
 		}
 	}
 
-	// it's a left corner if the current point is "right" of previous point
+	xDiff := p.X - pP.X
+	if xDiff == 0 {
+		xDiff = p.X - nP.X
+	}
+
+	// it's a left corner if either point is "right" of corner point
 	// wrapped mode also makes this trickier ;)
-	if abs(pP.X-p.X) <= 1 {
+	// NOTE: "right" means a larger X value on the Battlesnake board
+	if abs(xDiff) == 1 {
 		// non-wrapped
-		if p.X > pP.X {
+		if xDiff < 0 {
 			xType = "left"
 		}
 	} else {
 		// wrapped
-		if p.X < pP.X {
+		if xDiff > 0 {
 			xType = "left"
 		}
 	}
