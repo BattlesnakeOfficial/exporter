@@ -114,22 +114,43 @@ func (b *Board) addHazard(p *engine.Point) {
 }
 
 func getDirection(p engine.Point, nP engine.Point) string {
-	d := fmt.Sprintf("%d,%d", nP.X-p.X, p.Y-nP.Y)
-	switch d {
-	case "1,0":
+	// handle cases where we aren't wrapping around the board
+	if p.X+1 == nP.X {
 		return "right"
-	case "0,1":
-		return "down"
-	case "-1,0":
+	}
+
+	if p.X-1 == nP.X {
 		return "left"
-	case "0,-1":
-		return "up"
-	case "0,0":
-		return "right"
-	default:
-		log.Errorf("Unable to deterine snake direction: %s", d)
+	}
+
+	if p.Y+1 == nP.Y {
 		return "up"
 	}
+
+	if p.Y-1 == nP.Y {
+		return "down"
+	}
+
+	// handle cases where we are wrapping around the board
+	if p.X > nP.X && nP.X == 0 {
+		return "right"
+	}
+
+	if p.X < nP.X && p.X == 0 {
+		return "left"
+	}
+
+	if p.Y > nP.Y && nP.Y == 0 {
+		return "up"
+	}
+
+	if p.Y < nP.Y && p.Y == 0 {
+		return "down"
+	}
+
+	// default to "up" when invalid moves are passed
+	log.Errorf("Unable to determine snake direction: %v to %v", p, nP)
+	return "up"
 }
 
 // pP = previous point, p = current point, nP next point.
