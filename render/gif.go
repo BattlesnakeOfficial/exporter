@@ -70,13 +70,19 @@ func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.G
 				Delay:    delay,
 			}
 		}
+
 		elapsed := time.Since(start)
-		fps := float64(len(gameFrames)) / elapsed.Seconds()
+		fps := 0.0
+		// guard against divide by 0 in the unlikely event the elapsed time was 0.
+		if elapsed.Seconds() > 0 {
+			fps = float64(len(gameFrames)) / elapsed.Seconds()
+		}
 		logrus.WithFields(logrus.Fields{
 			"game":     g.ID,
 			"duration": elapsed,
 			"fps":      fps,
-		}).Infof("render complete")
+		}).Infof("GIF render complete")
+
 		close(c)
 	}()
 	return gif.EncodeAllConcurrent(w, c)
