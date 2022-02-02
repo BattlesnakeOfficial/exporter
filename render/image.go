@@ -19,7 +19,6 @@ const (
 	AssetFallbackTail        = "tails/regular.png"
 	AssetFallbackUnspecified = ""
 	BoardBorder              = 2
-	BoardBorderBottom        = 15
 	SquareSizePixels         = 20
 	SquareBorderPixels       = 1
 	SquareFoodRadius         = SquareSizePixels / 3
@@ -300,7 +299,7 @@ func drawGaps(dc *gg.Context, bx, by int, dir snakeDirection, hexColor string) {
 func createBoardContext(b *Board) *gg.Context {
 	dc := gg.NewContext(
 		SquareSizePixels*b.Width+BoardBorder*2,
-		SquareSizePixels*b.Height+BoardBorder*2+BoardBorderBottom,
+		SquareSizePixels*b.Height+BoardBorder*2,
 	)
 
 	cacheKey := fmt.Sprintf("%d:%d", b.Width, b.Height)
@@ -326,16 +325,6 @@ func createBoardContext(b *Board) *gg.Context {
 
 	// Draw watermark
 	drawWatermark(dc)
-
-	// Draw subtitle
-	dc.SetColor(color.Black)
-	dc.DrawStringAnchored(
-		"play.battlesnake.com",
-		float64(dc.Width()/2),
-		float64(dc.Height()-10),
-		0.5, 0.5,
-	)
-	dc.Fill()
 
 	// Cache for next time
 	cacheDC := gg.NewContext(dc.Width(), dc.Height())
@@ -389,8 +378,7 @@ func boardYToDrawY(dc *gg.Context, y int) float64 {
 	// Note: the Battlesnake board coordinates have (0,0) at the bottom left
 	// so we need to flip the y-axis to convert to the graphics, which follows the convention
 	// of (0,0) being the top left.
-	// ALSO, there is a gap at the bottom and some borders that need to get offset.
-	return float64((dc.Height() - BoardBorderBottom - BoardBorder*2 - SquareSizePixels) - (y * SquareSizePixels)) // flip!
+	return float64((dc.Height() - BoardBorder*2 - SquareSizePixels) - (y * SquareSizePixels)) // flip!
 }
 
 // // SnakeBuilder is a builder pattern to make it easy to construct snakes in code
