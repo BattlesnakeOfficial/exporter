@@ -13,26 +13,28 @@ func TestGetCorner(t *testing.T) {
 	// shifts the corner points around to test different edge cases
 	shift := func(p engine.Point, x, y int) engine.Point {
 		nP := engine.Point{X: p.X + x, Y: p.Y + y}
+
 		// wrap around (assuming 3x3 board here)
-		if nP.X == -1 {
-			nP.X = 2
+		if nP.X < 0 {
+			nP.X += 3
 		}
-		if nP.Y == -1 {
-			nP.Y = 2
+		if nP.Y < 0 {
+			nP.Y += 2
 		}
 		if nP.X > 2 {
-			nP.X = 0
+			nP.X -= 3
 		}
 		if nP.Y > 2 {
-			nP.Y = 0
+			nP.Y -= 3
 		}
 		return nP
 	}
 
 	// This tries all the permutations of the corner and straight pieces being placed on a 3x3 board
-	// It should make sure that all the wrapped cases work
-	for _, x := range []int{-1, 0, 1} {
-		for y := range []int{-1, 0, 1} {
+	// It should make sure that all the wrapped cases work.
+	// It checks 200 different permutations! 😎
+	for _, x := range []int{-2, -1, 0, 1, 2} {
+		for y := range []int{-2, -1, 0, 1, 2} {
 			t.Logf("shifting x by %d, y by %d", x, y)
 			// none
 			assert.Equal(t, cornerNone, getCorner(shift(engine.Point{X: 0, Y: 0}, x, y), shift(engine.Point{X: 0, Y: 1}, x, y), shift(engine.Point{X: 0, Y: 2}, x, y)))
