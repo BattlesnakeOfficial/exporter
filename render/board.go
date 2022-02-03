@@ -29,10 +29,10 @@ func (c snakeCorner) isLeft() bool {
 type snakeDirection int
 
 const (
-	up snakeDirection = iota
-	down
-	left
-	right
+	moveUp snakeDirection = iota
+	moveDown
+	moveLeft
+	moveRight
 )
 
 const (
@@ -144,41 +144,41 @@ func (b *Board) addHazard(p *engine.Point) {
 func getDirection(p engine.Point, nP engine.Point) snakeDirection {
 	// handle cases where we aren't wrapping around the board
 	if p.X+1 == nP.X {
-		return right
+		return moveRight
 	}
 
 	if p.X-1 == nP.X {
-		return left
+		return moveLeft
 	}
 
 	if p.Y+1 == nP.Y {
-		return up
+		return moveUp
 	}
 
 	if p.Y-1 == nP.Y {
-		return down
+		return moveDown
 	}
 
 	// handle cases where we are wrapping around the board
 	if p.X > nP.X && nP.X == 0 {
-		return right
+		return moveRight
 	}
 
 	if p.X < nP.X && p.X == 0 {
-		return left
+		return moveLeft
 	}
 
 	if p.Y > nP.Y && nP.Y == 0 {
-		return up
+		return moveUp
 	}
 
 	if p.Y < nP.Y && p.Y == 0 {
-		return down
+		return moveDown
 	}
 
 	// default to "up" when invalid moves are passed
 	log.Errorf("Unable to determine snake direction: %v to %v", p, nP)
-	return up
+	return moveUp
 }
 
 // getCorner gets the corner type for the given 3 segments.
