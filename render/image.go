@@ -161,13 +161,13 @@ func drawHazard(dc *gg.Context, bx int, by int) {
 func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, bx int, by int, hexColor string, dir snakeDirection) {
 	var rotation int
 	switch dir {
-	case Right:
+	case right:
 		rotation = 0
-	case Down:
+	case down:
 		rotation = 270
-	case Left:
+	case left:
 		rotation = 180
-	case Up:
+	case up:
 		rotation = 90
 	}
 
@@ -264,28 +264,28 @@ func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor string, corner snake
 func drawGaps(dc *gg.Context, bx, by int, dir snakeDirection, hexColor string) {
 	dc.SetHexColor(hexColor)
 	switch dir {
-	case Up:
+	case up:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by-1)-SquareBorderPixels+BoardBorder,
 			SquareSizePixels-SquareBorderPixels*2,
 			SquareBorderPixels*2,
 		)
-	case Down:
+	case down:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)-SquareBorderPixels+BoardBorder,
 			SquareSizePixels-SquareBorderPixels*2,
 			SquareBorderPixels*2,
 		)
-	case Right:
+	case right:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)-SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
 			SquareBorderPixels*2,
 			SquareSizePixels-SquareBorderPixels*2,
 		)
-	case Left:
+	case left:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx+1)-SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
