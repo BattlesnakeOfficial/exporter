@@ -63,16 +63,16 @@ func TestGetDirection(t *testing.T) {
 		desc string         // description of test case
 	}{
 		// easy cases
-		{p1: engine.Point{X: 3, Y: 3}, p2: engine.Point{X: 3, Y: 4}, want: up, desc: "non-wrapped up"},
-		{p1: engine.Point{X: 3, Y: 3}, p2: engine.Point{X: 3, Y: 2}, want: down, desc: "non-wrapped down"},
-		{p1: engine.Point{X: 3, Y: 3}, p2: engine.Point{X: 4, Y: 3}, want: right, desc: "non-wrapped right"},
-		{p1: engine.Point{X: 3, Y: 3}, p2: engine.Point{X: 2, Y: 3}, want: left, desc: "non-wrapped left"},
+		{p1: engine.Point{X: 3, Y: 3}, p2: engine.Point{X: 3, Y: 4}, want: Up, desc: "non-wrapped up"},
+		{p1: engine.Point{X: 3, Y: 3}, p2: engine.Point{X: 3, Y: 2}, want: Down, desc: "non-wrapped down"},
+		{p1: engine.Point{X: 3, Y: 3}, p2: engine.Point{X: 4, Y: 3}, want: Right, desc: "non-wrapped right"},
+		{p1: engine.Point{X: 3, Y: 3}, p2: engine.Point{X: 2, Y: 3}, want: Left, desc: "non-wrapped left"},
 
 		// wrapped cases
-		{p1: engine.Point{X: 1, Y: 10}, p2: engine.Point{X: 1, Y: 0}, want: up, desc: "wrapped up"},
-		{p1: engine.Point{X: 1, Y: 0}, p2: engine.Point{X: 1, Y: 10}, want: down, desc: "wrapped down"},
-		{p1: engine.Point{X: 0, Y: 4}, p2: engine.Point{X: 10, Y: 4}, want: left, desc: "wrapped left"},
-		{p1: engine.Point{X: 10, Y: 0}, p2: engine.Point{X: 0, Y: 0}, want: right, desc: "wrapped right"},
+		{p1: engine.Point{X: 1, Y: 10}, p2: engine.Point{X: 1, Y: 0}, want: Up, desc: "wrapped up"},
+		{p1: engine.Point{X: 1, Y: 0}, p2: engine.Point{X: 1, Y: 10}, want: Down, desc: "wrapped down"},
+		{p1: engine.Point{X: 0, Y: 4}, p2: engine.Point{X: 10, Y: 4}, want: Left, desc: "wrapped left"},
+		{p1: engine.Point{X: 10, Y: 0}, p2: engine.Point{X: 0, Y: 0}, want: Right, desc: "wrapped right"},
 	}
 
 	for _, tc := range cases {
@@ -94,13 +94,13 @@ func TestBoard(t *testing.T) {
 	}
 
 	// ensure adding content works
-	b.AddSnakeTail(&engine.Point{X: 0, Y: 0}, "#0acc33", "regular", right)
+	b.AddSnakeTail(&engine.Point{X: 0, Y: 0}, "#0acc33", "regular", Right)
 	assert.Equal(t, BoardSquareSnakeTail, b.getContents(0, 0)[0].Type, "(0,0) should have tail content")
 
-	b.AddSnakeBody(&engine.Point{X: 1, Y: 0}, "#0acc33", right, "none")
+	b.AddSnakeBody(&engine.Point{X: 1, Y: 0}, "#0acc33", Right, "none")
 	assert.Equal(t, BoardSquareSnakeBody, b.getContents(1, 0)[0].Type, "(1,0) should have body content")
 
-	b.AddSnakeHead(&engine.Point{X: 2, Y: 0}, "#0acc33", "regular", right)
+	b.AddSnakeHead(&engine.Point{X: 2, Y: 0}, "#0acc33", "regular", Right)
 	assert.Equal(t, BoardSquareSnakeHead, b.getContents(2, 0)[0].Type, "(2,0) should have head content")
 
 	b.addFood(&engine.Point{X: 3, Y: 0})
@@ -125,13 +125,13 @@ func TestPlaceSnake(t *testing.T) {
 		Head: "beluga",
 		Tail: "rattle",
 	}
-	b.placeSnake(s)
+	b.PlaceSnake(s)
 
 	// HEAD
 	c := b.getContents(0, 0)
 	require.Len(t, c, 1, "there should only be a head here")
 	assert.Equal(t, BoardSquareSnakeHead, c[0].Type, "this should be a head")
-	assert.Equal(t, down, c[0].Direction, "the head should be pointing down")
+	assert.Equal(t, Down, c[0].Direction, "the head should be pointing down")
 	assert.Equal(t, "#3B194D", c[0].HexColor, "the head should have the snake colour")
 	assert.Equal(t, "beluga", c[0].SnakeType, "the head should be customised")
 
@@ -146,7 +146,7 @@ func TestPlaceSnake(t *testing.T) {
 	c = b.getContents(1, 1)
 	require.Len(t, c, 1, "there should only be a tail here")
 	assert.Equal(t, BoardSquareSnakeTail, c[0].Type, "this should be a tail")
-	assert.Equal(t, right, c[0].Direction, "the tail should be pointing right")
+	assert.Equal(t, Right, c[0].Direction, "the tail should be pointing right")
 	assert.Equal(t, "#3B194D", c[0].HexColor, "the tail should have the snake colour")
 	assert.Equal(t, "rattle", c[0].SnakeType, "the tail should be customised")
 
@@ -161,12 +161,12 @@ func TestPlaceSnake(t *testing.T) {
 			{X: 4, Y: 8}, // tail
 		},
 	}
-	b.placeSnake(s)
+	b.PlaceSnake(s)
 
 	c = b.getContents(5, 9)
 	require.Len(t, c, 1, "there should only be a head here")
 	assert.Equal(t, BoardSquareSnakeHead, c[0].Type, "this should be a head")
-	assert.Equal(t, up, c[0].Direction, "the head should be pointing up")
+	assert.Equal(t, Up, c[0].Direction, "the head should be pointing up")
 	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the head should have the dead snake colour")
 	assert.Equal(t, "regular", c[0].SnakeType, "the head should be default")
 
@@ -181,7 +181,7 @@ func TestPlaceSnake(t *testing.T) {
 	c = b.getContents(4, 8)
 	require.Len(t, c, 1, "there should only be a tail here")
 	assert.Equal(t, BoardSquareSnakeTail, c[0].Type, "this should be a tail")
-	assert.Equal(t, left, c[0].Direction, "the tail should be pointing left")
+	assert.Equal(t, Left, c[0].Direction, "the tail should be pointing left")
 	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the tail should have the dead snake colour")
 	assert.Equal(t, "regular", c[0].SnakeType, "the tail should be default")
 }

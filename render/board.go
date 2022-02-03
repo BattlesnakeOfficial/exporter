@@ -29,10 +29,10 @@ func (c snakeCorner) isLeft() bool {
 type snakeDirection int
 
 const (
-	up snakeDirection = iota
-	down
-	left
-	right
+	Up snakeDirection = iota
+	Down
+	Left
+	Right
 )
 
 const (
@@ -144,41 +144,41 @@ func (b *Board) addHazard(p *engine.Point) {
 func getDirection(p engine.Point, nP engine.Point) snakeDirection {
 	// handle cases where we aren't wrapping around the board
 	if p.X+1 == nP.X {
-		return right
+		return Right
 	}
 
 	if p.X-1 == nP.X {
-		return left
+		return Left
 	}
 
 	if p.Y+1 == nP.Y {
-		return up
+		return Up
 	}
 
 	if p.Y-1 == nP.Y {
-		return down
+		return Down
 	}
 
 	// handle cases where we are wrapping around the board
 	if p.X > nP.X && nP.X == 0 {
-		return right
+		return Right
 	}
 
 	if p.X < nP.X && p.X == 0 {
-		return left
+		return Left
 	}
 
 	if p.Y > nP.Y && nP.Y == 0 {
-		return up
+		return Up
 	}
 
 	if p.Y < nP.Y && p.Y == 0 {
-		return down
+		return Down
 	}
 
 	// default to "up" when invalid moves are passed
 	log.Errorf("Unable to determine snake direction: %v to %v", p, nP)
-	return up
+	return Up
 }
 
 // getCorner gets the corner type for the given 3 segments.
@@ -239,7 +239,7 @@ func getCorner(pP engine.Point, p engine.Point, nP engine.Point) snakeCorner {
 	return snakeCorner(fmt.Sprintf("%s-%s", yType, xType))
 }
 
-func (b *Board) placeSnake(snake engine.Snake) {
+func (b *Board) PlaceSnake(snake engine.Snake) {
 	// Default head type
 	head := "regular"
 	if len(snake.Head) > 0 {
@@ -303,7 +303,7 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 	// First place dead snakes (up to 10 turns after death)
 	for _, snake := range gf.Snakes {
 		if snake.Death != nil && (gf.Turn-snake.Death.Turn) <= 10 {
-			board.placeSnake(snake)
+			board.PlaceSnake(snake)
 		}
 	}
 
@@ -315,7 +315,7 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 	// Third, place alive snakes
 	for _, snake := range gf.Snakes {
 		if snake.Death == nil {
-			board.placeSnake(snake)
+			board.PlaceSnake(snake)
 		}
 	}
 
