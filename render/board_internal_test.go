@@ -94,13 +94,13 @@ func TestBoard(t *testing.T) {
 	}
 
 	// ensure adding content works
-	b.AddSnakeTail(&engine.Point{X: 0, Y: 0}, "#0acc33", "regular", Right)
+	b.addSnakeTail(&engine.Point{X: 0, Y: 0}, "#0acc33", "regular", Right)
 	assert.Equal(t, BoardSquareSnakeTail, b.getContents(0, 0)[0].Type, "(0,0) should have tail content")
 
-	b.AddSnakeBody(&engine.Point{X: 1, Y: 0}, "#0acc33", Right, "none")
+	b.addSnakeBody(&engine.Point{X: 1, Y: 0}, "#0acc33", Right, "none")
 	assert.Equal(t, BoardSquareSnakeBody, b.getContents(1, 0)[0].Type, "(1,0) should have body content")
 
-	b.AddSnakeHead(&engine.Point{X: 2, Y: 0}, "#0acc33", "regular", Right)
+	b.addSnakeHead(&engine.Point{X: 2, Y: 0}, "#0acc33", "regular", Right)
 	assert.Equal(t, BoardSquareSnakeHead, b.getContents(2, 0)[0].Type, "(2,0) should have head content")
 
 	b.addFood(&engine.Point{X: 3, Y: 0})
@@ -125,7 +125,7 @@ func TestPlaceSnake(t *testing.T) {
 		Head: "beluga",
 		Tail: "rattle",
 	}
-	b.PlaceSnake(s)
+	b.placeSnake(s)
 
 	// HEAD
 	c := b.getContents(0, 0)
@@ -161,7 +161,7 @@ func TestPlaceSnake(t *testing.T) {
 			{X: 4, Y: 8}, // tail
 		},
 	}
-	b.PlaceSnake(s)
+	b.placeSnake(s)
 
 	c = b.getContents(5, 9)
 	require.Len(t, c, 1, "there should only be a head here")

@@ -108,7 +108,7 @@ func (b *Board) addFood(p *engine.Point) {
 	})
 }
 
-func (b *Board) AddSnakeTail(p *engine.Point, color, snakeType string, direction snakeDirection) {
+func (b *Board) addSnakeTail(p *engine.Point, color, snakeType string, direction snakeDirection) {
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeTail,
 		HexColor:  color,
@@ -117,7 +117,7 @@ func (b *Board) AddSnakeTail(p *engine.Point, color, snakeType string, direction
 	})
 }
 
-func (b *Board) AddSnakeHead(p *engine.Point, color, snakeType string, dir snakeDirection) {
+func (b *Board) addSnakeHead(p *engine.Point, color, snakeType string, dir snakeDirection) {
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeHead,
 		HexColor:  color,
@@ -126,7 +126,7 @@ func (b *Board) AddSnakeHead(p *engine.Point, color, snakeType string, dir snake
 	})
 }
 
-func (b *Board) AddSnakeBody(p *engine.Point, color string, dir snakeDirection, corner snakeCorner) {
+func (b *Board) addSnakeBody(p *engine.Point, color string, dir snakeDirection, corner snakeCorner) {
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeBody,
 		HexColor:  color,
@@ -239,7 +239,7 @@ func getCorner(pP engine.Point, p engine.Point, nP engine.Point) snakeCorner {
 	return snakeCorner(fmt.Sprintf("%s-%s", yType, xType))
 }
 
-func (b *Board) PlaceSnake(snake engine.Snake) {
+func (b *Board) placeSnake(snake engine.Snake) {
 	// Default head type
 	head := "regular"
 	if len(snake.Head) > 0 {
@@ -268,7 +268,7 @@ func (b *Board) PlaceSnake(snake engine.Snake) {
 				continue
 			}
 
-			b.AddSnakeHead(&point, color, head, getDirection(snake.Body[i+1], point))
+			b.addSnakeHead(&point, color, head, getDirection(snake.Body[i+1], point))
 			continue
 		}
 
@@ -283,11 +283,11 @@ func (b *Board) PlaceSnake(snake engine.Snake) {
 			if prev.X == point.X && prev.Y == point.Y {
 				direction = getDirection(snake.Body[i-2], point)
 			}
-			b.AddSnakeTail(&point, color, tail, direction)
+			b.addSnakeTail(&point, color, tail, direction)
 		} else {
 			direction := getDirection(snake.Body[i+1], point)
 			corner := getCorner(snake.Body[i-1], point, snake.Body[i+1])
-			b.AddSnakeBody(&point, color, direction, corner)
+			b.addSnakeBody(&point, color, direction, corner)
 		}
 	}
 }
@@ -303,7 +303,7 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 	// First place dead snakes (up to 10 turns after death)
 	for _, snake := range gf.Snakes {
 		if snake.Death != nil && (gf.Turn-snake.Death.Turn) <= 10 {
-			board.PlaceSnake(snake)
+			board.placeSnake(snake)
 		}
 	}
 
@@ -315,7 +315,7 @@ func GameFrameToBoard(g *engine.Game, gf *engine.GameFrame) *Board {
 	// Third, place alive snakes
 	for _, snake := range gf.Snakes {
 		if snake.Death == nil {
-			board.PlaceSnake(snake)
+			board.placeSnake(snake)
 		}
 	}
 
