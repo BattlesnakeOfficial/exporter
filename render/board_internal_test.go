@@ -10,23 +10,46 @@ import (
 
 func TestGetCorner(t *testing.T) {
 
-	t.Log("non-wrapped")
-	// none
-	assert.Equal(t, cornerNone, getCorner(engine.Point{X: 0, Y: 0}, engine.Point{X: 0, Y: 1}, engine.Point{X: 0, Y: 2}))
-	assert.Equal(t, cornerNone, getCorner(engine.Point{X: 0, Y: 2}, engine.Point{X: 0, Y: 1}, engine.Point{X: 0, Y: 0}))
-	assert.Equal(t, cornerNone, getCorner(engine.Point{X: 0, Y: 0}, engine.Point{X: 1, Y: 0}, engine.Point{X: 2, Y: 0}))
-	assert.Equal(t, cornerNone, getCorner(engine.Point{X: 2, Y: 0}, engine.Point{X: 1, Y: 0}, engine.Point{X: 0, Y: 0}))
+	// shifts the corner points around to test different edge cases
+	shift := func(p engine.Point, x, y int) engine.Point {
+		nP := engine.Point{X: p.X + x, Y: p.Y + y}
+		// wrap around (assuming 3x3 board here)
+		if nP.X == -1 {
+			nP.X = 2
+		}
+		if nP.Y == -1 {
+			nP.Y = 2
+		}
+		if nP.X > 2 {
+			nP.X = 0
+		}
+		if nP.Y > 2 {
+			nP.Y = 0
+		}
+		return nP
+	}
 
-	// ╔
-	assert.Equal(t, cornerTopLeft, getCorner(engine.Point{X: 0, Y: 0}, engine.Point{X: 0, Y: 1}, engine.Point{X: 1, Y: 1}))
-	// ╗
-	assert.Equal(t, cornerTopRight, getCorner(engine.Point{X: 0, Y: 1}, engine.Point{X: 1, Y: 1}, engine.Point{X: 1, Y: 0}))
-	// ╝
-	assert.Equal(t, cornerBottomRight, getCorner(engine.Point{X: 1, Y: 1}, engine.Point{X: 1, Y: 0}, engine.Point{X: 0, Y: 0}))
-	// ╚
-	assert.Equal(t, cornerBottomLeft, getCorner(engine.Point{X: 1, Y: 0}, engine.Point{X: 0, Y: 0}, engine.Point{X: 0, Y: 1}))
+	// This tries all the permutations of the corner and straight pieces being placed on a 3x3 board
+	// It should make sure that all the wrapped cases work
+	for _, x := range []int{-1, 0, 1} {
+		for y := range []int{-1, 0, 1} {
+			t.Logf("shifting x by %d, y by %d", x, y)
+			// none
+			assert.Equal(t, cornerNone, getCorner(shift(engine.Point{X: 0, Y: 0}, x, y), shift(engine.Point{X: 0, Y: 1}, x, y), shift(engine.Point{X: 0, Y: 2}, x, y)))
+			assert.Equal(t, cornerNone, getCorner(shift(engine.Point{X: 0, Y: 2}, x, y), shift(engine.Point{X: 0, Y: 1}, x, y), shift(engine.Point{X: 0, Y: 0}, x, y)))
+			assert.Equal(t, cornerNone, getCorner(shift(engine.Point{X: 0, Y: 0}, x, y), shift(engine.Point{X: 1, Y: 0}, x, y), shift(engine.Point{X: 2, Y: 0}, x, y)))
+			assert.Equal(t, cornerNone, getCorner(shift(engine.Point{X: 2, Y: 0}, x, y), shift(engine.Point{X: 1, Y: 0}, x, y), shift(engine.Point{X: 0, Y: 0}, x, y)))
 
-	t.Log("wrapped")
+			// ╔
+			assert.Equal(t, cornerTopLeft, getCorner(shift(engine.Point{X: 0, Y: 0}, x, y), shift(engine.Point{X: 0, Y: 1}, x, y), shift(engine.Point{X: 1, Y: 1}, x, y)))
+			// ╗
+			assert.Equal(t, cornerTopRight, getCorner(shift(engine.Point{X: 0, Y: 1}, x, y), shift(engine.Point{X: 1, Y: 1}, x, y), shift(engine.Point{X: 1, Y: 0}, x, y)))
+			// ╝
+			assert.Equal(t, cornerBottomRight, getCorner(shift(engine.Point{X: 1, Y: 1}, x, y), shift(engine.Point{X: 1, Y: 0}, x, y), shift(engine.Point{X: 0, Y: 0}, x, y)))
+			// ╚
+			assert.Equal(t, cornerBottomLeft, getCorner(shift(engine.Point{X: 1, Y: 0}, x, y), shift(engine.Point{X: 0, Y: 0}, x, y), shift(engine.Point{X: 0, Y: 1}, x, y)))
+		}
+	}
 }
 
 func TestGetDirection(t *testing.T) {

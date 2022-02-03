@@ -185,7 +185,6 @@ func getDirection(p engine.Point, nP engine.Point) snakeDirection {
 // pP = previous point, p = current point, nP next point.
 // note: p is also the "corner point" ;)
 func getCorner(pP engine.Point, p engine.Point, nP engine.Point) snakeCorner {
-
 	// for a corner, there needs to be an X AND a Y change
 	if (pP.X == p.X && pP.X == nP.X) || (pP.Y == p.Y && pP.Y == nP.Y) {
 		// either X or Y hasn't changed, so no corner
