@@ -27,7 +27,7 @@ func gameFrameToPalettedImage(g *engine.Game, gf *engine.GameFrame) *image.Palet
 	// This is where the bulk of GIF creation CPU is spent.
 	// First, Board is rendered to RGBA Image
 	// Second, RGBA Image converted to Paletted Image (lossy)
-	rgbaImage := drawBoard(board)
+	rgbaImage := DrawBoard(board)
 	palettedImage := image.NewPaletted(rgbaImage.Bounds(), buildGIFPallete(rgbaImage))
 
 	// No Dithering
@@ -138,14 +138,6 @@ func buildGIFPallete(src image.Image) color.Palette {
 	}
 
 	return pal
-}
-
-// min returns the minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // colorUsage is simple pair of color and the number of times it's used
