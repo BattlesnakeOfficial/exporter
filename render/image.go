@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	AssetFallbackHead        = "heads/regular.png"
-	AssetFallbackTail        = "tails/regular.png"
+	AssetFallbackHead        = "heads/default.png"
+	AssetFallbackTail        = "tails/default.png"
 	AssetFallbackUnspecified = ""
 	BoardBorder              = 2
 	SquareSizePixels         = 20

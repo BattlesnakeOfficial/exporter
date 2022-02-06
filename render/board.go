@@ -241,13 +241,13 @@ func getCorner(pP engine.Point, p engine.Point, nP engine.Point) snakeCorner {
 
 func (b *Board) placeSnake(snake engine.Snake) {
 	// Default head type
-	head := "regular"
+	head := "default"
 	if len(snake.Head) > 0 {
 		head = snake.Head
 	}
 
 	// Default tail type
-	tail := "regular"
+	tail := "default"
 	if len(snake.Tail) > 0 {
 		tail = snake.Tail
 	}
