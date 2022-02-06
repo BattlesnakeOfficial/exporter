@@ -24,9 +24,10 @@ type Snake struct {
 }
 
 type GameFrame struct {
-	Turn   int     `json:"Turn"`
-	Food   []Point `json:"Food"`
-	Snakes []Snake `json:"Snakes"`
+	Turn    int     `json:"Turn"`
+	Food    []Point `json:"Food"`
+	Snakes  []Snake `json:"Snakes"`
+	Hazards []Point `json:"Hazards"`
 }
 
 type Game struct {
