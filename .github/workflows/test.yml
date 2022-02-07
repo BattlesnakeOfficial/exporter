@@ -39,7 +39,10 @@ jobs:
       with:
         go-version: '1.17'
     - name: Install inkscape
-      run: sudo apt install -y inkscape
+      run: |
+        sudo add-apt-repository ppa:inkscape.dev/stable
+        sudo apt update
+        sudo apt install -y inkscape
     - name: go test
       run: go test -timeout 20s -race ./...
 

@@ -13,7 +13,7 @@ Or install manually from https://go.dev/dl/.
 
 ### Inkscape
 
-The exporter uses [inkscape](https://inkscape.org/) to convert SVGs to PNG format. If Inkscape is not present, the exporter will gracefully handle this by rendering default tails/heads using a local PNG file. You don't have to have inkscape installed to use the exporter unless you want custom heads or tails.
+The exporter uses [inkscape](https://inkscape.org/) (version 1.1+) to convert SVGs to PNG format. If Inkscape is not present, the exporter will gracefully handle this by rendering default tails/heads using a local PNG file. You don't have to have inkscape installed to use the exporter unless you want custom heads or tails.
 
 ALSO, some tests which cover functionality that includes SVG rendering will fail unless you have inkscape installed locally.
 
