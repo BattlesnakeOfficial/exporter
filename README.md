@@ -11,6 +11,18 @@ brew install go@1.17
 
 Or install manually from https://go.dev/dl/.
 
+### Inkscape
+
+The exporter uses [inkscape](https://inkscape.org/) to convert SVGs to PNG format. If Inkscape is not present, the exporter will gracefully handle this by rendering default tails/heads using a local PNG file. You don't have to have inkscape installed to use the exporter unless you want custom heads or tails.
+
+ALSO, some tests which cover functionality that includes SVG rendering will fail unless you have inkscape installed locally.
+
+Inkscape is a freely available, cross-platform tool which you can easily install:
+
+- [Windows](https://inkscape-manuals.readthedocs.io/en/latest/installing-on-windows.html)
+- [Mac](https://inkscape-manuals.readthedocs.io/en/latest/installing-on-mac.html)
+- [Linux](https://inkscape-manuals.readthedocs.io/en/latest/installing-on-linux.html)
+
 ### Building
 Installing to `$GOPATH/bin/`: (defaults to `$HOME/go/bin` if you don't have GOPATH set):
 ```
