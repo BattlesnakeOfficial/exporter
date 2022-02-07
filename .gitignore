@@ -4,5 +4,7 @@
 .vscode
 .idea
 
+bin/
+
 # General
 .DS_Store

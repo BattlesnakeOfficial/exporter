@@ -24,16 +24,34 @@ Inkscape is a freely available, cross-platform tool which you can easily install
 - [Linux](https://inkscape-manuals.readthedocs.io/en/latest/installing-on-linux.html)
 
 ### Building
-Installing to `$GOPATH/bin/`: (defaults to `$HOME/go/bin` if you don't have GOPATH set):
+
+#### local
+
+```sh
+go build -o bin/exporter cmd/exporter/main.go
 ```
-go install -v ./cmd/exporter
+
+#### docker
+
+```sh
+docker build . -t exporter
 ```
 
 ### Running the server
+
+
+#### local
+
 ```
 export PORT=8000 # optional port override
 
-exporter
+./bin/exporter
+```
+
+#### docker
+
+```sh
+docker run -it -p 8000:8000 exporter:latest
 ```
 
 ### Running the tests
