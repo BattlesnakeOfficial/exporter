@@ -42,23 +42,25 @@ func (c Client) SVGToPNG(path string, width, height int) (image.Image, error) {
 	}
 
 	cmd := exec.Command(c.cmd(), path, "-w", fmt.Sprint(width), "-h", fmt.Sprint(height), "--export-type=png", "--export-filename=-")
-	b := bytes.NewBuffer(nil)
-	cmd.Stdout = b
+	stdoutData := bytes.NewBuffer(nil)
+	stderrData := bytes.NewBuffer(nil)
+	cmd.Stdout = stdoutData
+	cmd.Stderr = stderrData
 	err = cmd.Start()
 	if err != nil {
-		return nil, err
+		return nil, describeError(err, stderrData.String())
 	}
 	err = cmd.Wait()
 	if err != nil {
-		return nil, err
+		return nil, describeError(err, stderrData.String())
 	}
 
 	// if we get no bytes on stdout, that means something went wrong
-	if b.Len() == 0 {
+	if stdoutData.Len() == 0 {
 		return nil, errors.New("error processing SVG")
 	}
 
-	img, err := png.Decode(b)
+	img, err := png.Decode(stdoutData)
 	return img, err
 }
 
@@ -67,4 +69,8 @@ func (c Client) cmd() string {
 		return defaultCommand
 	}
 	return c.Command
+}
+
+func describeError(err error, info string) error {
+	return fmt.Errorf("%v: %s", err, info)
 }
