@@ -59,6 +59,8 @@ docker run -it -p 8000:8000 exporter:latest
 go test ./...
 ```
 
+**Note:** some tests may fail if `inkscape` is not available **or** if you have the wrong version of `inkscape` installed (pre `1.x` versions of `inkscape` won't work)
+
 ## Endpoints
 
 #### `/avatars/{customation_key:customization_value}/{width}x{height}.svg`
