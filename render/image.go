@@ -1,14 +1,18 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
+	"io"
 	"os"
 	"strings"
 	"time"
 
+	"github.com/BattlesnakeOfficial/exporter/inkscape"
+	"github.com/BattlesnakeOfficial/exporter/media"
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
 	"github.com/patrickmn/go-cache"
@@ -23,8 +27,15 @@ const (
 	AssetHead AssetType = "head"
 	// AssetTail is a snake tail
 	AssetTail = "tail"
-	// AssetGeneric is a general type of asset
-	AssetGeneric = "generic"
+)
+
+type rotations int
+
+const (
+	rotate0 rotations = iota
+	rotate90
+	rotate180
+	rotate270
 )
 
 const (
@@ -41,6 +52,7 @@ const (
 
 var boardImageCache = cache.New(6*time.Hour, time.Minute)
 var assetImageCache = cache.New(time.Hour, time.Minute)
+var inkscapeClient = &inkscape.Client{}
 
 // From github.com/fogleman/gg
 func parseHexColor(x string) color.Color {
@@ -77,26 +89,27 @@ func loadImageFile(path string) (image.Image, error) {
 	return img, err
 }
 
-func transformImage(src image.Image, w, h, rot int) image.Image {
-	var dstImage image.Image
-	dstImage = imaging.Resize(src, w, h, imaging.Lanczos)
+func scaleImage(src image.Image, w, h int) image.Image {
+	return imaging.Resize(src, w, h, imaging.Lanczos)
+}
 
-	if rot == 180 {
-		dstImage = imaging.FlipH(dstImage)
-	} else if rot == 90 {
-		dstImage = imaging.Rotate90(dstImage)
-	} else if rot == 270 {
-		dstImage = imaging.Rotate270(dstImage)
+func rotateImage(src image.Image, rot rotations) image.Image {
+	switch rot {
+	case rotate90:
+		return imaging.Rotate90(src)
+	case rotate180:
+		return imaging.FlipH(src)
+	case rotate270:
+		return imaging.Rotate270(src)
 	}
-
-	return dstImage
+	return src
 }
 
-func imageCacheKey(path string, w, h, rot int) string {
-	return fmt.Sprintf("local:%s:%d:%d:%d", path, w, h, rot)
+func imageCacheKey(path string, w, h int, rot rotations) string {
+	return fmt.Sprintf("%s:%d:%d:%d", path, w, h, rot)
 }
 
-func loadLocalImageAsset(path string, w, h, rot int) (image.Image, error) {
+func loadLocalImageAsset(path string, w, h int, rot rotations) (image.Image, error) {
 	key := imageCacheKey(path, w, h, rot)
 	cachedImage, ok := assetImageCache.Get(key)
 	if ok {
@@ -108,9 +121,78 @@ func loadLocalImageAsset(path string, w, h, rot int) (image.Image, error) {
 		logrus.WithField("path", path).WithError(err).Errorf("Error loading asset from file")
 		return nil, err
 	}
-	img = transformImage(img, w, h, rot)
+	img = scaleImage(img, w, h)
 	assetImageCache.Set(key, img, 0)
 
+	return img, nil
+}
+
+func downloadSVG(name string, aType AssetType, w io.Writer) error {
+	var svg string
+	var err error
+	switch aType {
+	case AssetHead:
+		svg, err = media.GetHeadSVG(name) // already potentially cached
+	case AssetTail:
+		svg, err = media.GetTailSVG(name) // already potentially cached
+	default:
+		return fmt.Errorf("unrecognised SVG asset type '%s'", aType)
+	}
+	if err != nil {
+		return err
+	}
+
+	_, err = w.Write([]byte(svg))
+	return err
+}
+
+func loadSVGImageAsset(name string, aType AssetType, w, h int, rot rotations) (image.Image, error) {
+
+	// determine path to SVG given whatever asset type it is
+	var path string
+	switch aType {
+	case AssetHead:
+		path = fmt.Sprintf("render/assets/heads/%s.svg", name)
+	case AssetTail:
+		path = fmt.Sprintf("render/assets/heads/%s.svg", name)
+	default:
+		return nil, fmt.Errorf("unable to load SVG - unrecognized asset type '%s'", aType)
+	}
+
+	key := imageCacheKey(path, w, h, rot)
+	cachedImage, ok := assetImageCache.Get(key)
+	if ok {
+		return cachedImage.(image.Image), nil
+	}
+
+	// make sure inkscape is available, otherwise we can't create an image from an SVG
+	if !inkscapeClient.IsAvailable() {
+		return nil, errors.New("unable to load SVG - unable to load SVG")
+	}
+
+	// check if we need to download the SVG from the media server
+	_, err := os.Stat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		f, err := os.Create(path)
+		if err != nil {
+			return nil, err
+		}
+		defer f.Close()
+
+		err = downloadSVG(name, aType, f)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// rasterize the SVG
+	img, err := inkscapeClient.SVGToPNG(path, w, h)
+	if err != nil {
+		return nil, err
+	}
+
+	img = rotateImage(img, rot)
+	assetImageCache.Set(key, img, 0)
 	return img, nil
 }
 
@@ -155,27 +237,46 @@ func drawHazard(dc *gg.Context, bx int, by int) {
 	dc.Fill()
 }
 
-func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, bx int, by int, hexColor string, dir snakeDirection) {
-	var rotation int
+func drawSnakeImage(name string, aType AssetType, dc *gg.Context, bx int, by int, hexColor string, dir snakeDirection) {
+	var rot rotations
 	switch dir {
 	case movingRight:
-		rotation = 0
+		rot = rotate0
 	case movingDown:
-		rotation = 270
+		rot = rotate270
 	case movingLeft:
-		rotation = 180
+		rot = rotate180
 	case movingUp:
-		rotation = 90
+		rot = rotate90
 	}
-
 	width := SquareSizePixels - SquareBorderPixels*2
 	height := SquareSizePixels - SquareBorderPixels*2
-	maskImage, err := loadLocalImageAsset(fmt.Sprintf("render/assets/%s", filename), width, height, rotation)
+
+	// first we try to load from the media server SVG's
+	maskImage, err := loadSVGImageAsset(name, aType, width, height, rot)
 	if err != nil {
-		logrus.WithError(err).Error("Unable to load asset, trying fallback")
-		maskImage, err = loadLocalImageAsset(fmt.Sprintf("render/assets/%s", fallbackFilename), width, height, rotation)
+		// log at info, because this could error just for people specifying snake types that don't exist
+		logrus.WithFields(logrus.Fields{
+			"name": name,
+			"type": aType,
+		}).WithError(err).Info("unable to load SVG image asset")
+
+		// attempt a graceful fall back to local, default PNG
+		var filename string
+		switch aType {
+		case AssetHead:
+			filename = fmt.Sprintf("render/assets/heads/%s.png", AssetFallbackHeadName)
+		case AssetTail:
+			filename = fmt.Sprintf("render/assets/tails/%s.png", AssetFallbackTailName)
+		default:
+			// something went wrong if we are asked for types we don't know about (log at error)
+			logrus.WithField("type", aType).Error("unrecognized snake image type - aborting draw")
+			return
+		}
+		maskImage, err = loadLocalImageAsset(filename, width, height, rot)
 		if err != nil {
-			logrus.WithError(err).Error("Unable to load fallback image - aborting draw")
+			// at this point we are unable to draw correctly, so we should log at error level
+			logrus.WithField("type", aType).WithError(err).Error("Unable to load local fallback image from file - aborting draw")
 			return
 		}
 	}
@@ -336,20 +437,17 @@ func DrawBoard(b *Board) image.Image {
 	dc := createBoardContext(b)
 
 	// Draw food and snakes over watermark
-	var snakeAsset string
 	for p, s := range b.squares { // cool, we can iterate ONLY the non-empty squares!
 		for _, c := range s.Contents {
 			switch c.Type {
 			case BoardSquareSnakeHead:
-				snakeAsset = fmt.Sprintf("heads/%s.png", c.SnakeType)
-				drawSnakeImage(snakeAsset, AssetFallbackHeadName, dc, p.X, p.Y, c.HexColor, c.Direction)
+				drawSnakeImage(c.SnakeType, AssetFallbackHeadName, dc, p.X, p.Y, c.HexColor, c.Direction)
 				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
 			case BoardSquareSnakeBody:
 				drawSnakeBody(dc, p.X, p.Y, c.HexColor, c.Corner)
 				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
 			case BoardSquareSnakeTail:
-				snakeAsset = fmt.Sprintf("tails/%s.png", c.SnakeType)
-				drawSnakeImage(snakeAsset, AssetFallbackTailName, dc, p.X, p.Y, c.HexColor, c.Direction)
+				drawSnakeImage(c.SnakeType, AssetFallbackTailName, dc, p.X, p.Y, c.HexColor, c.Direction)
 			case BoardSquareFood:
 				drawFood(dc, p.X, p.Y)
 			case BoardSquareHazard:
