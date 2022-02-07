@@ -28,7 +28,7 @@ const (
 	// AssetHead is a snake head
 	AssetHead AssetType = "head"
 	// AssetTail is a snake tail
-	AssetTail = "tail"
+	AssetTail AssetType = "tail"
 )
 
 type rotations int
@@ -386,13 +386,13 @@ func DrawBoard(b *Board) image.Image {
 		for _, c := range s.Contents {
 			switch c.Type {
 			case BoardSquareSnakeHead:
-				drawSnakeImage(c.SnakeType, AssetFallbackHeadName, dc, p.X, p.Y, c.HexColor, c.Direction)
+				drawSnakeImage(c.SnakeType, AssetHead, dc, p.X, p.Y, c.HexColor, c.Direction)
 				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
 			case BoardSquareSnakeBody:
 				drawSnakeBody(dc, p.X, p.Y, c.HexColor, c.Corner)
 				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
 			case BoardSquareSnakeTail:
-				drawSnakeImage(c.SnakeType, AssetFallbackTailName, dc, p.X, p.Y, c.HexColor, c.Direction)
+				drawSnakeImage(c.SnakeType, AssetTail, dc, p.X, p.Y, c.HexColor, c.Direction)
 			case BoardSquareFood:
 				drawFood(dc, p.X, p.Y)
 			case BoardSquareHazard:
