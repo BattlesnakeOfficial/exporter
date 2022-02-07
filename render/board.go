@@ -142,6 +142,11 @@ func (b *Board) addHazard(p *engine.Point) {
 }
 
 func getDirection(p engine.Point, nP engine.Point) snakeDirection {
+	// handle when the points haven't changed (a common case) by defaulting to up
+	if p == nP {
+		return movingUp
+	}
+
 	// handle cases where we aren't wrapping around the board
 	if p.X+1 == nP.X {
 		return movingRight
