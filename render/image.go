@@ -6,8 +6,10 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"io"
+	"io/fs"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -53,6 +55,7 @@ const (
 var boardImageCache = cache.New(6*time.Hour, time.Minute)
 var assetImageCache = cache.New(time.Hour, time.Minute)
 var inkscapeClient = &inkscape.Client{}
+var svgMgr = &svgManager{baseDir: "render/assets/"}
 
 // From github.com/fogleman/gg
 func parseHexColor(x string) color.Color {
@@ -87,6 +90,17 @@ func loadImageFile(path string) (image.Image, error) {
 
 	img, _, err := image.Decode(f)
 	return img, err
+}
+
+func fetchSVGAsset(name string, aType AssetType) (string, error) {
+	switch aType {
+	case AssetHead:
+		return media.GetHeadSVG(name) // already potentially cached
+	case AssetTail:
+		return media.GetTailSVG(name) // already potentially cached
+	default:
+		return "", fmt.Errorf("unrecognised SVG asset type '%s'", aType)
+	}
 }
 
 func scaleImage(src image.Image, w, h int) image.Image {
@@ -124,75 +138,6 @@ func loadLocalImageAsset(path string, w, h int, rot rotations) (image.Image, err
 	img = scaleImage(img, w, h)
 	assetImageCache.Set(key, img, 0)
 
-	return img, nil
-}
-
-func downloadSVG(name string, aType AssetType, w io.Writer) error {
-	var svg string
-	var err error
-	switch aType {
-	case AssetHead:
-		svg, err = media.GetHeadSVG(name) // already potentially cached
-	case AssetTail:
-		svg, err = media.GetTailSVG(name) // already potentially cached
-	default:
-		return fmt.Errorf("unrecognised SVG asset type '%s'", aType)
-	}
-	if err != nil {
-		return err
-	}
-
-	_, err = w.Write([]byte(svg))
-	return err
-}
-
-func loadSVGImageAsset(name string, aType AssetType, w, h int, rot rotations) (image.Image, error) {
-
-	// determine path to SVG given whatever asset type it is
-	var path string
-	switch aType {
-	case AssetHead:
-		path = fmt.Sprintf("render/assets/heads/%s.svg", name)
-	case AssetTail:
-		path = fmt.Sprintf("render/assets/heads/%s.svg", name)
-	default:
-		return nil, fmt.Errorf("unable to load SVG - unrecognized asset type '%s'", aType)
-	}
-
-	key := imageCacheKey(path, w, h, rot)
-	cachedImage, ok := assetImageCache.Get(key)
-	if ok {
-		return cachedImage.(image.Image), nil
-	}
-
-	// make sure inkscape is available, otherwise we can't create an image from an SVG
-	if !inkscapeClient.IsAvailable() {
-		return nil, errors.New("unable to load SVG - unable to load SVG")
-	}
-
-	// check if we need to download the SVG from the media server
-	_, err := os.Stat(path)
-	if errors.Is(err, os.ErrNotExist) {
-		f, err := os.Create(path)
-		if err != nil {
-			return nil, err
-		}
-		defer f.Close()
-
-		err = downloadSVG(name, aType, f)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// rasterize the SVG
-	img, err := inkscapeClient.SVGToPNG(path, w, h)
-	if err != nil {
-		return nil, err
-	}
-
-	img = rotateImage(img, rot)
-	assetImageCache.Set(key, img, 0)
 	return img, nil
 }
 
@@ -253,7 +198,7 @@ func drawSnakeImage(name string, aType AssetType, dc *gg.Context, bx int, by int
 	height := SquareSizePixels - SquareBorderPixels*2
 
 	// first we try to load from the media server SVG's
-	maskImage, err := loadSVGImageAsset(name, aType, width, height, rot)
+	maskImage, err := svgMgr.loadSVGImageAsset(name, aType, width, height, rot)
 	if err != nil {
 		// log at info, because this could error just for people specifying snake types that don't exist
 		logrus.WithFields(logrus.Fields{
@@ -475,4 +420,73 @@ func boardYToDrawY(dc *gg.Context, y int) float64 {
 	// so we need to flip the y-axis to convert to the graphics, which follows the convention
 	// of (0,0) being the top left.
 	return float64((dc.Height() - BoardBorder*2 - SquareSizePixels) - (y * SquareSizePixels)) // flip!
+}
+
+type svgManager struct {
+	baseDir string
+}
+
+func (sm svgManager) ensureSubdirExists(subDir string) error {
+	path := filepath.Join(sm.baseDir, subDir)
+	_, err := os.Stat(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return os.MkdirAll(path, os.ModePerm)
+	}
+
+	return err
+}
+
+func (sm svgManager) loadSVGImageAsset(name string, aType AssetType, w, h int, rot rotations) (image.Image, error) {
+	// determine path to SVG given whatever asset type it is
+	var path string
+	var err error
+	switch aType {
+	case AssetHead:
+		err = sm.ensureSubdirExists("heads")
+		path = filepath.Join(sm.baseDir, "heads", fmt.Sprintf("%s.svg", name))
+	case AssetTail:
+		err = sm.ensureSubdirExists("tails")
+		path = filepath.Join(sm.baseDir, "tails", fmt.Sprintf("%s.svg", name))
+	default:
+		return nil, fmt.Errorf("unable to load SVG - unrecognized asset type '%s'", aType)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	key := imageCacheKey(path, w, h, rot)
+	cachedImage, ok := assetImageCache.Get(key)
+	if ok {
+		return cachedImage.(image.Image), nil
+	}
+
+	// make sure inkscape is available, otherwise we can't create an image from an SVG
+	if !inkscapeClient.IsAvailable() {
+		return nil, errors.New("unable to load SVG - unable to load SVG")
+	}
+
+	// check if we need to download the SVG from the media server
+	_, err = os.Stat(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		svg, err := fetchSVGAsset(name, aType)
+		if err != nil {
+			return nil, err
+		}
+		err = ioutil.WriteFile(path, []byte(svg), os.ModePerm)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// rasterize the SVG
+	img, err := inkscapeClient.SVGToPNG(path, w, h)
+	if err != nil {
+		logrus.WithField("path", path).WithError(err).Info("unable to rasterize SVG")
+		return nil, err
+	}
+
+	img = rotateImage(img, rot)
+	assetImageCache.Set(key, img, 0)
+	return img, nil
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"image"
 	"image/color"
+	"io/fs"
 	"os"
 	"testing"
 
@@ -29,7 +30,7 @@ func TestSVGToPNG(t *testing.T) {
 
 	// should get an error when file doesn't exist
 	_, err = client.SVGToPNG("testdata/filedoesntexist.svg", 100, 100)
-	require.Equal(t, errors.New("SVG not found"), err)
+	require.ErrorIs(t, err, fs.ErrNotExist)
 
 	// should get an error when the command is wrong
 	client = inkscape.Client{

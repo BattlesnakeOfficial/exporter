@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/sirupsen/logrus"
 )
 
 var ErrNotFound = errors.New("resource not found")
 
 func getMediaResource(path string) (string, error) {
+	logrus.WithField("path", path).Info("fetching media resource")
 	url := fmt.Sprintf("https://media.battlesnake.com/%s", path)
 
 	client := http.Client{}
@@ -21,7 +24,7 @@ func getMediaResource(path string) (string, error) {
 		return "", ErrNotFound
 	}
 	if response.StatusCode != 200 {
-		return "", fmt.Errorf("got non 200 from media: %d", response.StatusCode)
+		return "", fmt.Errorf("got non 200 from media '%s': %d", path, response.StatusCode)
 	}
 
 	body, err := ioutil.ReadAll(response.Body)

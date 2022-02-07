@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"image"
 	"image/png"
+	"os"
 	"os/exec"
 )
 
@@ -35,10 +36,15 @@ func (c Client) SVGToPNG(path string, width, height int) (image.Image, error) {
 		return nil, errors.New("invalid width")
 	}
 
+	_, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
 	cmd := exec.Command(c.cmd(), path, "-w", fmt.Sprint(width), "-h", fmt.Sprint(height), "--export-type=png", "--export-filename=-")
 	b := bytes.NewBuffer(nil)
 	cmd.Stdout = b
-	err := cmd.Start()
+	err = cmd.Start()
 	if err != nil {
 		return nil, err
 	}
@@ -47,9 +53,9 @@ func (c Client) SVGToPNG(path string, width, height int) (image.Image, error) {
 		return nil, err
 	}
 
-	// if we get no bytes on stdout, that means the file didn't exist
+	// if we get no bytes on stdout, that means something went wrong
 	if b.Len() == 0 {
-		return nil, errors.New("SVG not found")
+		return nil, errors.New("error processing SVG")
 	}
 
 	img, err := png.Decode(b)
