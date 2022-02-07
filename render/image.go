@@ -463,7 +463,7 @@ func (sm svgManager) loadSVGImageAsset(name string, aType AssetType, w, h int, r
 
 	// make sure inkscape is available, otherwise we can't create an image from an SVG
 	if !inkscapeClient.IsAvailable() {
-		return nil, errors.New("unable to load SVG - unable to load SVG")
+		return nil, errors.New("inkscape is not available - unable to load SVG")
 	}
 
 	// check if we need to download the SVG from the media server
