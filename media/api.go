@@ -6,13 +6,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var ErrNotFound = errors.New("resource not found")
 
 func getMediaResource(path string) (string, error) {
-	logrus.WithField("path", path).Info("fetching media resource")
+	log.WithField("path", path).Info("fetching media resource")
 	url := fmt.Sprintf("https://media.battlesnake.com/%s", path)
 
 	client := http.Client{}

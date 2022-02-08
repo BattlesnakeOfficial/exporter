@@ -18,7 +18,7 @@ import (
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
 	"github.com/patrickmn/go-cache"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // AssetType is intended to be used like an enum for the type of asset we are loading
@@ -132,7 +132,7 @@ func loadLocalImageAsset(path string, w, h int, rot rotations) (image.Image, err
 
 	img, err := loadImageFile(path)
 	if err != nil {
-		logrus.WithField("path", path).WithError(err).Errorf("Error loading asset from file")
+		log.WithField("path", path).WithError(err).Errorf("Error loading asset from file")
 		return nil, err
 	}
 	img = scaleImage(img, w, h)
@@ -144,7 +144,7 @@ func loadLocalImageAsset(path string, w, h int, rot rotations) (image.Image, err
 func drawWatermark(dc *gg.Context) {
 	watermarkImage, err := loadLocalImageAsset("render/assets/watermark.png", dc.Width()*2/3, dc.Height()*2/3, 0)
 	if err != nil {
-		logrus.WithError(err).Error("Unable to load watermark image")
+		log.WithError(err).Error("Unable to load watermark image")
 		return
 	}
 	dc.DrawImageAnchored(watermarkImage, dc.Width()/2, dc.Height()/2, 0.5, 0.5)
@@ -201,7 +201,7 @@ func drawSnakeImage(name string, aType AssetType, dc *gg.Context, bx int, by int
 	maskImage, err := svgMgr.loadSVGImageAsset(name, aType, width, height, rot)
 	if err != nil {
 		// log at info, because this could error just for people specifying snake types that don't exist
-		logrus.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"name": name,
 			"type": aType,
 		}).WithError(err).Info("unable to load SVG image asset")
@@ -215,13 +215,13 @@ func drawSnakeImage(name string, aType AssetType, dc *gg.Context, bx int, by int
 			filename = fmt.Sprintf("render/assets/tails/%s.png", AssetFallbackTailName)
 		default:
 			// something went wrong if we are asked for types we don't know about (log at error)
-			logrus.WithField("type", aType).Error("unrecognized snake image type - aborting draw")
+			log.WithField("type", aType).Error("unrecognized snake image type - aborting draw")
 			return
 		}
 		maskImage, err = loadLocalImageAsset(filename, width, height, rot)
 		if err != nil {
 			// at this point we are unable to draw correctly, so we should log at error level
-			logrus.WithField("type", aType).WithError(err).Error("Unable to load local fallback image from file - aborting draw")
+			log.WithField("type", aType).WithError(err).Error("Unable to load local fallback image from file - aborting draw")
 			return
 		}
 	}
@@ -482,7 +482,7 @@ func (sm svgManager) loadSVGImageAsset(name string, aType AssetType, w, h int, r
 	// rasterize the SVG
 	img, err := inkscapeClient.SVGToPNG(path, w, h)
 	if err != nil {
-		logrus.WithField("path", path).WithError(err).Info("unable to rasterize SVG")
+		log.WithField("path", path).WithError(err).Info("unable to rasterize SVG")
 		return nil, err
 	}
 
