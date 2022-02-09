@@ -41,7 +41,8 @@ const (
 	ColorHazard        = "#00000066"
 )
 
-var boardImageCache = cache.New(6*time.Hour, time.Minute)
+// cache for storing image.Image objects to speed up rendering
+var imageCache = cache.New(6*time.Hour, 10*time.Minute)
 
 // From github.com/fogleman/gg
 func parseHexColor(x string) color.Color {
@@ -125,13 +126,13 @@ func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by i
 	width := SquareSizePixels - SquareBorderPixels*2
 	height := SquareSizePixels - SquareBorderPixels*2
 
-	var img image.Image
+	var snakeImg image.Image
 	var err error
 	switch st {
 	case snakeHead:
-		img, err = media.GetHeadPNG(name, width, height)
+		snakeImg, err = media.GetHeadPNG(name, width, height)
 	case snakeTail:
-		img, err = media.GetTailPNG(name, width, height)
+		snakeImg, err = media.GetTailPNG(name, width, height)
 	default:
 		log.WithField("snakeImageType", st).Error("unable to draw an unrecognized snake image type")
 	}
@@ -152,7 +153,7 @@ func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by i
 	case movingUp:
 		rot = rotate90
 	}
-	img = rotateImage(img, rot)
+	snakeImg = rotateImage(snakeImg, rot)
 
 	dst := dc.Image().(draw.Image)
 	dstRect := image.Rect(
@@ -164,7 +165,7 @@ func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by i
 
 	srcImage := &image.Uniform{parseHexColor(hexColor)}
 
-	draw.DrawMask(dst, dstRect, srcImage, image.Point{}, img, image.Point{}, draw.Over)
+	draw.DrawMask(dst, dstRect, srcImage, image.Point{}, snakeImg, image.Point{}, draw.Over)
 }
 
 func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor string, corner snakeCorner) {
@@ -277,8 +278,8 @@ func createBoardContext(b *Board) *gg.Context {
 		SquareSizePixels*b.Height+BoardBorder*2,
 	)
 
-	cacheKey := fmt.Sprintf("%d:%d", b.Width, b.Height)
-	cachedBoardImage, ok := boardImageCache.Get(cacheKey)
+	cacheKey := fmt.Sprintf("board:%d:%d", b.Width, b.Height)
+	cachedBoardImage, ok := imageCache.Get(cacheKey)
 	if ok {
 		dc.DrawImage(cachedBoardImage.(image.Image), 0, 0)
 		return dc
@@ -301,7 +302,7 @@ func createBoardContext(b *Board) *gg.Context {
 	// Cache for next time
 	cacheDC := gg.NewContext(dc.Width(), dc.Height())
 	cacheDC.DrawImage(dc.Image(), 0, 0)
-	boardImageCache.Set(cacheKey, cacheDC.Image(), 0)
+	imageCache.Set(cacheKey, cacheDC.Image(), cache.DefaultExpiration)
 
 	return dc
 }
