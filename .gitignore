@@ -5,6 +5,7 @@
 .idea
 
 bin/
+media/assets/downloads/
 
 # General
 .DS_Store

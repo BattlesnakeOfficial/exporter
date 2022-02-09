@@ -17,6 +17,6 @@ RUN apk add --no-cache ca-certificates inkscape
 WORKDIR /app
 
 COPY --from=builder /go/bin/ /bin/
-COPY ./render/assets/ ./render/assets/
+COPY ./media/assets/ ./media/assets/
 
 CMD ["/bin/exporter"]
