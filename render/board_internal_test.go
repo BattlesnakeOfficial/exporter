@@ -168,7 +168,7 @@ func TestPlaceSnake(t *testing.T) {
 	assert.Equal(t, BoardSquareSnakeHead, c[0].Type, "this should be a head")
 	assert.Equal(t, movingUp, c[0].Direction, "the head should be pointing up")
 	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the head should have the dead snake colour")
-	assert.Equal(t, "regular", c[0].SnakeType, "the head should be default")
+	assert.Equal(t, "default", c[0].SnakeType, "the head should be default")
 
 	// BODY
 	c = b.getContents(5, 8)
@@ -183,5 +183,5 @@ func TestPlaceSnake(t *testing.T) {
 	assert.Equal(t, BoardSquareSnakeTail, c[0].Type, "this should be a tail")
 	assert.Equal(t, movingLeft, c[0].Direction, "the tail should be pointing left")
 	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the tail should have the dead snake colour")
-	assert.Equal(t, "regular", c[0].SnakeType, "the tail should be default")
+	assert.Equal(t, "default", c[0].SnakeType, "the tail should be default")
 }

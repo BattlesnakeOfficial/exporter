@@ -12,11 +12,11 @@ FROM alpine:latest
 ARG APP_VERSION=0.0.0
 ENV APP_VERSION=$APP_VERSION
 
-RUN apk add --no-cache ca-certificates
+RUN apk add --no-cache ca-certificates inkscape
 
 WORKDIR /app
 
 COPY --from=builder /go/bin/ /bin/
-COPY ./render/assets/ ./render/assets/
+COPY ./media/assets/ ./media/assets/
 
 CMD ["/bin/exporter"]

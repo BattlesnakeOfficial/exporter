@@ -142,6 +142,11 @@ func (b *Board) addHazard(p *engine.Point) {
 }
 
 func getDirection(p engine.Point, nP engine.Point) snakeDirection {
+	// handle when the points haven't changed (a common case) by defaulting to "right"
+	if p == nP {
+		return movingRight
+	}
+
 	// handle cases where we aren't wrapping around the board
 	if p.X+1 == nP.X {
 		return movingRight
@@ -176,9 +181,9 @@ func getDirection(p engine.Point, nP engine.Point) snakeDirection {
 		return movingDown
 	}
 
-	// default to "up" when invalid moves are passed
+	// default to "right" when invalid moves are passed
 	log.Errorf("Unable to determine snake direction: %v to %v", p, nP)
-	return movingUp
+	return movingRight
 }
 
 // getCorner gets the corner type for the given 3 segments.
@@ -241,13 +246,13 @@ func getCorner(pP engine.Point, p engine.Point, nP engine.Point) snakeCorner {
 
 func (b *Board) placeSnake(snake engine.Snake) {
 	// Default head type
-	head := "regular"
+	head := "default"
 	if len(snake.Head) > 0 {
 		head = snake.Head
 	}
 
 	// Default tail type
-	tail := "regular"
+	tail := "default"
 	if len(snake.Tail) > 0 {
 		tail = snake.Tail
 	}

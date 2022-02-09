@@ -24,6 +24,20 @@ func TestHandleVersion(t *testing.T) {
 	require.Equal(t, "1.2.3", res.Body.String())
 }
 
+func TestHandlerAvatar_OK(t *testing.T) {
+	server := NewServer()
+
+	for _, path := range []string{
+		"/200x100.svg",
+		"/head:beluga/500x100.svg",
+		"/head:beluga/tail:fish/color:%2331688e/500x100.svg",
+	} {
+		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", path), nil)
+		server.router.ServeHTTP(res, req)
+		require.Equal(t, http.StatusOK, res.Code)
+	}
+}
+
 func TestHandleAvatar_BadRequest(t *testing.T) {
 	server := NewServer()
 

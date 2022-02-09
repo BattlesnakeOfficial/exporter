@@ -5,33 +5,44 @@ import (
 	"image"
 	"image/color"
 	"image/draw"
-	"os"
 	"strings"
-	"sync"
+	"time"
 
+	"github.com/BattlesnakeOfficial/exporter/media"
 	"github.com/disintegration/imaging"
 	"github.com/fogleman/gg"
+	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 )
 
+type snakeImageType int
+
 const (
-	AssetFallbackHead        = "heads/regular.png"
-	AssetFallbackTail        = "tails/regular.png"
-	AssetFallbackUnspecified = ""
-	BoardBorder              = 2
-	SquareSizePixels         = 20
-	SquareBorderPixels       = 1
-	SquareFoodRadius         = SquareSizePixels / 3
-	ColorEmptySquare         = "#f0f0f0"
-	ColorFood                = "#ff5c75"
-	ColorHazard              = "#00000066"
+	snakeHead snakeImageType = iota
+	snakeTail
 )
 
-var boardImageCache = make(map[string]image.Image)
-var boardImageCacheLock sync.Mutex
+type rotations int
 
-var assetImageCache = make(map[string]image.Image)
-var assetImageCacheLock sync.Mutex
+const (
+	rotate0 rotations = iota
+	rotate90
+	rotate180
+	rotate270
+)
+
+const (
+	BoardBorder        = 2
+	SquareSizePixels   = 20
+	SquareBorderPixels = 1
+	SquareFoodRadius   = SquareSizePixels / 3
+	ColorEmptySquare   = "#f0f0f0"
+	ColorFood          = "#ff5c75"
+	ColorHazard        = "#00000066"
+)
+
+// cache for storing image.Image objects to speed up rendering
+var imageCache = cache.New(6*time.Hour, 10*time.Minute)
 
 // From github.com/fogleman/gg
 func parseHexColor(x string) color.Color {
@@ -57,72 +68,24 @@ func parseHexColor(x string) color.Color {
 	return color.RGBA{r, g, b, a}
 }
 
-func loadRawImageAsset(filename string) image.Image {
-	f, err := os.Open(fmt.Sprintf("render/assets/%s", filename))
-	if err != nil {
-		panic(err)
+func rotateImage(src image.Image, rot rotations) image.Image {
+	switch rot {
+	case rotate90:
+		return imaging.Rotate90(src)
+	case rotate180:
+		return imaging.FlipH(src)
+	case rotate270:
+		return imaging.Rotate270(src)
 	}
-	defer f.Close()
-
-	assetImage, _, err := image.Decode(f)
-	if err != nil {
-		panic(err)
-	}
-
-	return assetImage
-}
-
-func loadRawImageAssetWithFallback(filename string, fallbackFilename string) image.Image {
-	if fallbackFilename == AssetFallbackUnspecified {
-		return loadRawImageAsset(filename)
-	}
-
-	f, err := os.Open(fmt.Sprintf("render/assets/%s", filename))
-	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"fallback": fallbackFilename}).Warn("unable to open image asset file")
-		return loadRawImageAsset(fallbackFilename)
-	}
-	defer f.Close()
-
-	assetImage, _, err := image.Decode(f)
-	if err != nil {
-		log.WithError(err).WithFields(log.Fields{"fallback": fallbackFilename}).Warn("unable to decode image asset")
-		return loadRawImageAsset(fallbackFilename)
-	}
-
-	return assetImage
-}
-
-func loadImageAsset(filename string, fallbackFilename string, w int, h int, rot int) image.Image {
-	cacheKey := fmt.Sprintf("%s:%d:%d:%d", filename, w, h, rot)
-	cachedImage, ok := assetImageCache[cacheKey]
-	if ok {
-		return cachedImage
-	}
-
-	assetImageCacheLock.Lock()
-	defer assetImageCacheLock.Unlock()
-
-	srcImage := loadRawImageAssetWithFallback(filename, fallbackFilename)
-
-	var dstImage image.Image
-	dstImage = imaging.Resize(srcImage, w, h, imaging.Lanczos)
-
-	if rot == 180 {
-		dstImage = imaging.FlipH(dstImage)
-	} else if rot == 90 {
-		dstImage = imaging.Rotate90(dstImage)
-	} else if rot == 270 {
-		dstImage = imaging.Rotate270(dstImage)
-	}
-
-	assetImageCache[cacheKey] = dstImage
-
-	return dstImage
+	return src
 }
 
 func drawWatermark(dc *gg.Context) {
-	watermarkImage := loadImageAsset("watermark.png", AssetFallbackUnspecified, dc.Width()*2/3, dc.Height()*2/3, 0)
+	watermarkImage, err := media.GetWatermarkPNG(dc.Width()*2/3, dc.Height()*2/3)
+	if err != nil {
+		log.WithError(err).Error("Unable to load watermark image")
+		return
+	}
 	dc.DrawImageAnchored(watermarkImage, dc.Width()/2, dc.Height()/2, 0.5, 0.5)
 }
 
@@ -158,26 +121,39 @@ func drawHazard(dc *gg.Context, bx int, by int) {
 	dc.Fill()
 }
 
-func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, bx int, by int, hexColor string, dir snakeDirection) {
-	var rotation int
-	switch dir {
-	case movingRight:
-		rotation = 0
-	case movingDown:
-		rotation = 270
-	case movingLeft:
-		rotation = 180
-	case movingUp:
-		rotation = 90
+func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by int, hexColor string, dir snakeDirection) {
+
+	width := SquareSizePixels - SquareBorderPixels*2
+	height := SquareSizePixels - SquareBorderPixels*2
+
+	var snakeImg image.Image
+	var err error
+	switch st {
+	case snakeHead:
+		snakeImg, err = media.GetHeadPNG(name, width, height)
+	case snakeTail:
+		snakeImg, err = media.GetTailPNG(name, width, height)
+	default:
+		log.WithField("snakeImageType", st).Error("unable to draw an unrecognized snake image type")
 	}
 
-	maskImage := loadImageAsset(
-		filename,
-		fallbackFilename,
-		SquareSizePixels-SquareBorderPixels*2,
-		SquareSizePixels-SquareBorderPixels*2,
-		rotation,
-	)
+	if err != nil {
+		log.WithError(err).Error("Unable to get snake image - aborting draw")
+		return
+	}
+
+	var rot rotations
+	switch dir {
+	case movingRight:
+		rot = rotate0
+	case movingDown:
+		rot = rotate270
+	case movingLeft:
+		rot = rotate180
+	case movingUp:
+		rot = rotate90
+	}
+	snakeImg = rotateImage(snakeImg, rot)
 
 	dst := dc.Image().(draw.Image)
 	dstRect := image.Rect(
@@ -189,7 +165,7 @@ func drawSnakeImage(filename string, fallbackFilename string, dc *gg.Context, bx
 
 	srcImage := &image.Uniform{parseHexColor(hexColor)}
 
-	draw.DrawMask(dst, dstRect, srcImage, image.Point{}, maskImage, image.Point{}, draw.Over)
+	draw.DrawMask(dst, dstRect, srcImage, image.Point{}, snakeImg, image.Point{}, draw.Over)
 }
 
 func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor string, corner snakeCorner) {
@@ -302,15 +278,12 @@ func createBoardContext(b *Board) *gg.Context {
 		SquareSizePixels*b.Height+BoardBorder*2,
 	)
 
-	cacheKey := fmt.Sprintf("%d:%d", b.Width, b.Height)
-	cachedBoardImage, ok := boardImageCache[cacheKey]
+	cacheKey := fmt.Sprintf("board:%d:%d", b.Width, b.Height)
+	cachedBoardImage, ok := imageCache.Get(cacheKey)
 	if ok {
-		dc.DrawImage(cachedBoardImage, 0, 0)
+		dc.DrawImage(cachedBoardImage.(image.Image), 0, 0)
 		return dc
 	}
-
-	boardImageCacheLock.Lock()
-	defer boardImageCacheLock.Unlock()
 
 	// Clear to white
 	dc.SetColor(color.White)
@@ -329,7 +302,7 @@ func createBoardContext(b *Board) *gg.Context {
 	// Cache for next time
 	cacheDC := gg.NewContext(dc.Width(), dc.Height())
 	cacheDC.DrawImage(dc.Image(), 0, 0)
-	boardImageCache[cacheKey] = cacheDC.Image()
+	imageCache.Set(cacheKey, cacheDC.Image(), cache.DefaultExpiration)
 
 	return dc
 }
@@ -338,20 +311,17 @@ func DrawBoard(b *Board) image.Image {
 	dc := createBoardContext(b)
 
 	// Draw food and snakes over watermark
-	var snakeAsset string
 	for p, s := range b.squares { // cool, we can iterate ONLY the non-empty squares!
 		for _, c := range s.Contents {
 			switch c.Type {
 			case BoardSquareSnakeHead:
-				snakeAsset = fmt.Sprintf("heads/%s.png", c.SnakeType)
-				drawSnakeImage(snakeAsset, AssetFallbackHead, dc, p.X, p.Y, c.HexColor, c.Direction)
+				drawSnakeImage(c.SnakeType, snakeHead, dc, p.X, p.Y, c.HexColor, c.Direction)
 				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
 			case BoardSquareSnakeBody:
 				drawSnakeBody(dc, p.X, p.Y, c.HexColor, c.Corner)
 				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
 			case BoardSquareSnakeTail:
-				snakeAsset = fmt.Sprintf("tails/%s.png", c.SnakeType)
-				drawSnakeImage(snakeAsset, AssetFallbackTail, dc, p.X, p.Y, c.HexColor, c.Direction)
+				drawSnakeImage(c.SnakeType, snakeTail, dc, p.X, p.Y, c.HexColor, c.Direction)
 			case BoardSquareFood:
 				drawFood(dc, p.X, p.Y)
 			case BoardSquareHazard:

@@ -12,7 +12,7 @@ import (
 
 	"github.com/BattlesnakeOfficial/exporter/engine"
 	"github.com/BattlesnakeOfficial/exporter/render/gif"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -77,7 +77,7 @@ func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.G
 		if elapsed.Seconds() > 0 {
 			fps = float64(len(gameFrames)) / elapsed.Seconds()
 		}
-		logrus.WithFields(logrus.Fields{
+		log.WithFields(log.Fields{
 			"game":     g.ID,
 			"duration": elapsed,
 			"fps":      fps,
