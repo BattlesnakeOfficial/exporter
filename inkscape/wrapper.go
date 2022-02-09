@@ -27,7 +27,7 @@ func (c Client) IsAvailable() bool {
 	return err == nil
 }
 
-// SVGToPNG raserizes the SVG at the specified path to PNG format.
+// SVGToPNG rasterizes the SVG at the specified path to PNG format.
 func (c Client) SVGToPNG(path string, width, height int) (image.Image, error) {
 	if height < 1 {
 		return nil, errors.New("invalid height")

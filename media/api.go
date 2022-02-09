@@ -3,17 +3,46 @@ package media
 import (
 	"errors"
 	"fmt"
+	"image"
 	"io/ioutil"
 	"net/http"
+	"time"
 
+	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
 )
 
 var ErrNotFound = errors.New("resource not found")
+var mediaServerURL = "https://media.battlesnake.com"
+
+const (
+	fallbackHeadID = "default"
+	fallbackTailID = "default"
+)
+
+// Create an in-mem media cache (6 hours, evicting every 10 mins)
+var mediaCache = cache.New(6*60*time.Minute, 10*time.Minute)
+
+func getCachedMediaResource(path string) (string, error) {
+	var resource string
+
+	obj, found := mediaCache.Get(path)
+	if found {
+		return obj.(string), nil
+	}
+
+	resource, err := getMediaResource(path)
+	if err != nil {
+		return "", err
+	}
+
+	mediaCache.Set(path, resource, cache.DefaultExpiration)
+	return resource, nil
+}
 
 func getMediaResource(path string) (string, error) {
 	log.WithField("path", path).Info("fetching media resource")
-	url := fmt.Sprintf("https://media.battlesnake.com/%s", path)
+	url := fmt.Sprintf("%s/%s", mediaServerURL, path)
 
 	client := http.Client{}
 	response, err := client.Get(url)
@@ -36,9 +65,25 @@ func getMediaResource(path string) (string, error) {
 }
 
 func GetHeadSVG(id string) (string, error) {
-	return getCachedMediaResource(fmt.Sprintf("snakes/heads/%s.svg", id))
+	return getCachedMediaResource(headSVGPath(id))
 }
 
 func GetTailSVG(id string) (string, error) {
-	return getCachedMediaResource(fmt.Sprintf("snakes/tails/%s.svg", id))
+	return getCachedMediaResource(tailSVGPath(id))
+}
+
+func GetHeadPNG(id string, w, h int) (image.Image, error) {
+	return getSVGImageWithFallback(headSVGPath(id), headSVGPath(fallbackHeadID), w, h)
+}
+
+func GetTailPNG(id string, w, h int) (image.Image, error) {
+	return getSVGImageWithFallback(tailSVGPath(id), tailSVGPath(fallbackTailID), w, h)
+}
+
+func headSVGPath(id string) string {
+	return fmt.Sprintf("snakes/heads/%s.svg", id)
+}
+
+func tailSVGPath(id string) string {
+	return fmt.Sprintf("snakes/tails/%s.svg", id)
 }
