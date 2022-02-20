@@ -185,3 +185,57 @@ func TestPlaceSnake(t *testing.T) {
 	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the tail should have the dead snake colour")
 	assert.Equal(t, "default", c[0].SnakeType, "the tail should be default")
 }
+
+func TestGrowingSnakePlacement(t *testing.T) {
+	b := NewBoard(11, 11)
+
+	// This test reproduces the issue found in DEV-1041.
+	// The issue was caused by the snake board structure allowing multiple contents per-square.
+	// When a snake eats and grows, it results in a body segment being placed on the same square as the tail.
+	// Previously, the squares in the game board only supported one content item, so the tail would overwrite the body.
+	// But now that squares support multiple contents, they both get rendered.
+	// This results in the tail "disappearing" because the body fills up the whole square.
+
+	t.Log("Placing a snake that just ate")
+	s := engine.Snake{ID: "test_123",
+		Name:   "A hungry snake",
+		Body:   []engine.Point{{X: 10, Y: 8}, {X: 9, Y: 8}, {X: 9, Y: 9}, {X: 9, Y: 9}},
+		Health: 100,
+		Color:  "#4b0082",
+		Head:   "bendr",
+		Tail:   "freckled",
+	}
+	b.placeSnake(s)
+
+	require.Len(t, b.getContents(9, 9), 1, "the snake tail should replace the body")
+	require.Equal(t, BoardSquareSnakeTail, b.getContents(9, 9)[0].Type, "the snake tail should replace the body")
+}
+
+func TestRemoveIfExists(t *testing.T) {
+	b := NewBoard(11, 11)
+
+	// empty case
+	// ensure removing something that doesn't exist doesn't cause a panic
+	b.removeIfExists(0, 0, BoardSquareSnakeBody)
+
+	// ensure a non-matching type doesn't get removed
+	require.Len(t, b.getContents(0, 0), 0)
+	b.addSnakeBody(&engine.Point{X: 0, Y: 0}, "", movingUp, cornerBottomLeft)
+	require.Len(t, b.getContents(0, 0), 1)
+	b.removeIfExists(0, 0, BoardSquareFood)
+	require.Len(t, b.getContents(0, 0), 1)
+
+	// ensure that a matching type gets removed
+	b.removeIfExists(0, 0, BoardSquareSnakeBody)
+	require.Len(t, b.getContents(0, 0), 0)
+
+	// ensure that removal works okay when there is more than one content
+	b.addSnakeBody(&engine.Point{X: 0, Y: 0}, "", movingUp, cornerBottomLeft)
+	b.addHazard(&engine.Point{X: 0, Y: 0})
+	require.Len(t, b.getContents(0, 0), 2)
+	b.removeIfExists(0, 0, BoardSquareSnakeHead)
+	require.Len(t, b.getContents(0, 0), 2, "shouldn't change when removing something that doesnt exist")
+	b.removeIfExists(0, 0, BoardSquareSnakeBody)
+	require.Len(t, b.getContents(0, 0), 1, "body should be gone now")
+	require.Equal(t, BoardSquareHazard, b.getContents(0, 0)[0].Type, "just hazard should be left")
+}
