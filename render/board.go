@@ -130,8 +130,8 @@ func (b Board) removeIfExists(x, y int, t BoardSquareContentType) {
 	}
 
 	// more than one item, we need to update the slice
-	// this is using the "append based removal" strategy which re-uses the slice
-	// effectively, it undoes the append
+	// this is using the "append based removal" strategy
+	// which re-uses the underlying slice
 	s.Contents = append(s.Contents[:foundIdx], s.Contents[foundIdx+1:]...)
 }
 
