@@ -102,6 +102,39 @@ func (b Board) getContents(x, y int) []BoardSquareContent {
 	return s.Contents
 }
 
+// removeIfExists checks whether the board square at coordinate (x,y)
+// contains the given content type and removes it if it does
+func (b Board) removeIfExists(x, y int, t BoardSquareContentType) {
+	s := b.getSquare(x, y)
+	if s == nil {
+		return
+	}
+
+	foundIdx := -1
+	for i, c := range s.Contents {
+		if c.Type == t {
+			foundIdx = i
+			break
+		}
+	}
+
+	if foundIdx < 0 {
+		// not found, we're done
+		return
+	}
+
+	// if only 1 item, reset contents to nil
+	if len(s.Contents) == 1 {
+		s.Contents = nil
+		return
+	}
+
+	// more than one item, we need to update the slice
+	// this is using the "append based removal" strategy which re-uses the slice
+	// effectively, it undoes the append
+	s.Contents = append(s.Contents[:foundIdx], s.Contents[foundIdx+1:]...)
+}
+
 func (b *Board) addFood(p *engine.Point) {
 	b.addContent(p, BoardSquareContent{
 		Type: BoardSquareFood,
@@ -109,6 +142,10 @@ func (b *Board) addFood(p *engine.Point) {
 }
 
 func (b *Board) addSnakeTail(p *engine.Point, color, snakeType string, direction snakeDirection) {
+	// when a snake eats and grows, the tail is placed on the same square as a body
+	// this makes sure we remove the body segment if that condition is hit
+	b.removeIfExists(p.X, p.Y, BoardSquareSnakeBody)
+
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeTail,
 		HexColor:  color,
