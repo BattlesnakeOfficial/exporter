@@ -57,13 +57,13 @@ func TestGetTailSVG(t *testing.T) {
 }
 
 func TestGetTailPNG(t *testing.T) {
-	img, err := GetTailPNG("default", 20, 20)
+	img, err := GetTailPNG("default", 20, 20, "#cc00aa")
 	require.NoError(t, err)
 	assertImg(t, img, 20, 20)
 }
 
 func TestGetHeadPNG(t *testing.T) {
-	img, err := GetHeadPNG("default", 20, 20)
+	img, err := GetHeadPNG("default", 20, 20, "#cc00aa")
 	require.NoError(t, err)
 	assertImg(t, img, 20, 20)
 }
@@ -83,13 +83,13 @@ func TestSVGManager(t *testing.T) {
 	require.NoError(t, mgr.writeFile("things/foo.svg", []byte(tailSVG)))
 	require.DirExists(t, filepath.Join(baseDir, "things"))
 	require.FileExists(t, mgr.getFullPath("things/foo.svg"))
-	err = mgr.ensureDownloaded("things/foo.svg")
+	_, err = mgr.ensureDownloaded("things/foo.svg", 20, 20, "#cc00aa")
 	require.NoError(t, err)
 
 	require.NoError(t, mgr.ensureSubdirExists("some/subdir"))
 	require.DirExists(t, mgr.getFullPath("some/subdir"))
 
-	img, err := mgr.loadSVGImage(headSVGPath("default"), 20, 20)
+	img, err := mgr.loadSVGImage(headSVGPath("default"), 20, 20, "#cc00aa")
 	require.NoError(t, err)
 	assertImg(t, img, 20, 20)
 }
@@ -97,27 +97,27 @@ func TestSVGManager(t *testing.T) {
 func TestGetSVGImageWithFallback(t *testing.T) {
 
 	// these shouldn't require a fallback
-	img, err := getSVGImageWithFallback(tailSVGPath("default"), "nofallback.png", 20, 20)
+	img, err := getSVGImageWithFallback(tailSVGPath("default"), "nofallback.png", 20, 20, "#cc00aa")
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
-	img, err = getSVGImageWithFallback(headSVGPath("default"), "nofallback.png", 20, 20)
+	img, err = getSVGImageWithFallback(headSVGPath("default"), "nofallback.png", 20, 20, "#cc00aa")
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
 
 	// test head/tail fallbacks
-	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), fallbackTail, 20, 20)
+	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), fallbackTail, 20, 20, "#cc00aa")
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
-	img, err = getSVGImageWithFallback(headSVGPath("notfound"), fallbackHead, 20, 20)
+	img, err = getSVGImageWithFallback(headSVGPath("notfound"), fallbackHead, 20, 20, "#cc00aa")
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
 
 	// this should just error
-	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), "404/notfound.png", 20, 20)
+	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), "404/notfound.png", 20, 20, "#cc00aa")
 	require.Error(t, err)
 	require.Nil(t, img)
 }
@@ -150,7 +150,7 @@ func TestLoadLocalImageAsset(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, i)
 	// ensure caching works
-	_, ok := imageCache.Get(imageCacheKey(fallbackHead, 20, 20))
+	_, ok := imageCache.Get(imageCacheKey(fallbackHead, 20, 20, ""))
 	require.True(t, ok, "image should get cached")
 
 	i, err = loadLocalImageAsset(fallbackTail, 20, 20)

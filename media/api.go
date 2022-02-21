@@ -67,12 +67,12 @@ func GetTailSVG(id string) (string, error) {
 	return getCachedMediaResource(tailSVGPath(id))
 }
 
-func GetHeadPNG(id string, w, h int) (image.Image, error) {
-	return getSVGImageWithFallback(headSVGPath(id), fallbackHead, w, h)
+func GetHeadPNG(id string, w, h int, color string) (image.Image, error) {
+	return getSVGImageWithFallback(headSVGPath(id), fallbackHead, w, h, color)
 }
 
-func GetTailPNG(id string, w, h int) (image.Image, error) {
-	return getSVGImageWithFallback(tailSVGPath(id), fallbackTail, w, h)
+func GetTailPNG(id string, w, h int, color string) (image.Image, error) {
+	return getSVGImageWithFallback(tailSVGPath(id), fallbackTail, w, h, color)
 }
 
 func headSVGPath(id string) string {

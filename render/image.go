@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
 	"strings"
 	"time"
 
@@ -130,9 +129,9 @@ func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by i
 	var err error
 	switch st {
 	case snakeHead:
-		snakeImg, err = media.GetHeadPNG(name, width, height)
+		snakeImg, err = media.GetHeadPNG(name, width, height, hexColor)
 	case snakeTail:
-		snakeImg, err = media.GetTailPNG(name, width, height)
+		snakeImg, err = media.GetTailPNG(name, width, height, hexColor)
 	default:
 		log.WithField("snakeImageType", st).Error("unable to draw an unrecognized snake image type")
 	}
@@ -155,17 +154,20 @@ func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by i
 	}
 	snakeImg = rotateImage(snakeImg, rot)
 
-	dst := dc.Image().(draw.Image)
-	dstRect := image.Rect(
-		int(boardXToDrawX(dc, bx))+SquareBorderPixels+BoardBorder,
-		int(boardYToDrawY(dc, by))+SquareBorderPixels+BoardBorder,
-		int(boardXToDrawX(dc, bx+1))-SquareBorderPixels+BoardBorder,
-		int(boardYToDrawY(dc, by-1))-SquareBorderPixels+BoardBorder,
-	)
+	// dst := dc.Image().(draw.Image)
+	// dstRect := image.Rect(
+	// 	int(boardXToDrawX(dc, bx))+SquareBorderPixels+BoardBorder,
+	// 	int(boardYToDrawY(dc, by))+SquareBorderPixels+BoardBorder,
+	// 	int(boardXToDrawX(dc, bx+1))-SquareBorderPixels+BoardBorder,
+	// 	int(boardYToDrawY(dc, by-1))-SquareBorderPixels+BoardBorder,
+	// )
 
-	srcImage := &image.Uniform{parseHexColor(hexColor)}
+	// srcImage := &image.Uniform{parseHexColor(hexColor)}
 
-	draw.DrawMask(dst, dstRect, srcImage, image.Point{}, snakeImg, image.Point{}, draw.Over)
+	// draw.DrawMask(dst, dstRect, srcImage, image.Point{}, snakeImg, image.Point{}, draw.Over)
+	dx := int(boardXToDrawX(dc, bx)) + SquareBorderPixels + BoardBorder
+	dy := int(boardYToDrawY(dc, by)) + SquareBorderPixels + BoardBorder
+	dc.DrawImage(snakeImg, dx, dy)
 }
 
 func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor string, corner snakeCorner) {

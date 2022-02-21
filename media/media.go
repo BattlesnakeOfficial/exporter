@@ -7,6 +7,7 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"time"
 
@@ -46,15 +47,15 @@ func loadImageFile(path string) (image.Image, error) {
 	return img, err
 }
 
-func imageCacheKey(path string, w, h int) string {
-	return fmt.Sprintf("%s:%d:%d", path, w, h)
+func imageCacheKey(path string, w, h int, color string) string {
+	return fmt.Sprintf("%s:%d:%d:%s", path, w, h, color)
 }
 
 // loadLocalImageAsset loads the specified media asset from the local filesystem.
 // It assumes the "mediaPath" is relative to the base path.
 // The base path is the directory where all media assets should be located within.
 func loadLocalImageAsset(mediaPath string, w, h int) (image.Image, error) {
-	key := imageCacheKey(mediaPath, w, h)
+	key := imageCacheKey(mediaPath, w, h, "")
 	mediaPath = filepath.Join(baseDir, mediaPath) // file is within the baseDir on disk
 	cachedImage, ok := imageCache.Get(key)
 	if ok {
@@ -72,9 +73,9 @@ func loadLocalImageAsset(mediaPath string, w, h int) (image.Image, error) {
 	return img, nil
 }
 
-func getSVGImageWithFallback(path, fallbackPath string, w, h int) (image.Image, error) {
+func getSVGImageWithFallback(path, fallbackPath string, w, h int, color string) (image.Image, error) {
 	// first we try to load from the media server SVG's
-	img, err := svgMgr.loadSVGImage(path, w, h)
+	img, err := svgMgr.loadSVGImage(path, w, h, color)
 	if err != nil {
 		// log at info, because this could error just for people specifying snake types that don't exist
 		log.WithFields(log.Fields{
@@ -95,8 +96,8 @@ func getSVGImageWithFallback(path, fallbackPath string, w, h int) (image.Image, 
 	return img, err
 }
 
-func (sm svgManager) loadSVGImage(mediaPath string, w, h int) (image.Image, error) {
-	key := imageCacheKey(mediaPath, w, h)
+func (sm svgManager) loadSVGImage(mediaPath string, w, h int, color string) (image.Image, error) {
+	key := imageCacheKey(mediaPath, w, h, color)
 	cachedImage, ok := imageCache.Get(key)
 	if ok {
 		return cachedImage.(image.Image), nil
@@ -107,10 +108,11 @@ func (sm svgManager) loadSVGImage(mediaPath string, w, h int) (image.Image, erro
 		return nil, errors.New("inkscape is not available - unable to load SVG")
 	}
 
-	err := sm.ensureDownloaded(mediaPath)
+	mediaPath, err := sm.ensureDownloaded(mediaPath, w, h, color)
 	if err != nil {
 		return nil, err
 	}
+
 	path := sm.getFullPath(mediaPath)
 
 	// rasterize the SVG
@@ -152,21 +154,34 @@ func (sm svgManager) getFullPath(mediaPath string) string {
 	return filepath.Join(sm.baseDir, mediaPath)
 }
 
-func (sm svgManager) ensureDownloaded(mediaPath string) error {
+func (sm svgManager) ensureDownloaded(mediaPath string, w, h int, color string) (string, error) {
+	// use the colour as a directory to separate different colours of SVG's
+	customizedMediaPath := path.Join(fmt.Sprintf("c%sw%dh%d", color, w, h), mediaPath)
+
 	// check if we need to download the SVG from the media server
-	_, err := os.Stat(sm.getFullPath(mediaPath))
+	_, err := os.Stat(sm.getFullPath(customizedMediaPath))
 	if errors.Is(err, fs.ErrNotExist) {
 		svg, err := getCachedMediaResource(mediaPath)
 		if err != nil {
-			return err
+			return "", err
 		}
-		err = sm.writeFile(mediaPath, []byte(svg))
+
+		svg = customiseSVG(svg, w, h, color)
+
+		err = sm.writeFile(customizedMediaPath, []byte(svg))
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
-	return nil
+	// return the new media path which includes the colour directory
+	return customizedMediaPath, nil
+}
+
+// customiseSVG wraps the SVG with an outer `svg` tag to ensure that it has the
+// specified width, height and fill attributes.
+func customiseSVG(svg string, w, h int, color string) string {
+	return fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" fill="%s" width="%d" height="%d">%s</svg>`, color, w, h, svg)
 }
 
 func scaleImage(src image.Image, w, h int) image.Image {
