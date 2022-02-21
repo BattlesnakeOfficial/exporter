@@ -96,20 +96,28 @@ func TestSVGManager(t *testing.T) {
 
 func TestGetSVGImageWithFallback(t *testing.T) {
 
-	// this shouldn't require a fallback
-	img, err := getSVGImageWithFallback(tailSVGPath("default"), tailSVGPath("default"), 20, 20)
+	// these shouldn't require a fallback
+	img, err := getSVGImageWithFallback(tailSVGPath("default"), "nofallback.png", 20, 20)
+	require.NoError(t, err)
+	require.NotNil(t, img)
+	assertImg(t, img, 20, 20)
+	img, err = getSVGImageWithFallback(headSVGPath("default"), "nofallback.png", 20, 20)
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
 
-	// this should require a fallback
-	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), tailSVGPath("default"), 20, 20)
+	// test head/tail fallbacks
+	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), fallbackTail, 20, 20)
+	require.NoError(t, err)
+	require.NotNil(t, img)
+	assertImg(t, img, 20, 20)
+	img, err = getSVGImageWithFallback(headSVGPath("notfound"), fallbackHead, 20, 20)
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
 
 	// this should just error
-	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), tailSVGPath("notfound"), 20, 20)
+	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), "404/notfound.png", 20, 20)
 	require.Error(t, err)
 	require.Nil(t, img)
 }
@@ -138,17 +146,17 @@ func TestLoadImageFile(t *testing.T) {
 
 func TestLoadLocalImageAsset(t *testing.T) {
 	// happy paths for assets that should always exist
-	i, err := loadLocalImageAsset(fmt.Sprintf("assets/heads/%s.png", fallbackHeadID), 20, 20)
+	i, err := loadLocalImageAsset(fallbackHead, 20, 20)
 	require.NoError(t, err)
 	require.NotNil(t, i)
 	// ensure caching works
-	_, ok := imageCache.Get(imageCacheKey(fmt.Sprintf("assets/heads/%s.png", fallbackTailID), 20, 20))
+	_, ok := imageCache.Get(imageCacheKey(fallbackHead, 20, 20))
 	require.True(t, ok, "image should get cached")
 
-	i, err = loadLocalImageAsset(fmt.Sprintf("assets/tails/%s.png", fallbackTailID), 20, 20)
+	i, err = loadLocalImageAsset(fallbackTail, 20, 20)
 	require.NoError(t, err)
 	require.NotNil(t, i)
-	i, err = loadLocalImageAsset("assets/watermark.png", 100, 100)
+	i, err = loadLocalImageAsset("watermark.png", 100, 100)
 	require.NoError(t, err)
 	require.NotNil(t, i)
 
