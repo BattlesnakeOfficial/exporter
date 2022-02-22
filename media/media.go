@@ -93,6 +93,7 @@ func getSVGImageWithFallback(path, fallbackPath string, w, h int, c color.Color)
 				"path":     path,
 				"fallback": fallbackPath,
 			}).WithError(err).Error("Unable to load local fallback image from file")
+			return nil, err
 		}
 		img = changeImageColor(img, c)
 	}
