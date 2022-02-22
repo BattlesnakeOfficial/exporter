@@ -10,7 +10,7 @@ import (
 	"os/exec"
 )
 
-var defaultCommand = "inkscape"
+var defaultCommand = "inkscapey"
 
 // Client is an implementation of an Inkscape CLI wrapper.
 // It assumes a locally available inkscape command can be run.
