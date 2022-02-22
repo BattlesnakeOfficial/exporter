@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func Same(t *testing.T, a, b image.Image) {
+func Equal(t *testing.T, a, b image.Image) {
 	require.Equal(t, a.Bounds().Min.X, b.Bounds().Min.X)
 	require.Equal(t, a.Bounds().Min.Y, b.Bounds().Min.Y)
 	require.Equal(t, a.Bounds().Max.X, b.Bounds().Max.X)

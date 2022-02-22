@@ -20,7 +20,7 @@ func TestSVGToPNG(t *testing.T) {
 	require.Equal(t, 100, got.Bounds().Max.X)
 	require.Equal(t, 100, got.Bounds().Max.Y)
 	want := loadTestImage(t)
-	imagetest.Same(t, want, got)
+	imagetest.Equal(t, want, got)
 
 	// client should validate width/height
 	_, err = client.SVGToPNG("testdata/example.svg", 0, 100)

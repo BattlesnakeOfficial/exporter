@@ -181,7 +181,7 @@ func TestChangeImageColor(t *testing.T) {
 	want, err := loadImageFile("testdata/default_00ccaa.png")
 	require.NoError(t, err)
 
-	imagetest.Same(t, want, img)
+	imagetest.Equal(t, want, img)
 }
 
 func TestScaleImage(t *testing.T) {
