@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Equal ensures that the two images are equivalent.
+// Equivalent means that both images have the same bounds and each pixel has the same RGBA values.
 func Equal(t *testing.T, a, b image.Image) {
 	require.Equal(t, a.Bounds().Min.X, b.Bounds().Min.X)
 	require.Equal(t, a.Bounds().Min.Y, b.Bounds().Min.Y)
