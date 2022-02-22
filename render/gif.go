@@ -7,11 +7,11 @@ import (
 	"image/draw"
 	"io"
 	"runtime"
-	"sort"
 	"time"
 
 	"github.com/BattlesnakeOfficial/exporter/engine"
 	"github.com/BattlesnakeOfficial/exporter/render/gif"
+	"github.com/ericpauley/go-quantize/quantize"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -28,7 +28,9 @@ func gameFrameToPalettedImage(g *engine.Game, gf *engine.GameFrame) *image.Palet
 	// First, Board is rendered to RGBA Image
 	// Second, RGBA Image converted to Paletted Image (lossy)
 	rgbaImage := DrawBoard(board)
-	palettedImage := image.NewPaletted(rgbaImage.Bounds(), buildGIFPallete(rgbaImage))
+	q := quantize.MedianCutQuantizer{}
+	p := q.Quantize(make([]color.Color, 0, 256), rgbaImage)
+	palettedImage := image.NewPaletted(rgbaImage.Bounds(), p)
 
 	// No Dithering
 	draw.Draw(palettedImage, rgbaImage.Bounds(), rgbaImage, image.Point{}, draw.Src)
@@ -102,54 +104,3 @@ func recoverToError(panicArg interface{}) error {
 	err = fmt.Errorf("panic at %s: %w", source, err)
 	return err
 }
-
-// getColorCounts finds all unique colours in an image and returns a count
-// of how often those colours are used, sorted in descending order.
-func getColorCounts(img image.Image) usageList {
-	counts := map[color.Color]int{}
-	m := img.Bounds().Max
-	for x := 0; x < m.X; x++ {
-		for y := 0; y < m.Y; y++ {
-			counts[img.At(x, y)]++
-		}
-	}
-
-	l := make(usageList, len(counts))
-	i := 0
-	for k, v := range counts {
-		l[i] = colorUsage{k, v}
-		i++
-	}
-
-	sort.Sort(l)
-
-	return l
-}
-
-// buildGIFPallete builds a colour pallete that can be used to convert the given image to a GIF frame.
-// Any image with any number of colours can be used. If the image has more colours than a GIF frame can
-// support, the pallete will be a subset of the source image colours.
-func buildGIFPallete(src image.Image) color.Palette {
-	counts := getColorCounts(src)
-
-	pal := make(color.Palette, min(GIFMaxColorsPerFrame, len(counts)))
-	for i := 0; i < len(pal); i++ {
-		pal[i] = counts[i].Key
-	}
-
-	return pal
-}
-
-// colorUsage is simple pair of color and the number of times it's used
-// It exists to make it easy to sort a slice of colors ordered by how much they are used.
-type colorUsage struct {
-	Key   color.Color
-	Value int
-}
-
-// usageList is a type that is used to satisfy sort.Interface so we can sort colors by usage
-type usageList []colorUsage
-
-func (p usageList) Len() int           { return len(p) }
-func (p usageList) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
-func (p usageList) Less(i, j int) bool { return p[i].Value > p[j].Value } // should be descending order

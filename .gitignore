@@ -6,6 +6,7 @@
 
 bin/
 media/assets/downloads/
+render/media/assets/downloads/
 
 # General
 .DS_Store

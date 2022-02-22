@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/disintegration/imaging v1.6.2
+	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4
 	github.com/fogleman/gg v1.3.0
 	github.com/julienschmidt/httprouter v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
