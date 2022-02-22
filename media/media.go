@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -47,15 +48,17 @@ func loadImageFile(path string) (image.Image, error) {
 	return img, err
 }
 
-func imageCacheKey(path string, w, h int, color string) string {
-	return fmt.Sprintf("%s:%d:%d:%s", path, w, h, color)
+// imageCacheKey creates a cache key that is unique to the given parameters.
+// color can be nil when there is no color.
+func imageCacheKey(path string, w, h int, c color.Color) string {
+	return fmt.Sprintf("%s:%d:%d:%s", path, w, h, colorToHex6(c))
 }
 
 // loadLocalImageAsset loads the specified media asset from the local filesystem.
 // It assumes the "mediaPath" is relative to the base path.
 // The base path is the directory where all media assets should be located within.
 func loadLocalImageAsset(mediaPath string, w, h int) (image.Image, error) {
-	key := imageCacheKey(mediaPath, w, h, "")
+	key := imageCacheKey(mediaPath, w, h, nil)
 	mediaPath = filepath.Join(baseDir, mediaPath) // file is within the baseDir on disk
 	cachedImage, ok := imageCache.Get(key)
 	if ok {
@@ -73,9 +76,9 @@ func loadLocalImageAsset(mediaPath string, w, h int) (image.Image, error) {
 	return img, nil
 }
 
-func getSVGImageWithFallback(path, fallbackPath string, w, h int, color string) (image.Image, error) {
+func getSVGImageWithFallback(path, fallbackPath string, w, h int, c color.Color) (image.Image, error) {
 	// first we try to load from the media server SVG's
-	img, err := svgMgr.loadSVGImage(path, w, h, color)
+	img, err := svgMgr.loadSVGImage(path, w, h, c)
 	if err != nil {
 		// log at info, because this could error just for people specifying snake types that don't exist
 		log.WithFields(log.Fields{
@@ -96,8 +99,8 @@ func getSVGImageWithFallback(path, fallbackPath string, w, h int, color string) 
 	return img, err
 }
 
-func (sm svgManager) loadSVGImage(mediaPath string, w, h int, color string) (image.Image, error) {
-	key := imageCacheKey(mediaPath, w, h, color)
+func (sm svgManager) loadSVGImage(mediaPath string, w, h int, c color.Color) (image.Image, error) {
+	key := imageCacheKey(mediaPath, w, h, c)
 	cachedImage, ok := imageCache.Get(key)
 	if ok {
 		return cachedImage.(image.Image), nil
@@ -108,7 +111,7 @@ func (sm svgManager) loadSVGImage(mediaPath string, w, h int, color string) (ima
 		return nil, errors.New("inkscape is not available - unable to load SVG")
 	}
 
-	mediaPath, err := sm.ensureDownloaded(mediaPath, w, h, color)
+	mediaPath, err := sm.ensureDownloaded(mediaPath, w, h, c)
 	if err != nil {
 		return nil, err
 	}
@@ -154,9 +157,9 @@ func (sm svgManager) getFullPath(mediaPath string) string {
 	return filepath.Join(sm.baseDir, mediaPath)
 }
 
-func (sm svgManager) ensureDownloaded(mediaPath string, w, h int, color string) (string, error) {
+func (sm svgManager) ensureDownloaded(mediaPath string, w, h int, c color.Color) (string, error) {
 	// use the colour as a directory to separate different colours of SVG's
-	customizedMediaPath := path.Join(fmt.Sprintf("c%sw%dh%d", color, w, h), mediaPath)
+	customizedMediaPath := path.Join(fmt.Sprintf("c%sw%dh%d", colorToHex6(c), w, h), mediaPath)
 
 	// check if we need to download the SVG from the media server
 	_, err := os.Stat(sm.getFullPath(customizedMediaPath))
@@ -166,7 +169,7 @@ func (sm svgManager) ensureDownloaded(mediaPath string, w, h int, color string) 
 			return "", err
 		}
 
-		svg = customiseSVG(svg, w, h, color)
+		svg = customiseSVG(svg, w, h, c)
 
 		err = sm.writeFile(customizedMediaPath, []byte(svg))
 		if err != nil {
@@ -180,8 +183,8 @@ func (sm svgManager) ensureDownloaded(mediaPath string, w, h int, color string) 
 
 // customiseSVG wraps the SVG with an outer `svg` tag to ensure that it has the
 // specified width, height and fill attributes.
-func customiseSVG(svg string, w, h int, color string) string {
-	return fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" fill="%s" width="%d" height="%d">%s</svg>`, color, w, h, svg)
+func customiseSVG(svg string, w, h int, c color.Color) string {
+	return fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" fill="%s" width="%d" height="%d">%s</svg>`, colorToHex6(c), w, h, svg)
 }
 
 func scaleImage(src image.Image, w, h int) image.Image {
@@ -190,4 +193,15 @@ func scaleImage(src image.Image, w, h int) image.Image {
 		return src
 	}
 	return imaging.Resize(src, w, h, imaging.Lanczos)
+}
+
+// colorToHex6 converts a color.Color to a 6-digit hexadecimal string.
+// If color is nil, the empty string is returned.
+func colorToHex6(c color.Color) string {
+	if c == nil {
+		return ""
+	}
+
+	r, g, b, _ := c.RGBA()
+	return fmt.Sprintf("#%02x%02x%02x", uint8(r), uint8(g), uint8(b))
 }

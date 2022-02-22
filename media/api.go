@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -67,12 +68,12 @@ func GetTailSVG(id string) (string, error) {
 	return getCachedMediaResource(tailSVGPath(id))
 }
 
-func GetHeadPNG(id string, w, h int, color string) (image.Image, error) {
-	return getSVGImageWithFallback(headSVGPath(id), fallbackHead, w, h, color)
+func GetHeadPNG(id string, w, h int, c color.Color) (image.Image, error) {
+	return getSVGImageWithFallback(headSVGPath(id), fallbackHead, w, h, c)
 }
 
-func GetTailPNG(id string, w, h int, color string) (image.Image, error) {
-	return getSVGImageWithFallback(tailSVGPath(id), fallbackTail, w, h, color)
+func GetTailPNG(id string, w, h int, c color.Color) (image.Image, error) {
+	return getSVGImageWithFallback(tailSVGPath(id), fallbackTail, w, h, c)
 }
 
 func headSVGPath(id string) string {

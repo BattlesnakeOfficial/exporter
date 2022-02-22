@@ -3,6 +3,7 @@ package media
 import (
 	"fmt"
 	"image"
+	"image/color"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -10,7 +11,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/BattlesnakeOfficial/exporter/imagetest"
 	"github.com/BattlesnakeOfficial/exporter/inkscape"
+	"github.com/BattlesnakeOfficial/exporter/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -57,13 +60,13 @@ func TestGetTailSVG(t *testing.T) {
 }
 
 func TestGetTailPNG(t *testing.T) {
-	img, err := GetTailPNG("default", 20, 20, "#cc00aa")
+	img, err := GetTailPNG("default", 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	assertImg(t, img, 20, 20)
 }
 
 func TestGetHeadPNG(t *testing.T) {
-	img, err := GetHeadPNG("default", 20, 20, "#cc00aa")
+	img, err := GetHeadPNG("default", 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	assertImg(t, img, 20, 20)
 }
@@ -83,13 +86,13 @@ func TestSVGManager(t *testing.T) {
 	require.NoError(t, mgr.writeFile("things/foo.svg", []byte(tailSVG)))
 	require.DirExists(t, filepath.Join(baseDir, "things"))
 	require.FileExists(t, mgr.getFullPath("things/foo.svg"))
-	_, err = mgr.ensureDownloaded("things/foo.svg", 20, 20, "#cc00aa")
+	_, err = mgr.ensureDownloaded("things/foo.svg", 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 
 	require.NoError(t, mgr.ensureSubdirExists("some/subdir"))
 	require.DirExists(t, mgr.getFullPath("some/subdir"))
 
-	img, err := mgr.loadSVGImage(headSVGPath("default"), 20, 20, "#cc00aa")
+	img, err := mgr.loadSVGImage(headSVGPath("default"), 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	assertImg(t, img, 20, 20)
 }
@@ -97,27 +100,27 @@ func TestSVGManager(t *testing.T) {
 func TestGetSVGImageWithFallback(t *testing.T) {
 
 	// these shouldn't require a fallback
-	img, err := getSVGImageWithFallback(tailSVGPath("default"), "nofallback.png", 20, 20, "#cc00aa")
+	img, err := getSVGImageWithFallback(tailSVGPath("default"), "nofallback.png", 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
-	img, err = getSVGImageWithFallback(headSVGPath("default"), "nofallback.png", 20, 20, "#cc00aa")
+	img, err = getSVGImageWithFallback(headSVGPath("default"), "nofallback.png", 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
 
 	// test head/tail fallbacks
-	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), fallbackTail, 20, 20, "#cc00aa")
+	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), fallbackTail, 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
-	img, err = getSVGImageWithFallback(headSVGPath("notfound"), fallbackHead, 20, 20, "#cc00aa")
+	img, err = getSVGImageWithFallback(headSVGPath("notfound"), fallbackHead, 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
 
 	// this should just error
-	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), "404/notfound.png", 20, 20, "#cc00aa")
+	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), "404/notfound.png", 20, 20, parse.HexColor("#cc00aa"))
 	require.Error(t, err)
 	require.Nil(t, img)
 }
@@ -130,8 +133,8 @@ func TestGetWatermarkPNG(t *testing.T) {
 
 func assertImg(t *testing.T, img image.Image, w, h int) {
 	require.NotNil(t, img)
-	assert.Equal(t, img.Bounds().Max.X, w)
-	assert.Equal(t, img.Bounds().Max.Y, h)
+	assert.Equal(t, w, img.Bounds().Max.X)
+	assert.Equal(t, h, img.Bounds().Max.Y)
 }
 
 func TestLoadImageFile(t *testing.T) {
@@ -144,13 +147,18 @@ func TestLoadImageFile(t *testing.T) {
 	require.Nil(t, i)
 }
 
+func TestImageCacheKey(t *testing.T) {
+	require.Equal(t, "heads/default.png:20:20:", imageCacheKey(fallbackHead, 20, 20, nil))            // ensure nil color is okay
+	require.Equal(t, "hello:100:50:#00ccaa", imageCacheKey("hello", 100, 50, parse.HexColor("#0ca"))) // make sure color key works
+}
+
 func TestLoadLocalImageAsset(t *testing.T) {
 	// happy paths for assets that should always exist
 	i, err := loadLocalImageAsset(fallbackHead, 20, 20)
 	require.NoError(t, err)
 	require.NotNil(t, i)
 	// ensure caching works
-	_, ok := imageCache.Get(imageCacheKey(fallbackHead, 20, 20, ""))
+	_, ok := imageCache.Get(imageCacheKey(fallbackHead, 20, 20, nil))
 	require.True(t, ok, "image should get cached")
 
 	i, err = loadLocalImageAsset(fallbackTail, 20, 20)
@@ -165,6 +173,17 @@ func TestLoadLocalImageAsset(t *testing.T) {
 	require.Error(t, err, "this image doesnt exist, so it should error when loading")
 }
 
+func TestChangeImageColor(t *testing.T) {
+	img, err := loadLocalImageAsset(fallbackHead, 50, 50)
+	require.NoError(t, err)
+	img = changeImageColor(img, color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+
+	want, err := loadImageFile("testdata/default_00ccaa.png")
+	require.NoError(t, err)
+
+	imagetest.Same(t, want, img)
+}
+
 func TestScaleImage(t *testing.T) {
 	i, err := loadImageFile("assets/watermark.png")
 	require.NoError(t, err)
@@ -175,6 +194,14 @@ func TestScaleImage(t *testing.T) {
 	require.NotNil(t, si)
 	assert.Equal(t, si.Bounds().Max.X, newX)
 	assert.Equal(t, si.Bounds().Max.Y, newY)
+}
+
+func TestColorToHex6(t *testing.T) {
+	require.Equal(t, "", colorToHex6(nil))
+	require.Equal(t, "#00ccaa", colorToHex6(color.RGBA{0x00, 0xcc, 0xaa, 0xff}))
+	require.Equal(t, "#000000", colorToHex6(color.RGBA{0x00, 0x00, 0x00, 0x00}))
+	require.Equal(t, "#123456", colorToHex6(color.RGBA{0x12, 0x34, 0x56, 0x78}))
+	require.Equal(t, "#ffffff", colorToHex6(color.RGBA{0xff, 0xff, 0xff, 0xff}))
 }
 
 const headSVG = `<svg id="root" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">

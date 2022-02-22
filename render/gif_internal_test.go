@@ -6,6 +6,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/BattlesnakeOfficial/exporter/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,7 +20,7 @@ func TestGetColorCounts(t *testing.T) {
 			name: "sample1.png",
 			want: usageList{
 				{
-					Key:   parseHexColor("#fff"),
+					Key:   parse.HexColor("#fff"),
 					Value: 400,
 				},
 			},
@@ -28,11 +29,11 @@ func TestGetColorCounts(t *testing.T) {
 			name: "sample2.png",
 			want: usageList{
 				{
-					Key:   parseHexColor("#fff"),
+					Key:   parse.HexColor("#fff"),
 					Value: 300,
 				},
 				{
-					Key:   parseHexColor("#000"),
+					Key:   parse.HexColor("#000"),
 					Value: 100,
 				},
 			},
@@ -41,23 +42,23 @@ func TestGetColorCounts(t *testing.T) {
 			name: "sample3.png",
 			want: usageList{
 				{
-					Key:   parseHexColor("#fff"),
+					Key:   parse.HexColor("#fff"),
 					Value: 50,
 				},
 				{
-					Key:   parseHexColor("#000"),
+					Key:   parse.HexColor("#000"),
 					Value: 100,
 				},
 				{
-					Key:   parseHexColor("#00ff00"),
+					Key:   parse.HexColor("#00ff00"),
 					Value: 50,
 				},
 				{
-					Key:   parseHexColor("#f00"),
+					Key:   parse.HexColor("#f00"),
 					Value: 100,
 				},
 				{
-					Key:   parseHexColor("#0011ff"),
+					Key:   parse.HexColor("#0011ff"),
 					Value: 100,
 				},
 			},
@@ -78,7 +79,7 @@ func TestBuildGIFPallete(t *testing.T) {
 	pallete := buildGIFPallete(img)
 	require.NotEmpty(t, pallete, "the pallete should not be empty")
 	assert.Len(t, pallete, GIFMaxColorsPerFrame, "the pallete should not be larger than a GIF can support")
-	require.Equal(t, parseHexColor("#000"), pallete[0], "the black square should be the most dominant colour and be first in the pallete")
+	require.Equal(t, parse.HexColor("#000"), pallete[0], "the black square should be the most dominant colour and be first in the pallete")
 }
 
 func loadSample(name string) image.Image {
