@@ -87,7 +87,6 @@ func getSVGImageWithFallback(path, fallbackPath string, w, h int, c color.Color)
 		}).WithError(err).Info("unable to load SVG image asset - loading fallback")
 
 		img, err = loadLocalImageAsset(fallbackPath, w, h)
-		img = changeImageColor(img, c)
 		if err != nil {
 			// at this point we are unable to draw correctly, so we should log at error level
 			log.WithFields(log.Fields{
@@ -95,6 +94,7 @@ func getSVGImageWithFallback(path, fallbackPath string, w, h int, c color.Color)
 				"fallback": fallbackPath,
 			}).WithError(err).Error("Unable to load local fallback image from file")
 		}
+		img = changeImageColor(img, c)
 	}
 
 	return img, err
