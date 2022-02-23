@@ -187,8 +187,7 @@ func (sm svgManager) ensureDownloaded(mediaPath string, c color.Color) (string, 
 	return customizedMediaPath, nil
 }
 
-// customiseSnakeSVG wraps the SVG with an outer `svg` tag to ensure that it has the
-// specified width, height and fill attributes.
+// customiseSnakeSVG sets the fill colour for the outer SVG tag
 func customiseSnakeSVG(svg string, c color.Color) string {
 	var buf bytes.Buffer
 	decoder := xml.NewDecoder(strings.NewReader(svg))
