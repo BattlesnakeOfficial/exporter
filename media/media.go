@@ -1,15 +1,19 @@
 package media
 
 import (
+	"bytes"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"image"
 	"image/color"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/BattlesnakeOfficial/exporter/inkscape"
@@ -113,7 +117,7 @@ func (sm svgManager) loadSVGImage(mediaPath string, w, h int, c color.Color) (im
 		return nil, errors.New("inkscape is not available - unable to load SVG")
 	}
 
-	mediaPath, err := sm.ensureDownloaded(mediaPath, w, h, c)
+	mediaPath, err := sm.ensureDownloaded(mediaPath, c)
 	if err != nil {
 		return nil, err
 	}
@@ -159,9 +163,9 @@ func (sm svgManager) getFullPath(mediaPath string) string {
 	return filepath.Join(sm.baseDir, mediaPath)
 }
 
-func (sm svgManager) ensureDownloaded(mediaPath string, w, h int, c color.Color) (string, error) {
+func (sm svgManager) ensureDownloaded(mediaPath string, c color.Color) (string, error) {
 	// use the colour as a directory to separate different colours of SVG's
-	customizedMediaPath := path.Join(fmt.Sprintf("c%sw%dh%d", colorToHex6(c), w, h), mediaPath)
+	customizedMediaPath := path.Join(colorToHex6(c), mediaPath)
 
 	// check if we need to download the SVG from the media server
 	_, err := os.Stat(sm.getFullPath(customizedMediaPath))
@@ -171,7 +175,7 @@ func (sm svgManager) ensureDownloaded(mediaPath string, w, h int, c color.Color)
 			return "", err
 		}
 
-		svg = customiseSVG(svg, w, h, c)
+		svg = customiseSVG(svg, c)
 
 		err = sm.writeFile(customizedMediaPath, []byte(svg))
 		if err != nil {
@@ -185,8 +189,57 @@ func (sm svgManager) ensureDownloaded(mediaPath string, w, h int, c color.Color)
 
 // customiseSVG wraps the SVG with an outer `svg` tag to ensure that it has the
 // specified width, height and fill attributes.
-func customiseSVG(svg string, w, h int, c color.Color) string {
-	return fmt.Sprintf(`<svg xmlns="http://www.w3.org/2000/svg" fill="%s" width="%d" height="%d">%s</svg>`, colorToHex6(c), w, h, svg)
+func customiseSVG(svg string, c color.Color) string {
+	var buf bytes.Buffer
+	decoder := xml.NewDecoder(strings.NewReader(svg))
+	encoder := xml.NewEncoder(&buf)
+
+	rootSVGFound := false
+
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.WithError(err).Info("error while decoding SVG token")
+			break // skip this token
+		}
+		token = xml.CopyToken(token)
+		switch v := (token).(type) {
+		case xml.StartElement:
+
+			// check if this is the root SVG tag that we can change the colour on
+			if !rootSVGFound && v.Name.Local == "svg" {
+				rootSVGFound = true
+				attrs := append(v.Attr, xml.Attr{Name: xml.Name{Local: "fill"}, Value: colorToHex6(c)})
+				(&v).Attr = attrs
+			}
+
+			// this is necessary to prevent a weird behavior in Go's XML serialization where every tag gets the
+			// "xmlns" set, even if it already has that as an attribute
+			// see also: https://github.com/golang/go/issues/7535
+			(&v).Name.Space = ""
+			token = v
+		case xml.EndElement:
+			// this is necessary to prevent a weird behavior in Go's XML serialization where every tag gets the
+			// "xmlns" set, even if it already has that as an attribute
+			// see also: https://github.com/golang/go/issues/7535
+			(&v).Name.Space = ""
+			token = v
+		}
+
+		if err := encoder.EncodeToken(token); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// must call flush, otherwise some elements will be missing
+	if err := encoder.Flush(); err != nil {
+		log.Fatal(err)
+	}
+
+	return buf.String()
 }
 
 func scaleImage(src image.Image, w, h int) image.Image {

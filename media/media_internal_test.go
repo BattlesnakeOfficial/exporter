@@ -86,8 +86,9 @@ func TestSVGManager(t *testing.T) {
 	require.NoError(t, mgr.writeFile("things/foo.svg", []byte(tailSVG)))
 	require.DirExists(t, filepath.Join(baseDir, "things"))
 	require.FileExists(t, mgr.getFullPath("things/foo.svg"))
-	_, err = mgr.ensureDownloaded("things/foo.svg", 20, 20, parse.HexColor("#cc00aa"))
+	customizedPath, err := mgr.ensureDownloaded("things/foo.svg", parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
+	require.Equal(t, "#cc00aa/things/foo.svg", customizedPath)
 
 	require.NoError(t, mgr.ensureSubdirExists("some/subdir"))
 	require.DirExists(t, mgr.getFullPath("some/subdir"))
@@ -202,6 +203,29 @@ func TestColorToHex6(t *testing.T) {
 	require.Equal(t, "#000000", colorToHex6(color.RGBA{0x00, 0x00, 0x00, 0x00}))
 	require.Equal(t, "#123456", colorToHex6(color.RGBA{0x12, 0x34, 0x56, 0x78}))
 	require.Equal(t, "#ffffff", colorToHex6(color.RGBA{0xff, 0xff, 0xff, 0xff}))
+}
+
+func TestCustomiseSVG(t *testing.T) {
+
+	// simple
+	customized := customiseSVG("<svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	require.Equal(t, `<svg fill="#00ccaa"></svg>`, customized)
+
+	// make sure it doesn't panic with strange/bad inputs
+	customiseSVG("", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSVG("afe9*#@(#f2038208", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSVG("<svg", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSVG("<svg><foo></>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSVG("<</>>>//", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSVG("<html></html>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+
+	// nested
+	customized = customiseSVG("<svg><svg></svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	require.Equal(t, `<svg fill="#00ccaa"><svg></svg></svg>`, customized, "nested SVG tags should be ignored")
+
+	// use a real head
+	customized = customiseSVG(headSVG, color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	require.Contains(t, customized, `<svg id="root" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#00ccaa">`)
 }
 
 const headSVG = `<svg id="root" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
