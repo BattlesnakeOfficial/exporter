@@ -59,15 +59,15 @@ func imageCacheKey(path string, w, h int, c color.Color) string {
 // The base path is the directory where all media assets should be located within.
 func loadLocalImageAsset(mediaPath string, w, h int) (image.Image, error) {
 	key := imageCacheKey(mediaPath, w, h, nil)
-	mediaPath = filepath.Join(baseDir, mediaPath) // file is within the baseDir on disk
 	cachedImage, ok := imageCache.Get(key)
 	if ok {
 		return cachedImage.(image.Image), nil
 	}
 
-	img, err := loadImageFile(mediaPath)
+	fullPath := filepath.Join(baseDir, mediaPath) // file is within the baseDir on disk
+	img, err := loadImageFile(fullPath)
 	if err != nil {
-		log.WithField("path", mediaPath).WithError(err).Errorf("Error loading asset from file")
+		log.WithField("path", fullPath).WithError(err).Errorf("Error loading asset from file")
 		return nil, err
 	}
 	img = scaleImage(img, w, h)
