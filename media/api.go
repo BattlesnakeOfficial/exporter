@@ -69,11 +69,11 @@ func GetTailSVG(id string) (string, error) {
 }
 
 func GetHeadPNG(id string, w, h int, c color.Color) (image.Image, error) {
-	return getSVGImageWithFallback(headSVGPath(id), fallbackHead, w, h, c)
+	return getSnakeSVGImage(headSVGPath(id), fallbackHead, w, h, c)
 }
 
 func GetTailPNG(id string, w, h int, c color.Color) (image.Image, error) {
-	return getSVGImageWithFallback(tailSVGPath(id), fallbackTail, w, h, c)
+	return getSnakeSVGImage(tailSVGPath(id), fallbackTail, w, h, c)
 }
 
 func headSVGPath(id string) string {

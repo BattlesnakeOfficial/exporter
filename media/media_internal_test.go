@@ -93,35 +93,35 @@ func TestSVGManager(t *testing.T) {
 	require.NoError(t, mgr.ensureSubdirExists("some/subdir"))
 	require.DirExists(t, mgr.getFullPath("some/subdir"))
 
-	img, err := mgr.loadSVGImage(headSVGPath("default"), 20, 20, parse.HexColor("#cc00aa"))
+	img, err := mgr.loadSnakeSVGImage(headSVGPath("default"), 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	assertImg(t, img, 20, 20)
 }
 
-func TestGetSVGImageWithFallback(t *testing.T) {
+func TestGetSnakeSVGImage(t *testing.T) {
 
 	// these shouldn't require a fallback
-	img, err := getSVGImageWithFallback(tailSVGPath("default"), "nofallback.png", 20, 20, parse.HexColor("#cc00aa"))
+	img, err := getSnakeSVGImage(tailSVGPath("default"), "nofallback.png", 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
-	img, err = getSVGImageWithFallback(headSVGPath("default"), "nofallback.png", 20, 20, parse.HexColor("#cc00aa"))
+	img, err = getSnakeSVGImage(headSVGPath("default"), "nofallback.png", 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
 
 	// test head/tail fallbacks
-	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), fallbackTail, 20, 20, parse.HexColor("#cc00aa"))
+	img, err = getSnakeSVGImage(tailSVGPath("notfound"), fallbackTail, 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
-	img, err = getSVGImageWithFallback(headSVGPath("notfound"), fallbackHead, 20, 20, parse.HexColor("#cc00aa"))
+	img, err = getSnakeSVGImage(headSVGPath("notfound"), fallbackHead, 20, 20, parse.HexColor("#cc00aa"))
 	require.NoError(t, err)
 	require.NotNil(t, img)
 	assertImg(t, img, 20, 20)
 
 	// this should just error
-	img, err = getSVGImageWithFallback(tailSVGPath("notfound"), "404/notfound.png", 20, 20, parse.HexColor("#cc00aa"))
+	img, err = getSnakeSVGImage(tailSVGPath("notfound"), "404/notfound.png", 20, 20, parse.HexColor("#cc00aa"))
 	require.Error(t, err)
 	require.Nil(t, img)
 }
@@ -208,23 +208,23 @@ func TestColorToHex6(t *testing.T) {
 func TestCustomiseSVG(t *testing.T) {
 
 	// simple
-	customized := customiseSVG("<svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customized := customiseSnakeSVG("<svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
 	require.Equal(t, `<svg fill="#00ccaa"></svg>`, customized)
 
 	// make sure it doesn't panic with strange/bad inputs
-	customiseSVG("", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSVG("afe9*#@(#f2038208", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSVG("<svg", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSVG("<svg><foo></>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSVG("<</>>>//", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSVG("<html></html>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSnakeSVG("", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSnakeSVG("afe9*#@(#f2038208", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSnakeSVG("<svg", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSnakeSVG("<svg><foo></>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSnakeSVG("<</>>>//", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customiseSnakeSVG("<html></html>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
 
 	// nested
-	customized = customiseSVG("<svg><svg></svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customized = customiseSnakeSVG("<svg><svg></svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
 	require.Equal(t, `<svg fill="#00ccaa"><svg></svg></svg>`, customized, "nested SVG tags should be ignored")
 
 	// use a real head
-	customized = customiseSVG(headSVG, color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customized = customiseSnakeSVG(headSVG, color.RGBA{0x00, 0xcc, 0xaa, 0xff})
 	require.Contains(t, customized, `<svg id="root" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#00ccaa">`)
 }
 

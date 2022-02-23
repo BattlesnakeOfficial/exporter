@@ -80,9 +80,9 @@ func loadLocalImageAsset(mediaPath string, w, h int) (image.Image, error) {
 	return img, nil
 }
 
-func getSVGImageWithFallback(path, fallbackPath string, w, h int, c color.Color) (image.Image, error) {
+func getSnakeSVGImage(path, fallbackPath string, w, h int, c color.Color) (image.Image, error) {
 	// first we try to load from the media server SVG's
-	img, err := svgMgr.loadSVGImage(path, w, h, c)
+	img, err := svgMgr.loadSnakeSVGImage(path, w, h, c)
 	if err != nil {
 		// log at info, because this could error just for people specifying snake types that don't exist
 		log.WithFields(log.Fields{
@@ -105,7 +105,7 @@ func getSVGImageWithFallback(path, fallbackPath string, w, h int, c color.Color)
 	return img, err
 }
 
-func (sm svgManager) loadSVGImage(mediaPath string, w, h int, c color.Color) (image.Image, error) {
+func (sm svgManager) loadSnakeSVGImage(mediaPath string, w, h int, c color.Color) (image.Image, error) {
 	key := imageCacheKey(mediaPath, w, h, c)
 	cachedImage, ok := imageCache.Get(key)
 	if ok {
@@ -175,7 +175,7 @@ func (sm svgManager) ensureDownloaded(mediaPath string, c color.Color) (string, 
 			return "", err
 		}
 
-		svg = customiseSVG(svg, c)
+		svg = customiseSnakeSVG(svg, c)
 
 		err = sm.writeFile(customizedMediaPath, []byte(svg))
 		if err != nil {
@@ -187,9 +187,9 @@ func (sm svgManager) ensureDownloaded(mediaPath string, c color.Color) (string, 
 	return customizedMediaPath, nil
 }
 
-// customiseSVG wraps the SVG with an outer `svg` tag to ensure that it has the
+// customiseSnakeSVG wraps the SVG with an outer `svg` tag to ensure that it has the
 // specified width, height and fill attributes.
-func customiseSVG(svg string, c color.Color) string {
+func customiseSnakeSVG(svg string, c color.Color) string {
 	var buf bytes.Buffer
 	decoder := xml.NewDecoder(strings.NewReader(svg))
 	encoder := xml.NewEncoder(&buf)
