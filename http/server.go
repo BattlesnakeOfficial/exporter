@@ -35,6 +35,9 @@ func NewServer() *Server {
 	router.GET("/games/:game/frames/:frame/ascii", withCaching(handleASCIIFrame))
 	router.GET("/games/:game/frames/:frame/gif", withCaching(handleGIFFrame))
 
+	router.GET("/games/:game/gif/:size", withCaching(handleGIFGame))
+	router.GET("/games/:game/frames/:frame/gif/:size", withCaching(handleGIFFrame))
+
 	router.PanicHandler = panicHandler
 
 	return &Server{

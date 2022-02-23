@@ -149,6 +149,12 @@ func handleASCIIFrame(w http.ResponseWriter, r *http.Request, p httprouter.Param
 
 func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	gameID := p.ByName("game")
+	sizeParam := p.ByName("size")
+	width, height, err := parseSizeParam(sizeParam)
+	if err != nil {
+		handleBadRequest(w, r, err)
+		return
+	}
 	frameID, err := strconv.Atoi(p.ByName("frame"))
 	if err != nil {
 		handleBadRequest(w, r, err)
@@ -179,7 +185,7 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	}
 
 	w.Header().Set("Content-Type", "image/gif")
-	if err = render.GameFrameToGIF(w, game, gameFrame); err != nil {
+	if err = render.GameFrameToGIF(w, game, gameFrame, width, height); err != nil {
 		handleError(w, r, err, http.StatusInternalServerError)
 		return
 	}
@@ -187,6 +193,12 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 
 func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	gameID := p.ByName("game")
+	sizeParam := p.ByName("size")
+	width, height, err := parseSizeParam(sizeParam)
+	if err != nil {
+		handleBadRequest(w, r, err)
+		return
+	}
 	engineURL := r.URL.Query().Get("engine_url")
 
 	log.WithField("game", gameID).WithField("engine_url", engineURL).Info("exporting game")
@@ -236,7 +248,7 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	}
 
 	w.Header().Set("Content-Type", "image/gif")
-	err = render.GameFramesToAnimatedGIF(w, game, gameFrames, frameDelay, loopDelay)
+	err = render.GameFramesToAnimatedGIF(w, game, gameFrames, frameDelay, loopDelay, width, height)
 	if err != nil {
 		handleError(w, r, err, http.StatusInternalServerError)
 		return
@@ -275,4 +287,30 @@ func handleAlive(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 func handleReady(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprint(w, "ready")
+}
+
+var sizeRegex = regexp.MustCompile(`(\d+)x(\d+)`)
+
+// parseSizeParam parses a path parameter that is expected to be in the form "<WIDTH>x<HEIGHT>"
+// if size is empty, 0,0 is returned
+func parseSizeParam(param string) (int, int, error) {
+	if param == "" {
+		return 0, 0, nil
+	}
+
+	m := sizeRegex.FindStringSubmatch(param)
+	if len(m) != 3 {
+		return 0, 0, fmt.Errorf("invalid size argument")
+	}
+
+	w, err := strconv.Atoi(m[1])
+	if err != nil {
+		return 0, 0, err
+	}
+	h, err := strconv.Atoi(m[2])
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return w, h, nil
 }

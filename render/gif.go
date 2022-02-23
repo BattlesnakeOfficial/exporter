@@ -21,13 +21,13 @@ const (
 	GIFMaxColorsPerFrame = 256
 )
 
-func gameFrameToPalettedImage(g *engine.Game, gf *engine.GameFrame) *image.Paletted {
+func gameFrameToPalettedImage(g *engine.Game, gf *engine.GameFrame, w, h int) *image.Paletted {
 	board := GameFrameToBoard(g, gf)
 
 	// This is where the bulk of GIF creation CPU is spent.
 	// First, Board is rendered to RGBA Image
 	// Second, RGBA Image converted to Paletted Image (lossy)
-	rgbaImage := DrawBoard(board)
+	rgbaImage := DrawBoard(board, w, h)
 	q := quantize.MedianCutQuantizer{}
 	p := q.Quantize(make([]color.Color, 0, 256), rgbaImage)
 	palettedImage := image.NewPaletted(rgbaImage.Bounds(), p)
@@ -40,8 +40,8 @@ func gameFrameToPalettedImage(g *engine.Game, gf *engine.GameFrame) *image.Palet
 	return palettedImage
 }
 
-func GameFrameToGIF(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
-	i := gameFrameToPalettedImage(g, gf)
+func GameFrameToGIF(w io.Writer, g *engine.Game, gf *engine.GameFrame, width, height int) error {
+	i := gameFrameToPalettedImage(g, gf, width, height)
 	err := gif.Encode(w, i, nil)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func GameFrameToGIF(w io.Writer, g *engine.Game, gf *engine.GameFrame) error {
 	return nil
 }
 
-func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.GameFrame, frameDelay, loopDelay int) error {
+func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.GameFrame, frameDelay, loopDelay, width, height int) error {
 	c := make(chan gif.GIFFrame)
 	go func() {
 		defer func() {
@@ -67,7 +67,7 @@ func GameFramesToAnimatedGIF(w io.Writer, g *engine.Game, gameFrames []*engine.G
 				delay = loopDelay
 			}
 			c <- gif.GIFFrame{
-				Image:    gameFrameToPalettedImage(g, gf),
+				Image:    gameFrameToPalettedImage(g, gf, width, height),
 				FrameNum: i,
 				Delay:    delay,
 			}

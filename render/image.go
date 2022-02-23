@@ -238,13 +238,10 @@ func drawGaps(dc *gg.Context, bx, by int, dir snakeDirection, c color.Color) {
 	dc.Fill()
 }
 
-func createBoardContext(b *Board) *gg.Context {
-	dc := gg.NewContext(
-		SquareSizePixels*b.Width+BoardBorder*2,
-		SquareSizePixels*b.Height+BoardBorder*2,
-	)
+func createBoardContext(b *Board, w, h int) *gg.Context {
+	dc := gg.NewContext(w, h)
 
-	cacheKey := fmt.Sprintf("board:%d:%d", b.Width, b.Height)
+	cacheKey := fmt.Sprintf("board:%d:%d:%d:%d", b.Width, b.Height, w, h)
 	cachedBoardImage, ok := imageCache.Get(cacheKey)
 	if ok {
 		dc.DrawImage(cachedBoardImage.(image.Image), 0, 0)
@@ -273,8 +270,8 @@ func createBoardContext(b *Board) *gg.Context {
 	return dc
 }
 
-func DrawBoard(b *Board) image.Image {
-	dc := createBoardContext(b)
+func DrawBoard(b *Board, w, h int) image.Image {
+	dc := createBoardContext(b, w, h)
 
 	// Draw food and snakes over watermark
 	for p, s := range b.squares { // cool, we can iterate ONLY the non-empty squares!
