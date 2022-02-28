@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/draw"
-	"strings"
 	"time"
 
 	"github.com/BattlesnakeOfficial/exporter/media"
@@ -43,30 +41,6 @@ const (
 
 // cache for storing image.Image objects to speed up rendering
 var imageCache = cache.New(6*time.Hour, 10*time.Minute)
-
-// From github.com/fogleman/gg
-func parseHexColor(x string) color.Color {
-	var r, g, b, a uint8
-
-	x = strings.TrimPrefix(x, "#")
-	a = 255
-	if len(x) == 3 {
-		format := "%1x%1x%1x"
-		fmt.Sscanf(x, format, &r, &g, &b)
-		r |= r << 4
-		g |= g << 4
-		b |= b << 4
-	}
-	if len(x) == 6 {
-		format := "%02x%02x%02x"
-		fmt.Sscanf(x, format, &r, &g, &b)
-	}
-	if len(x) == 8 {
-		format := "%02x%02x%02x%02x"
-		fmt.Sscanf(x, format, &r, &g, &b, &a)
-	}
-	return color.RGBA{r, g, b, a}
-}
 
 func rotateImage(src image.Image, rot rotations) image.Image {
 	switch rot {
@@ -121,7 +95,7 @@ func drawHazard(dc *gg.Context, bx int, by int) {
 	dc.Fill()
 }
 
-func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by int, hexColor string, dir snakeDirection) {
+func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by int, c color.Color, dir snakeDirection) {
 
 	width := SquareSizePixels - SquareBorderPixels*2
 	height := SquareSizePixels - SquareBorderPixels*2
@@ -130,9 +104,9 @@ func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by i
 	var err error
 	switch st {
 	case snakeHead:
-		snakeImg, err = media.GetHeadPNG(name, width, height)
+		snakeImg, err = media.GetHeadPNG(name, width, height, c)
 	case snakeTail:
-		snakeImg, err = media.GetTailPNG(name, width, height)
+		snakeImg, err = media.GetTailPNG(name, width, height, c)
 	default:
 		log.WithField("snakeImageType", st).Error("unable to draw an unrecognized snake image type")
 	}
@@ -155,21 +129,13 @@ func drawSnakeImage(name string, st snakeImageType, dc *gg.Context, bx int, by i
 	}
 	snakeImg = rotateImage(snakeImg, rot)
 
-	dst := dc.Image().(draw.Image)
-	dstRect := image.Rect(
-		int(boardXToDrawX(dc, bx))+SquareBorderPixels+BoardBorder,
-		int(boardYToDrawY(dc, by))+SquareBorderPixels+BoardBorder,
-		int(boardXToDrawX(dc, bx+1))-SquareBorderPixels+BoardBorder,
-		int(boardYToDrawY(dc, by-1))-SquareBorderPixels+BoardBorder,
-	)
-
-	srcImage := &image.Uniform{parseHexColor(hexColor)}
-
-	draw.DrawMask(dst, dstRect, srcImage, image.Point{}, snakeImg, image.Point{}, draw.Over)
+	dx := int(boardXToDrawX(dc, bx)) + SquareBorderPixels + BoardBorder
+	dy := int(boardYToDrawY(dc, by)) + SquareBorderPixels + BoardBorder
+	dc.DrawImage(snakeImg, dx, dy)
 }
 
-func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor string, corner snakeCorner) {
-	dc.SetHexColor(hexColor)
+func drawSnakeBody(dc *gg.Context, bx int, by int, c color.Color, corner snakeCorner) {
+	dc.SetColor(c)
 	if corner == "none" {
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
@@ -237,8 +203,8 @@ func drawSnakeBody(dc *gg.Context, bx int, by int, hexColor string, corner snake
 	dc.Fill()
 }
 
-func drawGaps(dc *gg.Context, bx, by int, dir snakeDirection, hexColor string) {
-	dc.SetHexColor(hexColor)
+func drawGaps(dc *gg.Context, bx, by int, dir snakeDirection, c color.Color) {
+	dc.SetColor(c)
 	switch dir {
 	case movingUp:
 		dc.DrawRectangle(
@@ -315,13 +281,13 @@ func DrawBoard(b *Board) image.Image {
 		for _, c := range s.Contents {
 			switch c.Type {
 			case BoardSquareSnakeHead:
-				drawSnakeImage(c.SnakeType, snakeHead, dc, p.X, p.Y, c.HexColor, c.Direction)
-				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
+				drawSnakeImage(c.SnakeType, snakeHead, dc, p.X, p.Y, c.Color, c.Direction)
+				drawGaps(dc, p.X, p.Y, c.Direction, c.Color)
 			case BoardSquareSnakeBody:
-				drawSnakeBody(dc, p.X, p.Y, c.HexColor, c.Corner)
-				drawGaps(dc, p.X, p.Y, c.Direction, c.HexColor)
+				drawSnakeBody(dc, p.X, p.Y, c.Color, c.Corner)
+				drawGaps(dc, p.X, p.Y, c.Direction, c.Color)
 			case BoardSquareSnakeTail:
-				drawSnakeImage(c.SnakeType, snakeTail, dc, p.X, p.Y, c.HexColor, c.Direction)
+				drawSnakeImage(c.SnakeType, snakeTail, dc, p.X, p.Y, c.Color, c.Direction)
 			case BoardSquareFood:
 				drawFood(dc, p.X, p.Y)
 			case BoardSquareHazard:

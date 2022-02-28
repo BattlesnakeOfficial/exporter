@@ -1,19 +1,30 @@
 package media
 
 import (
+	"bytes"
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/BattlesnakeOfficial/exporter/inkscape"
 	"github.com/disintegration/imaging"
 	"github.com/patrickmn/go-cache"
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	fallbackHead = "heads/default.png" // relative to base path
+	fallbackTail = "tails/default.png" // relative to base path
 )
 
 // imageCache is a cache that contains image.Image values
@@ -27,7 +38,7 @@ var svgMgr = &svgManager{
 
 // GetWatermarkPNG gets the watermark asset, scaled to the requested width/height
 func GetWatermarkPNG(w, h int) (image.Image, error) {
-	return loadLocalImageAsset(filepath.Join(baseDir, "watermark.png"), w, h)
+	return loadLocalImageAsset("watermark.png", w, h)
 }
 
 func loadImageFile(path string) (image.Image, error) {
@@ -41,20 +52,26 @@ func loadImageFile(path string) (image.Image, error) {
 	return img, err
 }
 
-func imageCacheKey(path string, w, h int) string {
-	return fmt.Sprintf("%s:%d:%d", path, w, h)
+// imageCacheKey creates a cache key that is unique to the given parameters.
+// color can be nil when there is no color.
+func imageCacheKey(path string, w, h int, c color.Color) string {
+	return fmt.Sprintf("%s:%d:%d:%s", path, w, h, colorToHex6(c))
 }
 
+// loadLocalImageAsset loads the specified media asset from the local filesystem.
+// It assumes the "mediaPath" is relative to the base path.
+// The base path is the directory where all media assets should be located within.
 func loadLocalImageAsset(mediaPath string, w, h int) (image.Image, error) {
-	key := imageCacheKey(mediaPath, w, h)
+	key := imageCacheKey(mediaPath, w, h, nil)
 	cachedImage, ok := imageCache.Get(key)
 	if ok {
 		return cachedImage.(image.Image), nil
 	}
 
-	img, err := loadImageFile(mediaPath)
+	fullPath := filepath.Join(baseDir, mediaPath) // file is within the baseDir on disk
+	img, err := loadImageFile(fullPath)
 	if err != nil {
-		log.WithField("path", mediaPath).WithError(err).Errorf("Error loading asset from file")
+		log.WithField("path", fullPath).WithError(err).Errorf("Error loading asset from file")
 		return nil, err
 	}
 	img = scaleImage(img, w, h)
@@ -63,9 +80,9 @@ func loadLocalImageAsset(mediaPath string, w, h int) (image.Image, error) {
 	return img, nil
 }
 
-func getSVGImageWithFallback(path, fallbackPath string, w, h int) (image.Image, error) {
+func getSnakeSVGImage(path, fallbackPath string, w, h int, c color.Color) (image.Image, error) {
 	// first we try to load from the media server SVG's
-	img, err := svgMgr.loadSVGImage(path, w, h)
+	img, err := svgMgr.loadSnakeSVGImage(path, w, h, c)
 	if err != nil {
 		// log at info, because this could error just for people specifying snake types that don't exist
 		log.WithFields(log.Fields{
@@ -80,14 +97,16 @@ func getSVGImageWithFallback(path, fallbackPath string, w, h int) (image.Image, 
 				"path":     path,
 				"fallback": fallbackPath,
 			}).WithError(err).Error("Unable to load local fallback image from file")
+			return nil, err
 		}
+		img = changeImageColor(img, c)
 	}
 
 	return img, err
 }
 
-func (sm svgManager) loadSVGImage(mediaPath string, w, h int) (image.Image, error) {
-	key := imageCacheKey(mediaPath, w, h)
+func (sm svgManager) loadSnakeSVGImage(mediaPath string, w, h int, c color.Color) (image.Image, error) {
+	key := imageCacheKey(mediaPath, w, h, c)
 	cachedImage, ok := imageCache.Get(key)
 	if ok {
 		return cachedImage.(image.Image), nil
@@ -98,10 +117,11 @@ func (sm svgManager) loadSVGImage(mediaPath string, w, h int) (image.Image, erro
 		return nil, errors.New("inkscape is not available - unable to load SVG")
 	}
 
-	err := sm.ensureDownloaded(mediaPath)
+	mediaPath, err := sm.ensureDownloaded(mediaPath, c)
 	if err != nil {
 		return nil, err
 	}
+
 	path := sm.getFullPath(mediaPath)
 
 	// rasterize the SVG
@@ -143,21 +163,82 @@ func (sm svgManager) getFullPath(mediaPath string) string {
 	return filepath.Join(sm.baseDir, mediaPath)
 }
 
-func (sm svgManager) ensureDownloaded(mediaPath string) error {
+func (sm svgManager) ensureDownloaded(mediaPath string, c color.Color) (string, error) {
+	// use the colour as a directory to separate different colours of SVG's
+	customizedMediaPath := path.Join(colorToHex6(c), mediaPath)
+
 	// check if we need to download the SVG from the media server
-	_, err := os.Stat(sm.getFullPath(mediaPath))
+	_, err := os.Stat(sm.getFullPath(customizedMediaPath))
 	if errors.Is(err, fs.ErrNotExist) {
 		svg, err := getCachedMediaResource(mediaPath)
 		if err != nil {
-			return err
+			return "", err
 		}
-		err = sm.writeFile(mediaPath, []byte(svg))
+
+		svg = customiseSnakeSVG(svg, c)
+
+		err = sm.writeFile(customizedMediaPath, []byte(svg))
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
-	return nil
+	// return the new media path which includes the colour directory
+	return customizedMediaPath, nil
+}
+
+// customiseSnakeSVG sets the fill colour for the outer SVG tag
+func customiseSnakeSVG(svg string, c color.Color) string {
+	var buf bytes.Buffer
+	decoder := xml.NewDecoder(strings.NewReader(svg))
+	encoder := xml.NewEncoder(&buf)
+
+	rootSVGFound := false
+
+	for {
+		token, err := decoder.Token()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.WithError(err).Info("error while decoding SVG token")
+			break // skip this token
+		}
+		token = xml.CopyToken(token)
+		switch v := (token).(type) {
+		case xml.StartElement:
+
+			// check if this is the root SVG tag that we can change the colour on
+			if !rootSVGFound && v.Name.Local == "svg" {
+				rootSVGFound = true
+				attrs := append(v.Attr, xml.Attr{Name: xml.Name{Local: "fill"}, Value: colorToHex6(c)})
+				(&v).Attr = attrs
+			}
+
+			// this is necessary to prevent a weird behavior in Go's XML serialization where every tag gets the
+			// "xmlns" set, even if it already has that as an attribute
+			// see also: https://github.com/golang/go/issues/7535
+			(&v).Name.Space = ""
+			token = v
+		case xml.EndElement:
+			// this is necessary to prevent a weird behavior in Go's XML serialization where every tag gets the
+			// "xmlns" set, even if it already has that as an attribute
+			// see also: https://github.com/golang/go/issues/7535
+			(&v).Name.Space = ""
+			token = v
+		}
+
+		if err := encoder.EncodeToken(token); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	// must call flush, otherwise some elements will be missing
+	if err := encoder.Flush(); err != nil {
+		log.Fatal(err)
+	}
+
+	return buf.String()
 }
 
 func scaleImage(src image.Image, w, h int) image.Image {
@@ -166,4 +247,15 @@ func scaleImage(src image.Image, w, h int) image.Image {
 		return src
 	}
 	return imaging.Resize(src, w, h, imaging.Lanczos)
+}
+
+// colorToHex6 converts a color.Color to a 6-digit hexadecimal string.
+// If color is nil, the empty string is returned.
+func colorToHex6(c color.Color) string {
+	if c == nil {
+		return ""
+	}
+
+	r, g, b, _ := c.RGBA()
+	return fmt.Sprintf("#%02x%02x%02x", uint8(r), uint8(g), uint8(b))
 }

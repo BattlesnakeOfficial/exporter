@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/BattlesnakeOfficial/exporter/engine"
+	"github.com/BattlesnakeOfficial/exporter/parse"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -94,13 +95,13 @@ func TestBoard(t *testing.T) {
 	}
 
 	// ensure adding content works
-	b.addSnakeTail(&engine.Point{X: 0, Y: 0}, "#0acc33", "regular", movingRight)
+	b.addSnakeTail(&engine.Point{X: 0, Y: 0}, parse.HexColor("#0acc33"), "regular", movingRight)
 	assert.Equal(t, BoardSquareSnakeTail, b.getContents(0, 0)[0].Type, "(0,0) should have tail content")
 
-	b.addSnakeBody(&engine.Point{X: 1, Y: 0}, "#0acc33", movingRight, "none")
+	b.addSnakeBody(&engine.Point{X: 1, Y: 0}, parse.HexColor("#0acc33"), movingRight, "none")
 	assert.Equal(t, BoardSquareSnakeBody, b.getContents(1, 0)[0].Type, "(1,0) should have body content")
 
-	b.addSnakeHead(&engine.Point{X: 2, Y: 0}, "#0acc33", "regular", movingRight)
+	b.addSnakeHead(&engine.Point{X: 2, Y: 0}, parse.HexColor("#0acc33"), "regular", movingRight)
 	assert.Equal(t, BoardSquareSnakeHead, b.getContents(2, 0)[0].Type, "(2,0) should have head content")
 
 	b.addFood(&engine.Point{X: 3, Y: 0})
@@ -132,14 +133,14 @@ func TestPlaceSnake(t *testing.T) {
 	require.Len(t, c, 1, "there should only be a head here")
 	assert.Equal(t, BoardSquareSnakeHead, c[0].Type, "this should be a head")
 	assert.Equal(t, movingDown, c[0].Direction, "the head should be pointing down")
-	assert.Equal(t, "#3B194D", c[0].HexColor, "the head should have the snake colour")
+	assert.Equal(t, parse.HexColor("#3B194D"), c[0].Color, "the head should have the snake colour")
 	assert.Equal(t, "beluga", c[0].SnakeType, "the head should be customised")
 
 	// BODY
 	c = b.getContents(0, 1)
 	require.Len(t, c, 1, "there should only be a body here")
 	assert.Equal(t, BoardSquareSnakeBody, c[0].Type, "this should be a body")
-	assert.Equal(t, "#3B194D", c[0].HexColor, "the body should have the snake colour")
+	assert.Equal(t, parse.HexColor("#3B194D"), c[0].Color, "the body should have the snake colour")
 	assert.Equal(t, "", c[0].SnakeType, "the body should not have a customization")
 
 	// TAIL
@@ -147,7 +148,7 @@ func TestPlaceSnake(t *testing.T) {
 	require.Len(t, c, 1, "there should only be a tail here")
 	assert.Equal(t, BoardSquareSnakeTail, c[0].Type, "this should be a tail")
 	assert.Equal(t, movingRight, c[0].Direction, "the tail should be pointing right")
-	assert.Equal(t, "#3B194D", c[0].HexColor, "the tail should have the snake colour")
+	assert.Equal(t, parse.HexColor("#3B194D"), c[0].Color, "the tail should have the snake colour")
 	assert.Equal(t, "rattle", c[0].SnakeType, "the tail should be customised")
 
 	t.Log("Placing a dead snake")
@@ -167,14 +168,14 @@ func TestPlaceSnake(t *testing.T) {
 	require.Len(t, c, 1, "there should only be a head here")
 	assert.Equal(t, BoardSquareSnakeHead, c[0].Type, "this should be a head")
 	assert.Equal(t, movingUp, c[0].Direction, "the head should be pointing up")
-	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the head should have the dead snake colour")
+	assert.Equal(t, parse.HexColor(ColorDeadSnake), c[0].Color, "the head should have the dead snake colour")
 	assert.Equal(t, "default", c[0].SnakeType, "the head should be default")
 
 	// BODY
 	c = b.getContents(5, 8)
 	require.Len(t, c, 1, "there should only be a body here")
 	assert.Equal(t, BoardSquareSnakeBody, c[0].Type, "this should be a body")
-	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the body should have the dead snake colour")
+	assert.Equal(t, parse.HexColor(ColorDeadSnake), c[0].Color, "the body should have the dead snake colour")
 	assert.Equal(t, "", c[0].SnakeType, "the body should not have a customization")
 
 	// TAIL
@@ -182,7 +183,7 @@ func TestPlaceSnake(t *testing.T) {
 	require.Len(t, c, 1, "there should only be a tail here")
 	assert.Equal(t, BoardSquareSnakeTail, c[0].Type, "this should be a tail")
 	assert.Equal(t, movingLeft, c[0].Direction, "the tail should be pointing left")
-	assert.Equal(t, ColorDeadSnake, c[0].HexColor, "the tail should have the dead snake colour")
+	assert.Equal(t, parse.HexColor(ColorDeadSnake), c[0].Color, "the tail should have the dead snake colour")
 	assert.Equal(t, "default", c[0].SnakeType, "the tail should be default")
 }
 
@@ -220,7 +221,7 @@ func TestRemoveIfExists(t *testing.T) {
 
 	// ensure a non-matching type doesn't get removed
 	require.Len(t, b.getContents(0, 0), 0)
-	b.addSnakeBody(&engine.Point{X: 0, Y: 0}, "", movingUp, cornerBottomLeft)
+	b.addSnakeBody(&engine.Point{X: 0, Y: 0}, nil, movingUp, cornerBottomLeft)
 	require.Len(t, b.getContents(0, 0), 1)
 	b.removeIfExists(0, 0, BoardSquareFood)
 	require.Len(t, b.getContents(0, 0), 1)
@@ -230,7 +231,7 @@ func TestRemoveIfExists(t *testing.T) {
 	require.Len(t, b.getContents(0, 0), 0)
 
 	// ensure that removal works okay when there is more than one content
-	b.addSnakeBody(&engine.Point{X: 0, Y: 0}, "", movingUp, cornerBottomLeft)
+	b.addSnakeBody(&engine.Point{X: 0, Y: 0}, nil, movingUp, cornerBottomLeft)
 	b.addHazard(&engine.Point{X: 0, Y: 0})
 	require.Len(t, b.getContents(0, 0), 2)
 	b.removeIfExists(0, 0, BoardSquareSnakeHead)

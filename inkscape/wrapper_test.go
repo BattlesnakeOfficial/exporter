@@ -3,11 +3,11 @@ package inkscape_test
 import (
 	"errors"
 	"image"
-	"image/color"
 	"io/fs"
 	"os"
 	"testing"
 
+	"github.com/BattlesnakeOfficial/exporter/imagetest"
 	"github.com/BattlesnakeOfficial/exporter/inkscape"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +20,7 @@ func TestSVGToPNG(t *testing.T) {
 	require.Equal(t, 100, got.Bounds().Max.X)
 	require.Equal(t, 100, got.Bounds().Max.Y)
 	want := loadTestImage(t)
-	same(t, want, got)
+	imagetest.Equal(t, want, got)
 
 	// client should validate width/height
 	_, err = client.SVGToPNG("testdata/example.svg", 0, 100)
@@ -50,25 +50,6 @@ func TestIsAvailable(t *testing.T) {
 		Command: "invalidinkscape",
 	}
 	require.False(t, client.IsAvailable())
-}
-
-func same(t *testing.T, a, b image.Image) {
-	require.Equal(t, a.Bounds().Max.X, b.Bounds().Max.X)
-	require.Equal(t, a.Bounds().Max.Y, b.Bounds().Max.Y)
-
-	for x := 0; x < a.Bounds().Max.X; x++ {
-		for y := 0; y < a.Bounds().Min.Y; y++ {
-			c1 := a.At(x, y)
-			c2 := b.At(x, y)
-			sameColor(t, c1, c2)
-		}
-	}
-}
-
-func sameColor(t *testing.T, c1, c2 color.Color) {
-	r1, g1, b1, a1 := c1.RGBA()
-	r2, g2, b2, a2 := c1.RGBA()
-	require.True(t, r1 == r2 && g1 == g2 && b1 == b2 && a1 == a2)
 }
 
 func loadTestImage(t *testing.T) image.Image {

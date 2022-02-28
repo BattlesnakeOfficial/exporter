@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -14,11 +15,6 @@ import (
 
 var ErrNotFound = errors.New("resource not found")
 var mediaServerURL = "https://media.battlesnake.com"
-
-const (
-	fallbackHeadID = "default"
-	fallbackTailID = "default"
-)
 
 // Create an in-mem media cache (6 hours, evicting every 10 mins)
 var mediaCache = cache.New(6*60*time.Minute, 10*time.Minute)
@@ -72,12 +68,12 @@ func GetTailSVG(id string) (string, error) {
 	return getCachedMediaResource(tailSVGPath(id))
 }
 
-func GetHeadPNG(id string, w, h int) (image.Image, error) {
-	return getSVGImageWithFallback(headSVGPath(id), headSVGPath(fallbackHeadID), w, h)
+func GetHeadPNG(id string, w, h int, c color.Color) (image.Image, error) {
+	return getSnakeSVGImage(headSVGPath(id), fallbackHead, w, h, c)
 }
 
-func GetTailPNG(id string, w, h int) (image.Image, error) {
-	return getSVGImageWithFallback(tailSVGPath(id), tailSVGPath(fallbackTailID), w, h)
+func GetTailPNG(id string, w, h int, c color.Color) (image.Image, error) {
+	return getSnakeSVGImage(tailSVGPath(id), fallbackTail, w, h, c)
 }
 
 func headSVGPath(id string) string {

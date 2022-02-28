@@ -2,9 +2,11 @@ package render
 
 import (
 	"fmt"
+	"image/color"
 	"strings"
 
 	"github.com/BattlesnakeOfficial/exporter/engine"
+	"github.com/BattlesnakeOfficial/exporter/parse"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -54,7 +56,7 @@ type BoardSquareContentType int
 // Examples of content are food, snake body parts and hazard squares
 type BoardSquareContent struct {
 	Type      BoardSquareContentType
-	HexColor  string
+	Color     color.Color
 	SnakeType string
 	Direction snakeDirection
 	Corner    snakeCorner
@@ -141,32 +143,32 @@ func (b *Board) addFood(p *engine.Point) {
 	})
 }
 
-func (b *Board) addSnakeTail(p *engine.Point, color, snakeType string, direction snakeDirection) {
+func (b *Board) addSnakeTail(p *engine.Point, c color.Color, snakeType string, direction snakeDirection) {
 	// when a snake eats and grows, the tail is placed on the same square as a body
 	// this makes sure we remove the body segment if that condition is hit
 	b.removeIfExists(p.X, p.Y, BoardSquareSnakeBody)
 
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeTail,
-		HexColor:  color,
+		Color:     c,
 		SnakeType: snakeType,
 		Direction: direction,
 	})
 }
 
-func (b *Board) addSnakeHead(p *engine.Point, color, snakeType string, dir snakeDirection) {
+func (b *Board) addSnakeHead(p *engine.Point, c color.Color, snakeType string, dir snakeDirection) {
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeHead,
-		HexColor:  color,
+		Color:     c,
 		SnakeType: snakeType,
 		Direction: dir,
 	})
 }
 
-func (b *Board) addSnakeBody(p *engine.Point, color string, dir snakeDirection, corner snakeCorner) {
+func (b *Board) addSnakeBody(p *engine.Point, c color.Color, dir snakeDirection, corner snakeCorner) {
 	b.addContent(p, BoardSquareContent{
 		Type:      BoardSquareSnakeBody,
-		HexColor:  color,
+		Color:     c,
 		Direction: dir,
 		Corner:    corner,
 	})
@@ -295,9 +297,9 @@ func (b *Board) placeSnake(snake engine.Snake) {
 	}
 
 	// Death color
-	color := snake.Color
+	color := parse.HexColor(snake.Color)
 	if snake.Death != nil {
-		color = ColorDeadSnake
+		color = parse.HexColor(ColorDeadSnake)
 	}
 
 	for i, point := range snake.Body {
