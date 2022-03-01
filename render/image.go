@@ -39,9 +39,17 @@ const (
 
 type boardContext struct {
 	*gg.Context
-	squareSizePx     int
+	// boardOffsetX is the x offset for the bottom-left corner of the board in the image.
+	// For boards that are not perfectly fit in an image, it will not be > 0 to center the board.
+	boardOffsetX int
+	// boardOffsetY is the y offset for the bottom-left corner of the board in the image.
+	// For boards that are not perfectly fit in an image, it will not be > 0 to center the board.
+	boardOffsetY int
+	// squareSizePx is the size of a single game board square, in pixels
+	squareSizePx int
+	// squareSizeHalfPx is the half the size of a single game board square
+	// We pre-calculate because it's a common value and it's needed in float precision.
 	squareSizeHalfPx float64
-	squareFoodRadius float64
 }
 
 // func (dc *boardContext)
@@ -67,7 +75,7 @@ func drawWatermark(dc *boardContext) {
 		log.WithError(err).Error("Unable to load watermark image")
 		return
 	}
-	dc.DrawImageAnchored(watermarkImage, dc.squareSizePx, dc.Height()/2, 0.5, 0.5)
+	dc.DrawImageAnchored(watermarkImage, dc.Height()/2, dc.Height()/2, 0.5, 0.5)
 }
 
 func drawEmptySquare(dc *boardContext, bx int, by int) {
@@ -86,7 +94,7 @@ func drawFood(dc *boardContext, bx int, by int) {
 	dc.DrawCircle(
 		boardXToDrawX(dc, bx)+dc.squareSizeHalfPx+BoardBorder,
 		boardYToDrawY(dc, by)+dc.squareSizeHalfPx+BoardBorder,
-		dc.squareFoodRadius,
+		float64(dc.squareSizePx)/3,
 	)
 	dc.Fill()
 }
@@ -247,11 +255,16 @@ func drawGaps(dc *boardContext, bx, by int, dir snakeDirection, c color.Color) {
 
 func createBoardContext(b *Board, w, h int) *boardContext {
 	ss := calcSquarePx(w, h, b.Width, b.Height)
+
+	offsetX := (w - (ss*b.Width + int(BoardBorder)*2)) / 2
+	offsetY := (h - (ss*b.Height + int(BoardBorder)*2)) / 2
+
 	dc := &boardContext{
 		Context:          gg.NewContext(w, h),
 		squareSizePx:     ss,
-		squareSizeHalfPx: float64(ss) / 2,
-		squareFoodRadius: float64(ss) / 3,
+		boardOffsetX:     offsetX,
+		boardOffsetY:     offsetY,
+		squareSizeHalfPx: float64(ss) / 2, // float to avoid rounding errors
 	}
 
 	cacheKey := fmt.Sprintf("board:%d:%d:%d:%d", b.Width, b.Height, w, h)
@@ -264,6 +277,7 @@ func createBoardContext(b *Board, w, h int) *boardContext {
 	// Clear to white
 	dc.SetColor(color.White)
 	dc.Clear()
+	// dc.DrawRectangle(float64(bx), float64(by), float64(ss*b.Width), float64(ss*b.Height))
 
 	// Draw empty squares
 	for y := 0; y < b.Height; y++ {
@@ -307,11 +321,13 @@ func squareFit(bounds, numSquares int) int {
 func DrawBoard(b *Board, imageWidth, imageHeight int) image.Image {
 	// check if we need to calculate the image width
 	if imageWidth <= 0 || imageHeight <= 0 {
+
 		// the legacy endpoints don't accept width/height parameters
 		// in those cases, the height/width is the Go zero value (0)
-		// and we should default to the old size which was 20 x num squares
-		imageWidth = b.Width * 20
-		imageHeight = b.Height * 20
+		// and we should default to the old size which was 20 * num squares + 2 * border size
+
+		imageWidth = b.Width*20 + int(BoardBorder)*2
+		imageHeight = b.Height*20 + int(BoardBorder)*2
 	}
 	dc := createBoardContext(b, imageWidth, imageHeight)
 
@@ -343,7 +359,7 @@ func DrawBoard(b *Board, imageWidth, imageHeight int) image.Image {
 // More specifically, it assumes the board coordinates are the indexes of squares and it returns the upper left
 // corner for that square.
 func boardXToDrawX(dc *boardContext, x int) float64 {
-	return float64(x * dc.squareSizePx)
+	return float64(dc.boardOffsetX + x*dc.squareSizePx)
 }
 
 // boardYToDrawY converts a y coordinate in "board space" to the y coordinate used by graphics.
@@ -353,5 +369,7 @@ func boardYToDrawY(dc *boardContext, y int) float64 {
 	// Note: the Battlesnake board coordinates have (0,0) at the bottom left
 	// so we need to flip the y-axis to convert to the graphics, which follows the convention
 	// of (0,0) being the top left.
-	return float64((dc.Height() - int(BoardBorder)*2 - dc.squareSizePx) - (y * dc.squareSizePx)) // flip!
+	drawY := (dc.Height() - int(BoardBorder)*2 - dc.squareSizePx) - (y * dc.squareSizePx)
+	drawY = drawY - dc.boardOffsetY // add offset to center board in GIF frame
+	return float64(drawY)
 }

@@ -30,7 +30,7 @@ func TestHappyPath(t *testing.T) {
 	var buf bytes.Buffer
 	game, frame := loadState(t)
 
-	err = render.GameFrameToGIF(&buf, game, frame, 224, 224)
+	err = render.GameFrameToGIF(&buf, game, frame, 0, 0)
 	require.NoError(t, err)
 	current, err := gif.Decode(&buf)
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func generateGoldenFile(t *testing.T, name string) {
 	f, err := os.Create(name)
 	require.NoError(t, err)
 	defer f.Close()
-	err = render.GameFrameToGIF(f, game, frame, 224, 224)
+	err = render.GameFrameToGIF(f, game, frame, 0, 0)
 	require.NoError(t, err)
 }
 
