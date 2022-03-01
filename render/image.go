@@ -52,8 +52,6 @@ type boardContext struct {
 	squareSizeHalfPx float64
 }
 
-// func (dc *boardContext)
-
 // cache for storing image.Image objects to speed up rendering
 var imageCache = cache.New(6*time.Hour, 10*time.Minute)
 
