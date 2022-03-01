@@ -39,7 +39,7 @@ const (
 
 type boardContext struct {
 	*gg.Context
-	squareSizePixels int
+	squareSizePx     int
 	squareSizeHalfPx float64
 	squareFoodRadius float64
 }
@@ -67,7 +67,7 @@ func drawWatermark(dc *boardContext) {
 		log.WithError(err).Error("Unable to load watermark image")
 		return
 	}
-	dc.DrawImageAnchored(watermarkImage, dc.Width()/2, dc.Height()/2, 0.5, 0.5)
+	dc.DrawImageAnchored(watermarkImage, dc.squareSizePx, dc.Height()/2, 0.5, 0.5)
 }
 
 func drawEmptySquare(dc *boardContext, bx int, by int) {
@@ -75,8 +75,8 @@ func drawEmptySquare(dc *boardContext, bx int, by int) {
 	dc.DrawRectangle(
 		boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 		boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
-		float64(dc.squareSizePixels)-SquareBorderPixels*2,
-		float64(dc.squareSizePixels)-SquareBorderPixels*2,
+		float64(dc.squareSizePx)-SquareBorderPixels*2,
+		float64(dc.squareSizePx)-SquareBorderPixels*2,
 	)
 	dc.Fill()
 }
@@ -96,16 +96,16 @@ func drawHazard(dc *boardContext, bx int, by int) {
 	dc.DrawRectangle(
 		boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 		boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
-		float64(dc.squareSizePixels)-SquareBorderPixels*2,
-		float64(dc.squareSizePixels)-SquareBorderPixels*2,
+		float64(dc.squareSizePx)-SquareBorderPixels*2,
+		float64(dc.squareSizePx)-SquareBorderPixels*2,
 	)
 	dc.Fill()
 }
 
 func drawSnakeImage(name string, st snakeImageType, dc *boardContext, bx int, by int, c color.Color, dir snakeDirection) {
 
-	width := dc.squareSizePixels - int(SquareBorderPixels*2)
-	height := dc.squareSizePixels - int(SquareBorderPixels*2)
+	width := dc.squareSizePx - int(SquareBorderPixels*2)
+	height := dc.squareSizePx - int(SquareBorderPixels*2)
 
 	var snakeImg image.Image
 	var err error
@@ -147,22 +147,22 @@ func drawSnakeBody(dc *boardContext, bx int, by int, c color.Color, corner snake
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
-			float64(dc.squareSizePixels)-SquareBorderPixels*2,
-			float64(dc.squareSizePixels)-SquareBorderPixels*2,
+			float64(dc.squareSizePx)-SquareBorderPixels*2,
+			float64(dc.squareSizePx)-SquareBorderPixels*2,
 		)
 	} else {
 		dc.DrawRoundedRectangle(
 			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
-			float64(dc.squareSizePixels)-SquareBorderPixels*2,
-			float64(dc.squareSizePixels)-SquareBorderPixels*2,
+			float64(dc.squareSizePx)-SquareBorderPixels*2,
+			float64(dc.squareSizePx)-SquareBorderPixels*2,
 			dc.squareSizeHalfPx,
 		)
 		if corner.isBottom() {
 			dc.DrawRectangle(
 				boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 				boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
-				float64(dc.squareSizePixels)-SquareBorderPixels*2,
+				float64(dc.squareSizePx)-SquareBorderPixels*2,
 				dc.squareSizeHalfPx,
 			)
 			if corner.isLeft() {
@@ -186,7 +186,7 @@ func drawSnakeBody(dc *boardContext, bx int, by int, c color.Color, corner snake
 			dc.DrawRectangle(
 				boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 				boardYToDrawY(dc, by)+SquareBorderPixels+dc.squareSizeHalfPx+BoardBorder,
-				float64(dc.squareSizePixels)-SquareBorderPixels*2,
+				float64(dc.squareSizePx)-SquareBorderPixels*2,
 				dc.squareSizeHalfPx,
 			)
 			if corner.isLeft() {
@@ -217,14 +217,14 @@ func drawGaps(dc *boardContext, bx, by int, dir snakeDirection, c color.Color) {
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by-1)-SquareBorderPixels+BoardBorder,
-			float64(dc.squareSizePixels)-SquareBorderPixels*2,
+			float64(dc.squareSizePx)-SquareBorderPixels*2,
 			SquareBorderPixels*2,
 		)
 	case movingDown:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx)+SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)-SquareBorderPixels+BoardBorder,
-			float64(dc.squareSizePixels)-SquareBorderPixels*2,
+			float64(dc.squareSizePx)-SquareBorderPixels*2,
 			SquareBorderPixels*2,
 		)
 	case movingRight:
@@ -232,14 +232,14 @@ func drawGaps(dc *boardContext, bx, by int, dir snakeDirection, c color.Color) {
 			boardXToDrawX(dc, bx)-SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
 			SquareBorderPixels*2,
-			float64(dc.squareSizePixels)-SquareBorderPixels*2,
+			float64(dc.squareSizePx)-SquareBorderPixels*2,
 		)
 	case movingLeft:
 		dc.DrawRectangle(
 			boardXToDrawX(dc, bx+1)-SquareBorderPixels+BoardBorder,
 			boardYToDrawY(dc, by)+SquareBorderPixels+BoardBorder,
 			SquareBorderPixels*2,
-			float64(dc.squareSizePixels)-SquareBorderPixels*2,
+			float64(dc.squareSizePx)-SquareBorderPixels*2,
 		)
 	}
 	dc.Fill()
@@ -249,7 +249,7 @@ func createBoardContext(b *Board, w, h int) *boardContext {
 	ss := calcSquarePx(w, h, b.Width, b.Height)
 	dc := &boardContext{
 		Context:          gg.NewContext(w, h),
-		squareSizePixels: ss,
+		squareSizePx:     ss,
 		squareSizeHalfPx: float64(ss) / 2,
 		squareFoodRadius: float64(ss) / 3,
 	}
@@ -343,7 +343,7 @@ func DrawBoard(b *Board, imageWidth, imageHeight int) image.Image {
 // More specifically, it assumes the board coordinates are the indexes of squares and it returns the upper left
 // corner for that square.
 func boardXToDrawX(dc *boardContext, x int) float64 {
-	return float64(x * dc.squareSizePixels)
+	return float64(x * dc.squareSizePx)
 }
 
 // boardYToDrawY converts a y coordinate in "board space" to the y coordinate used by graphics.
@@ -353,5 +353,5 @@ func boardYToDrawY(dc *boardContext, y int) float64 {
 	// Note: the Battlesnake board coordinates have (0,0) at the bottom left
 	// so we need to flip the y-axis to convert to the graphics, which follows the convention
 	// of (0,0) being the top left.
-	return float64((dc.Height() - int(BoardBorder)*2 - dc.squareSizePixels) - (y * dc.squareSizePixels)) // flip!
+	return float64((dc.Height() - int(BoardBorder)*2 - dc.squareSizePx) - (y * dc.squareSizePx)) // flip!
 }
