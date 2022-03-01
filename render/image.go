@@ -300,8 +300,20 @@ func squareFit(bounds, numSquares int) int {
 	return (bounds - int(BoardBorder)*2) / numSquares
 }
 
-func DrawBoard(b *Board, w, h int) image.Image {
-	dc := createBoardContext(b, w, h)
+// DrawBoard draws the given board data into an image.
+// Width and height values are in pixels.
+// If the image width/height is invalid (<= 0) a valid width/height
+// is calculated using the number of squares in the board.
+func DrawBoard(b *Board, imageWidth, imageHeight int) image.Image {
+	// check if we need to calculate the image width
+	if imageWidth <= 0 || imageHeight <= 0 {
+		// the legacy endpoints don't accept width/height parameters
+		// in those cases, the height/width is the Go zero value (0)
+		// and we should default to the old size which was 20 x num squares
+		imageWidth = b.Width * 20
+		imageHeight = b.Height * 20
+	}
+	dc := createBoardContext(b, imageWidth, imageHeight)
 
 	// Draw food and snakes over watermark
 	for p, s := range b.squares { // cool, we can iterate ONLY the non-empty squares!
