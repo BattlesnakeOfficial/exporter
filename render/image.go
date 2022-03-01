@@ -45,6 +45,12 @@ type boardContext struct {
 	// boardOffsetY is the y offset for the bottom-left corner of the board in the image.
 	// For boards that are not perfectly fit in an image, it will not be > 0 to center the board.
 	boardOffsetY int
+	// boardWidthPx is the width of the actual game board, in pixels
+	// This is different than dc.Width, which is the width of the entire image
+	boardWidthPx int
+	// boardHeightPx is the height of the actual game board, in pixels
+	// This is different than dc.Height, which is the height of the entire image
+	boardHeightPx int
 	// squareSizePx is the size of a single game board square, in pixels
 	squareSizePx int
 	// squareSizeHalfPx is the half the size of a single game board square
@@ -68,12 +74,17 @@ func rotateImage(src image.Image, rot rotations) image.Image {
 }
 
 func drawWatermark(dc *boardContext) {
-	watermarkImage, err := media.GetWatermarkPNG(dc.Width()*2/3, dc.Height()*2/3)
+
+	// The watermark is a square image.
+	// We want to scale it close to the maximum size of square that can fit within the board.
+	wmSize := min(dc.boardWidthPx, dc.boardHeightPx)
+
+	watermarkImage, err := media.GetWatermarkPNG(wmSize*2/3, wmSize*2/3)
 	if err != nil {
 		log.WithError(err).Error("Unable to load watermark image")
 		return
 	}
-	dc.DrawImageAnchored(watermarkImage, dc.Height()/2, dc.Height()/2, 0.5, 0.5)
+	dc.DrawImageAnchored(watermarkImage, dc.Width()/2, dc.Height()/2, 0.5, 0.5)
 }
 
 func drawEmptySquare(dc *boardContext, bx int, by int) {
@@ -254,12 +265,16 @@ func drawGaps(dc *boardContext, bx, by int, dir snakeDirection, c color.Color) {
 func createBoardContext(b *Board, w, h int) *boardContext {
 	ss := calcSquarePx(w, h, b.Width, b.Height)
 
-	offsetX := (w - (ss*b.Width + int(BoardBorder)*2)) / 2
-	offsetY := (h - (ss*b.Height + int(BoardBorder)*2)) / 2
+	boardWidthPx := ss*b.Width + int(BoardBorder)*2
+	boardHeightPx := ss*b.Height + int(BoardBorder)*2
+	offsetX := (w - boardWidthPx) / 2
+	offsetY := (h - boardHeightPx) / 2
 
 	dc := &boardContext{
 		Context:          gg.NewContext(w, h),
 		squareSizePx:     ss,
+		boardWidthPx:     boardWidthPx,
+		boardHeightPx:    boardHeightPx,
 		boardOffsetX:     offsetX,
 		boardOffsetY:     offsetY,
 		squareSizeHalfPx: float64(ss) / 2, // float to avoid rounding errors
