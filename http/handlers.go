@@ -25,6 +25,9 @@ import (
 // to get really slow and the GIF sizes start to get too big.
 const maxGIFResolution = 504 * 504
 
+// allowedPixelsPerSquare is a list of resolutions that the API will allow.
+var allowedPixelsPerSquare = []int{10, 20, 30, 40}
+
 func handleVersion(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	version := os.Getenv("APP_VERSION")
 	if len(version) == 0 {
@@ -154,22 +157,36 @@ func handleASCIIFrame(w http.ResponseWriter, r *http.Request, p httprouter.Param
 	}
 }
 
+// validateDimensionsForBoard checks whether the width/height is valid for the given board width/height.
+func validateDimensionsForBoard(game *engine.Game, w, h int) error {
+
+	// handle the legacy case where w/h are 0
+	if w == 0 || h == 0 {
+		return nil
+	}
+
+	b := int(render.BoardBorder * 2)
+	options := make([]string, 0, len(allowedPixelsPerSquare)) // used to build a helpful error message
+	for _, r := range allowedPixelsPerSquare {
+		// should match one of the allowed resolutions
+		aw := (game.Width*r + b)
+		ah := (game.Height*r + b)
+		options = append(options, fmt.Sprintf("%dx%d", aw, ah))
+		if aw == w && ah == h {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("Dimensions %dx%d invalid - valid options are: %s", w, h, strings.Join(options, ", "))
+}
+
 func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	gameID := p.ByName("game")
-	sizeParam := p.ByName("size")
-	width, height, err := parseSizeParam(sizeParam)
+	width, height, err := getGameDimensions(p)
 	if err != nil {
 		handleBadRequest(w, r, err)
 		return
 	}
-
-	// ensure width/height are within allowable limits
-	err = validateGIFSize(width, height)
-	if err != nil {
-		handleBadRequest(w, r, err)
-		return
-	}
-
 	frameID, err := strconv.Atoi(p.ByName("frame"))
 	if err != nil {
 		handleBadRequest(w, r, err)
@@ -186,6 +203,11 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		} else {
 			handleError(w, r, err, http.StatusInternalServerError)
 		}
+		return
+	}
+	err = validateDimensionsForBoard(game, width, height)
+	if err != nil {
+		handleBadRequest(w, r, err)
 		return
 	}
 
@@ -206,17 +228,25 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	}
 }
 
-func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	gameID := p.ByName("game")
+func getGameDimensions(p httprouter.Params) (int, int, error) {
 	sizeParam := p.ByName("size")
 	width, height, err := parseSizeParam(sizeParam)
 	if err != nil {
-		handleBadRequest(w, r, err)
-		return
+		return 0, 0, err
 	}
 
 	// ensure width/height are within allowable limits
 	err = validateGIFSize(width, height)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return width, height, nil
+}
+
+func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+	gameID := p.ByName("game")
+	width, height, err := getGameDimensions(p)
 	if err != nil {
 		handleBadRequest(w, r, err)
 		return
@@ -233,6 +263,11 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 		} else {
 			handleError(w, r, err, http.StatusInternalServerError)
 		}
+		return
+	}
+	err = validateDimensionsForBoard(game, width, height)
+	if err != nil {
+		handleBadRequest(w, r, err)
 		return
 	}
 

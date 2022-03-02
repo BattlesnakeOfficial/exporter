@@ -88,6 +88,7 @@ func TestHandleGIFGame_NotFound(t *testing.T) {
 }
 
 func TestHandleGIFGame_InvalidResolutions(t *testing.T) {
+	fixtures.TestInRootDir()
 	server := NewServer()
 	req, err := http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/gif/510x510", nil)
 	require.NoError(t, err)
@@ -104,6 +105,26 @@ func TestHandleGIFGame_InvalidResolutions(t *testing.T) {
 	server.router.ServeHTTP(rr, req)
 	require.Equal(t, http.StatusBadRequest, rr.Code)
 	require.Equal(t, "Invalid dimensions: \"50_50\" not of the format <WIDTH>x<HEIGHT>.", rr.Body.String())
+
+	engineServer := fixtures.StubEngineServer(func(res http.ResponseWriter, req *http.Request) {
+		if strings.HasSuffix(req.URL.Path, "/frames") {
+			_, _ = res.Write([]byte(fixtures.ExampleGameFramesResponse))
+		} else {
+			_, _ = res.Write([]byte(fixtures.ExampleGameResponse))
+		}
+	})
+	defer engineServer.Close()
+	{
+		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/gif/400x400", nil)
+		query := req.URL.Query()
+		query.Set("engine_url", engineServer.URL)
+		req.URL.RawQuery = query.Encode()
+
+		server.router.ServeHTTP(res, req)
+
+		require.Equal(t, http.StatusBadRequest, res.Code)
+		require.Equal(t, "Dimensions 400x400 invalid - valid options are: 114x114, 224x224, 334x334, 444x444", res.Body.String())
+	}
 }
 
 func TestHandleGIFGame_Success(t *testing.T) {
@@ -117,16 +138,19 @@ func TestHandleGIFGame_Success(t *testing.T) {
 			_, _ = res.Write([]byte(fixtures.ExampleGameResponse))
 		}
 	})
+	defer engineServer.Close()
 
-	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/gif", nil)
-	query := req.URL.Query()
-	query.Set("engine_url", engineServer.URL)
-	req.URL.RawQuery = query.Encode()
+	{
+		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/gif", nil)
+		query := req.URL.Query()
+		query.Set("engine_url", engineServer.URL)
+		req.URL.RawQuery = query.Encode()
 
-	server.router.ServeHTTP(res, req)
+		server.router.ServeHTTP(res, req)
 
-	require.Equal(t, http.StatusOK, res.Code)
-	require.Equal(t, "image/gif", res.Result().Header.Get("Content-Type"))
+		require.Equal(t, http.StatusOK, res.Code)
+		require.Equal(t, "image/gif", res.Result().Header.Get("Content-Type"))
+	}
 }
 
 func TestHandleGIFFrame_NotFound(t *testing.T) {
