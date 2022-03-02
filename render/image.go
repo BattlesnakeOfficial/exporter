@@ -311,8 +311,12 @@ func createBoardContext(b *Board, w, h int) *boardContext {
 }
 
 // calcSquarePx calculates the size of a game board square (in pixels).
-// It figures out the maximum size in pixels for a square given the total pixel width/height
-// and the number of squares wide/high.
+// It figures out the maximum size in pixels that each square can be
+// given the total width/height of the image and the height/width of the
+// game board (in squares).
+//
+// Essentially, this is a game board fitting function to maximise the size
+// of the game board within the GIF.
 func calcSquarePx(wPx, hPx, wS, hS int) int {
 	// in order to accommodate boards that are rectangles, we need to figure out
 	// what the square size should be to fit in the width and within the height
