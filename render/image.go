@@ -290,7 +290,6 @@ func createBoardContext(b *Board, w, h int) *boardContext {
 	// Clear to white
 	dc.SetColor(color.White)
 	dc.Clear()
-	// dc.DrawRectangle(float64(bx), float64(by), float64(ss*b.Width), float64(ss*b.Height))
 
 	// Draw empty squares
 	for y := 0; y < b.Height; y++ {
