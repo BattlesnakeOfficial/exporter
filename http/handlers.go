@@ -25,11 +25,6 @@ import (
 // to get really slow and the GIF sizes start to get too big.
 const maxGIFResolution = 504 * 504
 
-// minGIFDimension is the minimum size that a GIF should be rendered at.
-// This lower bound was chosen with some trial and error. Below this size, critical details
-// start to get lost and the GIF is not visually correct anymore.
-const minGIFDimension = 92
-
 func handleVersion(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	version := os.Getenv("APP_VERSION")
 	if len(version) == 0 {
@@ -317,7 +312,7 @@ func handleReady(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	fmt.Fprint(w, "ready")
 }
 
-var sizeRegex = regexp.MustCompile(`(\d+)x(\d+)`)
+var sizeRegex = regexp.MustCompile(`^(\d+)x(\d+)$`)
 
 // validateGIFSize checks that the dimension of the GIF is within a safe range that we can allow.
 func validateGIFSize(w, h int) error {
@@ -329,13 +324,13 @@ func validateGIFSize(w, h int) error {
 	}
 
 	// ensure the minimum dimensions are met
-	if w != 0 && w < minGIFDimension {
-		return fmt.Errorf(`Width %d is less than the minimum allowable width of %d.`, w, minGIFDimension)
+	if w < 0 {
+		return fmt.Errorf(`Invalid width %d: cannot be < 0.`, w)
 	}
 
 	// ensure the minimum dimensions are met
-	if h != 0 && h < minGIFDimension {
-		return fmt.Errorf(`Height %d is less than the minimum allowable height of %d.`, h, minGIFDimension)
+	if h < 0 {
+		return fmt.Errorf(`Invalid height %d: cannot be < 0`, h)
 	}
 
 	return nil
