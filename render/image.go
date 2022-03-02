@@ -40,10 +40,10 @@ const (
 type boardContext struct {
 	*gg.Context
 	// boardOffsetX is the x offset for the bottom-left corner of the board in the image.
-	// For boards that are not perfectly fit in an image, it will not be > 0 to center the board.
+	// For boards that don't perfectly fit within the image bounds, it will > 0 to center the board.
 	boardOffsetX int
 	// boardOffsetY is the y offset for the bottom-left corner of the board in the image.
-	// For boards that are not perfectly fit in an image, it will not be > 0 to center the board.
+	// For boards that don't perfectly fit within the image bounds, it will > 0 to center the board.
 	boardOffsetY int
 	// boardWidthPx is the width of the actual game board, in pixels
 	// This is different than dc.Width, which is the width of the entire image

@@ -371,9 +371,10 @@ func validateGIFSize(w, h int) error {
 	return nil
 }
 
-// parseSizeParam parses a path parameter that is expected to be in the form "<WIDTH>x<HEIGHT>"
-// if size is empty, 0,0 is returned
+// parseSizeParam parses a path parameter that is expected to be in the form "<WIDTH>x<HEIGHT>".
+// If the size param is empty, 0,0 is returned.
 func parseSizeParam(param string) (int, int, error) {
+	// check for legacy case where size params are not included
 	if param == "" {
 		return 0, 0, nil
 	}
