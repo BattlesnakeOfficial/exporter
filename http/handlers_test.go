@@ -1,8 +1,10 @@
 package http
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -83,6 +85,33 @@ func TestHandleGIFGame_NotFound(t *testing.T) {
 
 	server.router.ServeHTTP(res, req)
 	require.Equal(t, http.StatusNotFound, res.Code)
+}
+
+func TestHandleGIFGame_InvalidResolutions(t *testing.T) {
+	server := NewServer()
+	req, err := http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/gif/510x510", nil)
+	require.NoError(t, err)
+	rr := httptest.NewRecorder()
+
+	server.router.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	require.Equal(t, "Too many pixels! Dimensions 510x510 having resolution 260100 exceeds maximum allowable resolution of 254016.", rr.Body.String())
+
+	req, err = http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/gif/50x50", nil)
+	require.NoError(t, err)
+	rr = httptest.NewRecorder()
+
+	server.router.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	require.Equal(t, "Width 50 is less than the minimum allowable width of 92.", rr.Body.String())
+
+	req, err = http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/gif/50_50", nil)
+	require.NoError(t, err)
+	rr = httptest.NewRecorder()
+
+	server.router.ServeHTTP(rr, req)
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	require.Equal(t, "Invalid dimensions: \"50_50\" not of the format <WIDTH>x<HEIGHT>.", rr.Body.String())
 }
 
 func TestHandleGIFGame_Success(t *testing.T) {
@@ -184,4 +213,30 @@ func TestHandleASCIIFrame_Success(t *testing.T) {
 
 	require.Equal(t, http.StatusOK, res.Code)
 	require.Equal(t, "text/plain; charset=utf-8", res.Result().Header.Get("Content-Type"))
+}
+
+func TestValidateGIFSize(t *testing.T) {
+
+	require.NoError(t, validateGIFSize(0, 0), "0 values should default to a calculated GIF size")
+
+	// test some allowable sizes
+	require.NoError(t, validateGIFSize(minGIFDimension, minGIFDimension))
+	require.NoError(t, validateGIFSize(114, 114))
+	require.NoError(t, validateGIFSize(384, 114))
+	require.NoError(t, validateGIFSize(504, 504))
+
+	// test some non-allowable sizes
+	require.Equal(t, errors.New("Width -1 is less than the minimum allowable width of 92."), validateGIFSize(-1, 100))
+	require.Equal(t, errors.New("Height -1 is less than the minimum allowable height of 92."), validateGIFSize(100, -1))
+
+	// test width below bounds
+	require.Error(t, validateGIFSize(minGIFDimension, minGIFDimension-1))
+
+	// test height below bounds
+	require.Error(t, validateGIFSize(minGIFDimension-1, minGIFDimension))
+
+	// test too high resolutions
+	require.Equal(t, errors.New("Too many pixels! Dimensions 505x505 having resolution 255025 exceeds maximum allowable resolution of 254016."), validateGIFSize(505, 505))
+	require.Error(t, validateGIFSize(384, 1995))
+	require.Error(t, validateGIFSize(1995, 384))
 }

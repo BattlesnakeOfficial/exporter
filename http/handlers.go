@@ -18,6 +18,18 @@ import (
 	"github.com/BattlesnakeOfficial/exporter/render"
 )
 
+// maxGIFResolution is the maximum resolution of GIF that we want to support.
+// This is an important limit to set, because the GIF rendering takes a lot more
+// IO, CPU and memory resources for larger resolutions.
+// This resolution was chosen as a safe upper-limit after which the rendering starts
+// to get really slow and the GIF sizes start to get too big.
+const maxGIFResolution = 504 * 504
+
+// minGIFDimension is the minimum size that a GIF should be rendered at.
+// This lower bound was chosen with some trial and error. Below this size, critical details
+// start to get lost and the GIF is not visually correct anymore.
+const minGIFDimension = 92
+
 func handleVersion(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	version := os.Getenv("APP_VERSION")
 	if len(version) == 0 {
@@ -155,6 +167,14 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 		handleBadRequest(w, r, err)
 		return
 	}
+
+	// ensure width/height are within allowable limits
+	err = validateGIFSize(width, height)
+	if err != nil {
+		handleBadRequest(w, r, err)
+		return
+	}
+
 	frameID, err := strconv.Atoi(p.ByName("frame"))
 	if err != nil {
 		handleBadRequest(w, r, err)
@@ -199,6 +219,14 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 		handleBadRequest(w, r, err)
 		return
 	}
+
+	// ensure width/height are within allowable limits
+	err = validateGIFSize(width, height)
+	if err != nil {
+		handleBadRequest(w, r, err)
+		return
+	}
+
 	engineURL := r.URL.Query().Get("engine_url")
 
 	log.WithField("game", gameID).WithField("engine_url", engineURL).Info("exporting game")
@@ -291,6 +319,28 @@ func handleReady(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 
 var sizeRegex = regexp.MustCompile(`(\d+)x(\d+)`)
 
+// validateGIFSize checks that the dimension of the GIF is within a safe range that we can allow.
+func validateGIFSize(w, h int) error {
+
+	// ensure the max resolution is not exceeded
+	res := w * h
+	if res > maxGIFResolution {
+		return fmt.Errorf(`Too many pixels! Dimensions %dx%d having resolution %d exceeds maximum allowable resolution of %d.`, w, h, res, maxGIFResolution)
+	}
+
+	// ensure the minimum dimensions are met
+	if w != 0 && w < minGIFDimension {
+		return fmt.Errorf(`Width %d is less than the minimum allowable width of %d.`, w, minGIFDimension)
+	}
+
+	// ensure the minimum dimensions are met
+	if h != 0 && h < minGIFDimension {
+		return fmt.Errorf(`Height %d is less than the minimum allowable height of %d.`, h, minGIFDimension)
+	}
+
+	return nil
+}
+
 // parseSizeParam parses a path parameter that is expected to be in the form "<WIDTH>x<HEIGHT>"
 // if size is empty, 0,0 is returned
 func parseSizeParam(param string) (int, int, error) {
@@ -300,7 +350,7 @@ func parseSizeParam(param string) (int, int, error) {
 
 	m := sizeRegex.FindStringSubmatch(param)
 	if len(m) != 3 {
-		return 0, 0, fmt.Errorf("invalid size argument")
+		return 0, 0, fmt.Errorf(`Invalid dimensions: "%s" not of the format <WIDTH>x<HEIGHT>.`, param)
 	}
 
 	w, err := strconv.Atoi(m[1])
