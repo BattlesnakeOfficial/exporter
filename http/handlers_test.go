@@ -36,7 +36,7 @@ func TestHandlerAvatar_OK(t *testing.T) {
 	} {
 		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", path), nil)
 		server.router.ServeHTTP(res, req)
-		require.Equal(t, http.StatusOK, res.Code)
+		require.Equal(t, http.StatusOK, res.Code, path)
 	}
 }
 
@@ -91,7 +91,7 @@ func TestHandleGIFGame_NotFound(t *testing.T) {
 func TestHandleGIFGame_InvalidResolutions(t *testing.T) {
 	fixtures.TestInRootDir()
 	server := NewServer()
-	req, err := http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/gif/510x510", nil)
+	req, err := http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/510x510.gif", nil)
 	require.NoError(t, err)
 	rr := httptest.NewRecorder()
 
@@ -99,7 +99,7 @@ func TestHandleGIFGame_InvalidResolutions(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, rr.Code)
 	require.Equal(t, "Too many pixels! Dimensions 510x510 having resolution 260100 exceeds maximum allowable resolution of 254016.", rr.Body.String())
 
-	req, err = http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/gif/50_50", nil)
+	req, err = http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/50_50.gif", nil)
 	require.NoError(t, err)
 	rr = httptest.NewRecorder()
 
@@ -115,7 +115,7 @@ func TestHandleGIFGame_InvalidResolutions(t *testing.T) {
 		}
 	})
 	defer engineServer.Close()
-	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/gif/400x400", nil)
+	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/400x400.gif", nil)
 	query := req.URL.Query()
 	query.Set("engine_url", engineServer.URL)
 	req.URL.RawQuery = query.Encode()
@@ -152,7 +152,7 @@ func TestHandleGIFGame_Success(t *testing.T) {
 	}
 
 	{
-		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/gif/444x444", nil)
+		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/444x444.gif", nil)
 		query := req.URL.Query()
 		query.Set("engine_url", engineServer.URL)
 		req.URL.RawQuery = query.Encode()
@@ -184,7 +184,7 @@ func TestHandleGIFFrame_NotFound(t *testing.T) {
 func TestHandleGIFFrame_InvalidResolutions(t *testing.T) {
 	fixtures.TestInRootDir()
 	server := NewServer()
-	req, err := http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/frames/1/gif/510x510", nil)
+	req, err := http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/frames/1/510x510.gif", nil)
 	require.NoError(t, err)
 	rr := httptest.NewRecorder()
 
@@ -192,7 +192,7 @@ func TestHandleGIFFrame_InvalidResolutions(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, rr.Code)
 	require.Equal(t, "Too many pixels! Dimensions 510x510 having resolution 260100 exceeds maximum allowable resolution of 254016.", rr.Body.String())
 
-	req, err = http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/frames/1/gif/50_50", nil)
+	req, err = http.NewRequest("GET", "/games/12345678-2666-4a58-9825-1e1cd0c761da/frames/1/50_50.gif", nil)
 	require.NoError(t, err)
 	rr = httptest.NewRecorder()
 
@@ -208,7 +208,7 @@ func TestHandleGIFFrame_InvalidResolutions(t *testing.T) {
 		}
 	})
 	defer engineServer.Close()
-	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/1/gif/400x400", nil)
+	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/1/400x400.gif", nil)
 	query := req.URL.Query()
 	query.Set("engine_url", engineServer.URL)
 	req.URL.RawQuery = query.Encode()
@@ -245,7 +245,7 @@ func TestHandleGIFFrame_Success(t *testing.T) {
 	}
 
 	{
-		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/0/gif/334x334", nil)
+		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/0/334x334.gif", nil)
 		query := req.URL.Query()
 		query.Set("engine_url", engineServer.URL)
 		req.URL.RawQuery = query.Encode()

@@ -10,7 +10,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/julienschmidt/httprouter"
+	"goji.io/pat"
+
 	log "github.com/sirupsen/logrus"
 
 	"github.com/BattlesnakeOfficial/exporter/engine"
@@ -28,7 +29,7 @@ const maxGIFResolution = 504 * 504
 // allowedPixelsPerSquare is a list of resolutions that the API will allow.
 var allowedPixelsPerSquare = []int{10, 20, 30, 40}
 
-func handleVersion(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func handleVersion(w http.ResponseWriter, r *http.Request) {
 	version := os.Getenv("APP_VERSION")
 	if len(version) == 0 {
 		version = "unknown"
@@ -39,12 +40,13 @@ func handleVersion(w http.ResponseWriter, r *http.Request, _ httprouter.Params) 
 var reAvatarParams = regexp.MustCompile(`^/(?:[a-z-]{1,32}:[a-z-0-9#]{1,32}/)*(?P<width>[0-9]{2,4})x(?P<height>[0-9]{2,4}).(?P<ext>[a-z]{3,4})$`)
 var reAvatarCustomizations = regexp.MustCompile(`(?P<key>[a-z-]{1,32}):(?P<value>[a-z-0-9#]{1,32})`)
 
-func handleAvatar(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func handleAvatar(w http.ResponseWriter, r *http.Request) {
+	subPath := strings.TrimPrefix(r.URL.Path, "/avatars")
 	errBadRequest := fmt.Errorf("bad request")
 	avatarSettings := render.AvatarSettings{}
 
 	// Extract width, height, and filetype
-	reParamsResult := reAvatarParams.FindStringSubmatch(p.ByName("params"))
+	reParamsResult := reAvatarParams.FindStringSubmatch(subPath)
 	if len(reParamsResult) != 4 {
 		handleBadRequest(w, r, errBadRequest)
 		return
@@ -71,7 +73,7 @@ func handleAvatar(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	}
 
 	// Extract customization params
-	reCustomizationResults := reAvatarCustomizations.FindAllStringSubmatch(p.ByName("params"), -1)
+	reCustomizationResults := reAvatarCustomizations.FindAllStringSubmatch(subPath, -1)
 	for _, match := range reCustomizationResults {
 		cKey, cValue := match[1], match[2]
 		switch cKey {
@@ -122,10 +124,10 @@ func handleAvatar(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	fmt.Fprint(w, avatarSVG)
 }
 
-func handleASCIIFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	gameID := p.ByName("game")
+func handleASCIIFrame(w http.ResponseWriter, r *http.Request) {
+	gameID := pat.Param(r, "game")
 	engineURL := r.URL.Query().Get("engine_url")
-	frameID, err := strconv.Atoi(p.ByName("frame"))
+	frameID, err := strconv.Atoi(pat.Param(r, "frame"))
 	if err != nil {
 		handleBadRequest(w, r, err)
 		return
@@ -180,14 +182,14 @@ func validateDimensionsForBoard(game *engine.Game, w, h int) error {
 	return fmt.Errorf("Dimensions %dx%d invalid - valid options are: %s", w, h, strings.Join(options, ", "))
 }
 
-func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	gameID := p.ByName("game")
-	width, height, err := getGameDimensions(p)
+func handleGIFFrameDimensions(w http.ResponseWriter, r *http.Request) {
+	gameID := pat.Param(r, "game")
+	width, height, err := getGameDimensions(r)
 	if err != nil {
 		handleBadRequest(w, r, err)
 		return
 	}
-	frameID, err := strconv.Atoi(p.ByName("frame"))
+	frameID, err := strconv.Atoi(pat.Param(r, "frame"))
 	if err != nil {
 		handleBadRequest(w, r, err)
 		return
@@ -228,8 +230,46 @@ func handleGIFFrame(w http.ResponseWriter, r *http.Request, p httprouter.Params)
 	}
 }
 
-func getGameDimensions(p httprouter.Params) (int, int, error) {
-	sizeParam := p.ByName("size")
+func handleGIFFrame(w http.ResponseWriter, r *http.Request) {
+	gameID := pat.Param(r, "game")
+	frameID, err := strconv.Atoi(pat.Param(r, "frame"))
+	if err != nil {
+		handleBadRequest(w, r, err)
+		return
+	}
+
+	log.Infof("exporting frame %s:%d", gameID, frameID)
+
+	engineURL := r.URL.Query().Get("engine_url")
+	game, err := engine.GetGame(gameID, engineURL)
+	if err != nil {
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	gameFrame, err := engine.GetGameFrame(game.ID, engineURL, frameID)
+	if err != nil {
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "image/gif")
+	if err = render.GameFrameToGIF(w, game, gameFrame, 0, 0); err != nil {
+		handleError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+}
+
+func getGameDimensions(r *http.Request) (int, int, error) {
+	sizeParam := pat.Param(r, "size")
 	width, height, err := parseSizeParam(sizeParam)
 	if err != nil {
 		return 0, 0, err
@@ -244,9 +284,9 @@ func getGameDimensions(p httprouter.Params) (int, int, error) {
 	return width, height, nil
 }
 
-func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-	gameID := p.ByName("game")
-	width, height, err := getGameDimensions(p)
+func handleGIFGameDimensions(w http.ResponseWriter, r *http.Request) {
+	gameID := pat.Param(r, "game")
+	width, height, err := getGameDimensions(r)
 	if err != nil {
 		handleBadRequest(w, r, err)
 		return
@@ -313,6 +353,64 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request, p httprouter.Params) 
 	}
 }
 
+func handleGIFGame(w http.ResponseWriter, r *http.Request) {
+	gameID := pat.Param(r, "game")
+	engineURL := r.URL.Query().Get("engine_url")
+
+	log.WithField("game", gameID).WithField("engine_url", engineURL).Info("exporting game")
+
+	game, err := engine.GetGame(gameID, engineURL)
+	if err != nil {
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	offset := 0
+	limit := math.MaxInt32
+	frames := strings.Split(r.URL.Query().Get("frames"), "-")
+	if len(frames) == 2 {
+		valOne, errOne := strconv.Atoi(frames[0])
+		valTwo, errTwo := strconv.Atoi(frames[1])
+		if errOne != nil || errTwo != nil {
+			handleBadRequest(w, r, fmt.Errorf("invalid frames parameter: %s", r.URL.Query().Get("frames")))
+		}
+
+		offset = valOne
+		limit = valTwo - valOne + 1
+	}
+
+	gameFrames, err := engine.GetGameFrames(game.ID, engineURL, offset, limit)
+	if err != nil {
+		if errors.Is(err, engine.ErrNotFound) {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	frameDelay, err := strconv.Atoi(r.URL.Query().Get("frameDelay"))
+	if err != nil {
+		frameDelay = render.GIFFrameDelay
+	}
+
+	loopDelay, err := strconv.Atoi(r.URL.Query().Get("loopDelay"))
+	if err != nil {
+		loopDelay = render.GIFLoopDelay
+	}
+
+	w.Header().Set("Content-Type", "image/gif")
+	err = render.GameFramesToAnimatedGIF(w, game, gameFrames, frameDelay, loopDelay, 0, 0)
+	if err != nil {
+		handleError(w, r, err, http.StatusInternalServerError)
+		return
+	}
+}
+
 func handleBadRequest(w http.ResponseWriter, r *http.Request, e error) {
 	w.WriteHeader(http.StatusBadRequest)
 	_, err := w.Write([]byte(e.Error()))
@@ -339,11 +437,11 @@ func handleError(w http.ResponseWriter, r *http.Request, err error, statusCode i
 	}
 }
 
-func handleAlive(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func handleAlive(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "alive")
 }
 
-func handleReady(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+func handleReady(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "ready")
 }
 
