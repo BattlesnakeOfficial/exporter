@@ -265,13 +265,25 @@ func TestHandleASCIIFrame_NotFound(t *testing.T) {
 	})
 	defer engineServer.Close()
 
-	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/1/ascii", nil)
-	query := req.URL.Query()
-	query.Set("engine_url", engineServer.URL)
-	req.URL.RawQuery = query.Encode()
+	{
+		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/1/ascii", nil)
+		query := req.URL.Query()
+		query.Set("engine_url", engineServer.URL)
+		req.URL.RawQuery = query.Encode()
 
-	server.router.ServeHTTP(res, req)
-	require.Equal(t, http.StatusNotFound, res.Code)
+		server.router.ServeHTTP(res, req)
+		require.Equal(t, http.StatusNotFound, res.Code)
+	}
+
+	{
+		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/1.txt", nil)
+		query := req.URL.Query()
+		query.Set("engine_url", engineServer.URL)
+		req.URL.RawQuery = query.Encode()
+
+		server.router.ServeHTTP(res, req)
+		require.Equal(t, http.StatusNotFound, res.Code)
+	}
 }
 
 func TestHandleASCIIFrame_Success(t *testing.T) {
@@ -287,15 +299,29 @@ func TestHandleASCIIFrame_Success(t *testing.T) {
 	})
 	defer engineServer.Close()
 
-	req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/0/ascii", nil)
-	query := req.URL.Query()
-	query.Set("engine_url", engineServer.URL)
-	req.URL.RawQuery = query.Encode()
+	{
+		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/0/ascii", nil)
+		query := req.URL.Query()
+		query.Set("engine_url", engineServer.URL)
+		req.URL.RawQuery = query.Encode()
 
-	server.router.ServeHTTP(res, req)
+		server.router.ServeHTTP(res, req)
 
-	require.Equal(t, http.StatusOK, res.Code)
-	require.Equal(t, "text/plain; charset=utf-8", res.Result().Header.Get("Content-Type"))
+		require.Equal(t, http.StatusOK, res.Code)
+		require.Equal(t, "text/plain; charset=utf-8", res.Result().Header.Get("Content-Type"))
+	}
+
+	{
+		req, res := fixtures.TestRequest(t, "GET", "http://localhost/games/GAME_ID/frames/0.txt", nil)
+		query := req.URL.Query()
+		query.Set("engine_url", engineServer.URL)
+		req.URL.RawQuery = query.Encode()
+
+		server.router.ServeHTTP(res, req)
+
+		require.Equal(t, http.StatusOK, res.Code)
+		require.Equal(t, "text/plain; charset=utf-8", res.Result().Header.Get("Content-Type"))
+	}
 }
 
 func TestValidateGIFSize(t *testing.T) {
