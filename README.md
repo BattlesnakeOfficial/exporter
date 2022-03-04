@@ -87,15 +87,66 @@ curl -i http://localhost:8000/avatars/head:beluga/tail:fish/color:%2331688e/500x
 
 #### `/games/{game id}/gif`
 
+**DEPRECATED:** use `/games/{game id}/{width}x{height}.gif` instead.
+
 Exports the game as an animated gif.
 
 #### `/games/{game id}/frames/{frame number}/gif`
+
+**DEPRECATED:** use `/games/{game id}/frames/{frame number}/{width}x{height}.gif` instead.
 
 Exports a specific frame as a gif (no animation).
 
 #### `/games/{game id}/frames/{frame number}/ascii`
 
+**DEPRECATED:** use `/games/{game id}/frames/{frame number}.txt` instead.
+
 Exports a specific frame as an ASCII string.
+
+#### `/games/{game id}/{width}x{height}.gif`
+
+Exports the game as an animated gif sized `width` pixels wide and `height` pixels high.
+
+See [GIF size validation](#Choose-a-GIF-size) for details about how to choose a valid GIF resolution
+
+#### `/games/{game id}/frames/{frame number}/{width}x{height}.gif`
+
+Exports the game as an animated gif sized `width` pixels wide and `height` pixels high.
+
+See [GIF size validation](#Choose-a-GIF-size) for details about how to choose a valid GIF resolution
+
+#### `/games/{game id}/frames/{frame number}.txt`
+
+Exports a specific frame as an ASCII string.
+
+### Choose a GIF size
+
+GIF sizes are restricted to a limited set of options based on the game board being exported. Additionally, there is an upper-limit of a maximum resolution of `504x504` (`254016` pixels) which supersedes the calculation of available options.
+
+
+At the time of this writing, the options are:
+
+- 10 pixels per board square (+ 4 pixels for border)
+- 20 pixels per board square (+ 4 pixels for border)
+- 30 pixels per board square (+ 4 pixels for border)
+- 40 pixels per board square (+ 4 pixels for border)
+
+These options may change. If you need an up-to-date list, look at `allowedPixelsPerSquare` in [handlers.go](./http/handlers.go) for an authoritative list of allowed resolutions.
+
+Using the above, you can determine the available GIF dimensions that you can request.
+
+Examples:
+- allowed sizes allowed for **11x11** board are: 
+  - **114x114** (10 pixels per board square)
+  - **224x224** (20 pixels per board square)
+  - **334x334** (30 pixels per board square)
+  - **444x444** (40 pixels per board square)
+- allowed sizes allowed for **19x19** board are: 
+  - **194x194** (10 pixels per board square)
+  - **384x384** (20 pixels per board square)
+  - **574x574** (30 pixels per board square) (**Disallowed** because it exceeds `504x504`)
+  - **764x764** (40 pixels per board square) (**Disallowed** because it exceeds `504x504`)
+- etc...
 
 ## Caching
 
