@@ -183,12 +183,20 @@ func validateDimensionsForBoard(game *engine.Game, w, h int) error {
 }
 
 func handleGIFFrameDimensions(w http.ResponseWriter, r *http.Request) {
-	gameID := pat.Param(r, "game")
 	width, height, err := getGameDimensions(r)
 	if err != nil {
 		handleBadRequest(w, r, err)
 		return
 	}
+	handleGIFFrameCommon(w, r, width, height)
+}
+
+func handleGIFFrame(w http.ResponseWriter, r *http.Request) {
+	handleGIFFrameCommon(w, r, 0, 0)
+}
+
+func handleGIFFrameCommon(w http.ResponseWriter, r *http.Request, width, height int) {
+	gameID := pat.Param(r, "game")
 	frameID, err := strconv.Atoi(pat.Param(r, "frame"))
 	if err != nil {
 		handleBadRequest(w, r, err)
@@ -230,44 +238,6 @@ func handleGIFFrameDimensions(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func handleGIFFrame(w http.ResponseWriter, r *http.Request) {
-	gameID := pat.Param(r, "game")
-	frameID, err := strconv.Atoi(pat.Param(r, "frame"))
-	if err != nil {
-		handleBadRequest(w, r, err)
-		return
-	}
-
-	log.Infof("exporting frame %s:%d", gameID, frameID)
-
-	engineURL := r.URL.Query().Get("engine_url")
-	game, err := engine.GetGame(gameID, engineURL)
-	if err != nil {
-		if errors.Is(err, engine.ErrNotFound) {
-			handleError(w, r, err, http.StatusNotFound)
-		} else {
-			handleError(w, r, err, http.StatusInternalServerError)
-		}
-		return
-	}
-
-	gameFrame, err := engine.GetGameFrame(game.ID, engineURL, frameID)
-	if err != nil {
-		if errors.Is(err, engine.ErrNotFound) {
-			handleError(w, r, err, http.StatusNotFound)
-		} else {
-			handleError(w, r, err, http.StatusInternalServerError)
-		}
-		return
-	}
-
-	w.Header().Set("Content-Type", "image/gif")
-	if err = render.GameFrameToGIF(w, game, gameFrame, 0, 0); err != nil {
-		handleError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-}
-
 func getGameDimensions(r *http.Request) (int, int, error) {
 	sizeParam := pat.Param(r, "size")
 	width, height, err := parseSizeParam(sizeParam)
@@ -285,13 +255,21 @@ func getGameDimensions(r *http.Request) (int, int, error) {
 }
 
 func handleGIFGameDimensions(w http.ResponseWriter, r *http.Request) {
-	gameID := pat.Param(r, "game")
 	width, height, err := getGameDimensions(r)
 	if err != nil {
 		handleBadRequest(w, r, err)
 		return
 	}
+	handleCommonGIFGame(w, r, width, height)
+}
 
+func handleGIFGame(w http.ResponseWriter, r *http.Request) {
+	handleCommonGIFGame(w, r, 0, 0)
+}
+
+func handleCommonGIFGame(w http.ResponseWriter, r *http.Request, width, height int) {
+
+	gameID := pat.Param(r, "game")
 	engineURL := r.URL.Query().Get("engine_url")
 
 	log.WithField("game", gameID).WithField("engine_url", engineURL).Info("exporting game")
@@ -347,64 +325,6 @@ func handleGIFGameDimensions(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "image/gif")
 	err = render.GameFramesToAnimatedGIF(w, game, gameFrames, frameDelay, loopDelay, width, height)
-	if err != nil {
-		handleError(w, r, err, http.StatusInternalServerError)
-		return
-	}
-}
-
-func handleGIFGame(w http.ResponseWriter, r *http.Request) {
-	gameID := pat.Param(r, "game")
-	engineURL := r.URL.Query().Get("engine_url")
-
-	log.WithField("game", gameID).WithField("engine_url", engineURL).Info("exporting game")
-
-	game, err := engine.GetGame(gameID, engineURL)
-	if err != nil {
-		if errors.Is(err, engine.ErrNotFound) {
-			handleError(w, r, err, http.StatusNotFound)
-		} else {
-			handleError(w, r, err, http.StatusInternalServerError)
-		}
-		return
-	}
-
-	offset := 0
-	limit := math.MaxInt32
-	frames := strings.Split(r.URL.Query().Get("frames"), "-")
-	if len(frames) == 2 {
-		valOne, errOne := strconv.Atoi(frames[0])
-		valTwo, errTwo := strconv.Atoi(frames[1])
-		if errOne != nil || errTwo != nil {
-			handleBadRequest(w, r, fmt.Errorf("invalid frames parameter: %s", r.URL.Query().Get("frames")))
-		}
-
-		offset = valOne
-		limit = valTwo - valOne + 1
-	}
-
-	gameFrames, err := engine.GetGameFrames(game.ID, engineURL, offset, limit)
-	if err != nil {
-		if errors.Is(err, engine.ErrNotFound) {
-			handleError(w, r, err, http.StatusNotFound)
-		} else {
-			handleError(w, r, err, http.StatusInternalServerError)
-		}
-		return
-	}
-
-	frameDelay, err := strconv.Atoi(r.URL.Query().Get("frameDelay"))
-	if err != nil {
-		frameDelay = render.GIFFrameDelay
-	}
-
-	loopDelay, err := strconv.Atoi(r.URL.Query().Get("loopDelay"))
-	if err != nil {
-		loopDelay = render.GIFLoopDelay
-	}
-
-	w.Header().Set("Content-Type", "image/gif")
-	err = render.GameFramesToAnimatedGIF(w, game, gameFrames, frameDelay, loopDelay, 0, 0)
 	if err != nil {
 		handleError(w, r, err, http.StatusInternalServerError)
 		return
