@@ -109,7 +109,7 @@ func Recovery(h http.Handler) http.Handler {
 		defer func() {
 			if err := recover(); err != nil {
 				source := "unknown"
-				if _, filename, line, ok := runtime.Caller(3); ok {
+				if _, filename, line, ok := runtime.Caller(2); ok {
 					source = fmt.Sprintf("%s:%d", filename, line)
 				}
 				log.WithField("err", err).
