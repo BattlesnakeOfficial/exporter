@@ -6,7 +6,7 @@ import (
 
 	"github.com/BattlesnakeOfficial/exporter/fixtures"
 	"github.com/stretchr/testify/require"
-	"goji.io/pat"
+	"goji.io/v3/pat"
 )
 
 func TestHandlesPanic(t *testing.T) {

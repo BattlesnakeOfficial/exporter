@@ -12,8 +12,8 @@ import (
 	"time"
 
 	log "github.com/sirupsen/logrus"
-	"goji.io"
-	"goji.io/pat"
+	"goji.io/v3"
+	"goji.io/v3/pat"
 )
 
 type Server struct {

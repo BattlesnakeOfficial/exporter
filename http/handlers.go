@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"goji.io/pat"
+	"goji.io/v3/pat"
 
 	log "github.com/sirupsen/logrus"
 
