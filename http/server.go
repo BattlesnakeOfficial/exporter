@@ -11,45 +11,50 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/julienschmidt/httprouter"
 	log "github.com/sirupsen/logrus"
+	"goji.io/v3"
+	"goji.io/v3/pat"
 )
 
 type Server struct {
-	router     *httprouter.Router
+	router     *goji.Mux
 	httpServer *http.Server
 }
 
 func NewServer() *Server {
-	router := httprouter.New()
+	mux := goji.NewMux()
+	mux.Use(Recovery) // captures panics
 
-	// System routes
-	router.GET("/", handleVersion)
-	router.GET("/version", handleVersion)
-	router.GET("/healthz/alive", handleAlive)
-	router.GET("/healthz/ready", handleReady)
+	// // System routes
+	mux.HandleFunc(pat.Get("/"), handleVersion)
+	mux.HandleFunc(pat.Get("/version"), handleVersion)
+	mux.HandleFunc(pat.Get("/healthz/alive"), handleAlive)
+	mux.HandleFunc(pat.Get("/healthz/ready"), handleReady)
 
 	// Export routes
-	router.GET("/avatars/*params", withCaching(handleAvatar))
-	router.GET("/games/:game/gif", withCaching(handleGIFGame))
-	router.GET("/games/:game/frames/:frame/ascii", withCaching(handleASCIIFrame))
-	router.GET("/games/:game/frames/:frame/gif", withCaching(handleGIFFrame))
+	mux.HandleFunc(pat.Get("/avatars/*"), withCaching(handleAvatar))
 
-	router.PanicHandler = panicHandler
+	mux.HandleFunc(pat.Get("/games/:game/gif"), withCaching(handleGIFGame))
+	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/ascii"), withCaching(handleASCIIFrame))
+	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/gif"), withCaching(handleGIFFrame))
+
+	mux.HandleFunc(pat.Get("/games/:game/:size.gif"), withCaching(handleGIFGameDimensions))
+	mux.HandleFunc(pat.Get("/games/:game/frames/:frame.txt"), withCaching(handleASCIIFrame))
+	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/:size.gif"), withCaching(handleGIFFrameDimensions))
 
 	return &Server{
-		router: router,
+		router: mux,
 		httpServer: &http.Server{
-			Handler: router,
+			Handler: mux,
 		},
 	}
 }
 
-func withCaching(wrappedHandler httprouter.Handle) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
+func withCaching(wrappedHandler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		maxAgeSeconds := 60 * 60 * 24 // 24 Hours
 		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age:%d", maxAgeSeconds))
-		wrappedHandler(w, r, p)
+		wrappedHandler(w, r)
 	}
 }
 
@@ -99,15 +104,23 @@ func (s *Server) Shutdown(timeout time.Duration) error {
 	return s.httpServer.Shutdown(ctx)
 }
 
-func panicHandler(w http.ResponseWriter, r *http.Request, err interface{}) {
-	source := "unknown"
-	if _, filename, line, ok := runtime.Caller(3); ok {
-		source = fmt.Sprintf("%s:%d", filename, line)
-	}
-	log.WithField("err", err).
-		WithField("url", r.URL.String()).
-		WithField("source", source).
-		Error("unhandled panic")
+func Recovery(h http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				source := "unknown"
+				if _, filename, line, ok := runtime.Caller(2); ok {
+					source = fmt.Sprintf("%s:%d", filename, line)
+				}
+				log.WithField("err", err).
+					WithField("url", r.URL.String()).
+					WithField("source", source).
+					Error("unhandled panic")
 
-	w.WriteHeader(http.StatusInternalServerError)
+				w.WriteHeader(http.StatusInternalServerError)
+			}
+		}()
+		h.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
 }
