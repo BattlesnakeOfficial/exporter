@@ -33,6 +33,7 @@ func TestHandlerAvatar_OK(t *testing.T) {
 		"/200x100.svg",
 		"/head:beluga/500x100.svg",
 		"/head:beluga/tail:fish/color:%2331688e/500x100.svg",
+		"/head:beluga/tail:fish/color:%23FfEeCc/500x100.svg",
 	} {
 		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", path), nil)
 		server.router.ServeHTTP(res, req)
