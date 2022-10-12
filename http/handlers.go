@@ -38,8 +38,8 @@ func handleVersion(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, version)
 }
 
-var reAvatarParams = regexp.MustCompile(`^/(?:[a-z-]{1,32}:[A-Za-z-0-9#]{1,32}/)*(?P<width>[0-9]{2,4})x(?P<height>[0-9]{2,4}).(?P<ext>[a-z]{3,4})$`)
-var reAvatarCustomizations = regexp.MustCompile(`(?P<key>[a-z-]{1,32}):(?P<value>[A-Za-z-0-9#]{1,32})`)
+var reAvatarParams = regexp.MustCompile(`^/(?:[a-z-]{1,32}:[A-Za-z-0-9#]{0,32}/)*(?P<width>[0-9]{2,4})x(?P<height>[0-9]{2,4}).(?P<ext>[a-z]{3,4})$`)
+var reAvatarCustomizations = regexp.MustCompile(`(?P<key>[a-z-]{1,32}):(?P<value>[A-Za-z-0-9#]{0,32})`)
 
 func handleAvatar(w http.ResponseWriter, r *http.Request) {
 	subPath := strings.TrimPrefix(r.URL.Path, "/avatars")
@@ -77,6 +77,10 @@ func handleAvatar(w http.ResponseWriter, r *http.Request) {
 	reCustomizationResults := reAvatarCustomizations.FindAllStringSubmatch(subPath, -1)
 	for _, match := range reCustomizationResults {
 		cKey, cValue := match[1], match[2]
+		if cValue == "" {
+			// ignore empty values
+			continue
+		}
 		switch cKey {
 		case "head":
 			avatarSettings.HeadSVG, err = media.GetHeadSVG(cValue)

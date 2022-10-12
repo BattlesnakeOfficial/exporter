@@ -35,6 +35,7 @@ func TestHandlerAvatar_OK(t *testing.T) {
 	}{
 		{"/200x100.svg", "image/svg+xml"},
 		{"/head:beluga/500x100.svg", "image/svg+xml"},
+		{"/head:/tail:/color:/500x100.svg", "image/svg+xml"},
 		{"/head:beluga/tail:fish/color:%2331688e/500x100.svg", "image/svg+xml"},
 		{"/head:beluga/tail:fish/color:%23FfEeCc/500x100.svg", "image/svg+xml"},
 		{"/head:beluga/tail:fish/color:%23FfEeCc/500x100.png", "image/png"},
@@ -64,16 +65,17 @@ func TestHandleAvatar_BadRequest(t *testing.T) {
 		"/500x99999.svg", // Invalid extension
 
 		"/color:00FF00/500x100.svg", // Invalid color value
-		"/head:/500x100.svg",        // Missing value
 		"/HEAD:default/500x100.svg", // Invalid characters
 		"/barf:true/500x100.svg",    // Unrecognized param
 
 	}
 
 	for _, path := range badRequestPaths {
-		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", path), nil)
-		server.router.ServeHTTP(res, req)
-		require.Equal(t, http.StatusBadRequest, res.Code)
+		t.Run(path, func(t *testing.T) {
+			req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", path), nil)
+			server.router.ServeHTTP(res, req)
+			require.Equal(t, http.StatusBadRequest, res.Code)
+		})
 	}
 }
 
