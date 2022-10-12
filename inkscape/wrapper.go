@@ -64,6 +64,39 @@ func (c Client) SVGToPNG(path string, width, height int) (image.Image, error) {
 	return img, err
 }
 
+// SVGStringToPNG rasterizes the provided SVG text to PNG format.
+func (c Client) SVGStringToPNG(svgText string, width, height int) (image.Image, error) {
+	if height < 1 {
+		return nil, errors.New("invalid height")
+	}
+	if width < 1 {
+		return nil, errors.New("invalid width")
+	}
+
+	cmd := exec.Command(c.cmd(), "--pipe", "-w", fmt.Sprint(width), "-h", fmt.Sprint(height), "--export-type=png", "--export-filename=-")
+	stdoutData := bytes.NewBuffer(nil)
+	stderrData := bytes.NewBuffer(nil)
+	cmd.Stdout = stdoutData
+	cmd.Stderr = stderrData
+	cmd.Stdin = bytes.NewBufferString(svgText)
+	err := cmd.Start()
+	if err != nil {
+		return nil, describeError(err, stderrData.String())
+	}
+	err = cmd.Wait()
+	if err != nil {
+		return nil, describeError(err, stderrData.String())
+	}
+
+	// if we get no bytes on stdout, that means something went wrong
+	if stdoutData.Len() == 0 {
+		return nil, errors.New("error processing SVG")
+	}
+
+	img, err := png.Decode(stdoutData)
+	return img, err
+}
+
 func (c Client) cmd() string {
 	if c.Command == "" {
 		return defaultCommand

@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"image/png"
 	"math"
 	"net/http"
 	"os"
@@ -67,7 +68,7 @@ func handleAvatar(w http.ResponseWriter, r *http.Request) {
 	avatarSettings.Height = pHeight
 
 	pExt := reParamsResult[3]
-	if pExt != "svg" {
+	if pExt != "svg" && pExt != "png" {
 		handleBadRequest(w, r, errBadRequest)
 		return
 	}
@@ -116,6 +117,20 @@ func handleAvatar(w http.ResponseWriter, r *http.Request) {
 			handleBadRequest(w, r, errBadRequest)
 		} else {
 			handleError(w, r, err, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	if pExt == "png" {
+		image, err := media.ConvertSVGStringToPNG(avatarSVG, avatarSettings.Width, avatarSettings.Height)
+		if err != nil {
+			handleError(w, r, err, http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "image/png")
+		if err := png.Encode(w, image); err != nil {
+			log.WithError(err).Error("unable to write PNG to response stream")
 		}
 		return
 	}

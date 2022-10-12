@@ -30,10 +30,12 @@ const (
 // imageCache is a cache that contains image.Image values
 var imageCache = cache.New(time.Hour, 10*time.Minute)
 
+var inkscapeClient = &inkscape.Client{}
+
 var baseDir = "media/assets"
 var svgMgr = &svgManager{
 	baseDir:  filepath.Join(baseDir, "downloads"),
-	inkscape: &inkscape.Client{},
+	inkscape: inkscapeClient,
 }
 
 // GetWatermarkPNG gets the watermark asset, scaled to the requested width/height
@@ -105,6 +107,25 @@ func getSnakeSVGImage(path, fallbackPath string, w, h int, c color.Color) (image
 	return img, err
 }
 
+func ConvertSVGStringToPNG(svg string, w, h int) (image.Image, error) {
+	// make sure inkscape is available, otherwise we can't create an image from an SVG
+	if !inkscapeClient.IsAvailable() {
+		return nil, errors.New("inkscape is not available - unable to convert SVG")
+	}
+
+	img, err := inkscapeClient.SVGStringToPNG(svg, w, h)
+	if err != nil {
+		log.WithError(err).Info("unable to rasterize SVG")
+		return nil, err
+	}
+	return img, nil
+}
+
+type svgManager struct {
+	baseDir  string
+	inkscape *inkscape.Client
+}
+
 func (sm svgManager) loadSnakeSVGImage(mediaPath string, w, h int, c color.Color) (image.Image, error) {
 	key := imageCacheKey(mediaPath, w, h, c)
 	cachedImage, ok := imageCache.Get(key)
@@ -133,11 +154,6 @@ func (sm svgManager) loadSnakeSVGImage(mediaPath string, w, h int, c color.Color
 
 	imageCache.Set(key, img, cache.DefaultExpiration)
 	return img, nil
-}
-
-type svgManager struct {
-	baseDir  string
-	inkscape *inkscape.Client
 }
 
 func (sm svgManager) ensureSubdirExists(subDir string) error {
