@@ -29,15 +29,21 @@ func TestHandleVersion(t *testing.T) {
 func TestHandlerAvatar_OK(t *testing.T) {
 	server := NewServer()
 
-	for _, path := range []string{
-		"/200x100.svg",
-		"/head:beluga/500x100.svg",
-		"/head:beluga/tail:fish/color:%2331688e/500x100.svg",
-		"/head:beluga/tail:fish/color:%23FfEeCc/500x100.svg",
+	for _, test := range []struct {
+		path        string
+		contentType string
+	}{
+		{"/200x100.svg", "image/svg+xml"},
+		{"/head:beluga/500x100.svg", "image/svg+xml"},
+		{"/head:/tail:/color:/500x100.svg", "image/svg+xml"},
+		{"/head:beluga/tail:fish/color:%2331688e/500x100.svg", "image/svg+xml"},
+		{"/head:beluga/tail:fish/color:%23FfEeCc/500x100.svg", "image/svg+xml"},
+		{"/head:beluga/tail:fish/color:%23FfEeCc/500x100.png", "image/png"},
 	} {
-		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", path), nil)
+		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", test.path), nil)
 		server.router.ServeHTTP(res, req)
-		require.Equal(t, http.StatusOK, res.Code, path)
+		require.Equal(t, http.StatusOK, res.Code, test.path)
+		require.Equal(t, res.Result().Header.Get("content-type"), test.contentType)
 	}
 }
 
@@ -55,20 +61,21 @@ func TestHandleAvatar_BadRequest(t *testing.T) {
 		"/100x1.svg",     // Invalid dimension
 		"/abcx100.svg",   // Missing dimension
 		"/100xqwer.svg",  // Missing dimension
-		"/500x100.png",   // Invalid extension
+		"/500x100.zip",   // Invalid extension
 		"/500x99999.svg", // Invalid extension
 
 		"/color:00FF00/500x100.svg", // Invalid color value
-		"/head:/500x100.svg",        // Missing value
 		"/HEAD:default/500x100.svg", // Invalid characters
 		"/barf:true/500x100.svg",    // Unrecognized param
 
 	}
 
 	for _, path := range badRequestPaths {
-		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", path), nil)
-		server.router.ServeHTTP(res, req)
-		require.Equal(t, http.StatusBadRequest, res.Code)
+		t.Run(path, func(t *testing.T) {
+			req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", path), nil)
+			server.router.ServeHTTP(res, req)
+			require.Equal(t, http.StatusBadRequest, res.Code)
+		})
 	}
 }
 
