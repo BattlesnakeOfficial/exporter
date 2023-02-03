@@ -35,6 +35,9 @@ var allowedPixelsPerSquare = []int{10, 20, 30, 40}
 var errBadRequest = fmt.Errorf("bad request")
 var errBadColor = fmt.Errorf("color parameter should have the format #FFFFFF")
 
+var reCustomizationParam = regexp.MustCompile(`^[A-Za-z-0-9#]{1,32}$`)
+var reColorParam = regexp.MustCompile(`^#?[A-Fa-f0-9]{6}$`)
+
 func handleVersion(w http.ResponseWriter, r *http.Request) {
 	version := os.Getenv("APP_VERSION")
 	if len(version) == 0 {
@@ -107,7 +110,7 @@ func handleAvatar(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case "color":
-			if len(cValue) != 7 || string(cValue[0]) != "#" {
+			if !reColorParam.MatchString(cValue) {
 				handleBadRequest(w, r, errBadRequest)
 				return
 			}
@@ -147,8 +150,6 @@ func handleAvatar(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, avatarSVG)
 }
 
-var reCustomizationParam = regexp.MustCompile(`^[A-Za-z-0-9#]{1,32}$`)
-
 func handleCustomization(w http.ResponseWriter, r *http.Request) {
 	customizationType := pat.Param(r, "type")
 	customizationName := pat.Param(r, "name")
@@ -172,7 +173,7 @@ func handleCustomization(w http.ResponseWriter, r *http.Request) {
 	var customizationColor color.Color = color.Black
 	colorParam := r.URL.Query().Get("color")
 	if colorParam != "" {
-		if len(colorParam) != 7 || string(colorParam[0]) != "#" {
+		if !reColorParam.MatchString(colorParam) {
 			handleBadRequest(w, r, errBadColor)
 			return
 		}
