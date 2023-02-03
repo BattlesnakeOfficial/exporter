@@ -45,7 +45,7 @@ func getMediaResource(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if response.StatusCode == http.StatusNotFound {
+	if response.StatusCode == http.StatusNotFound || response.StatusCode == http.StatusForbidden {
 		return "", ErrNotFound
 	}
 	if response.StatusCode != 200 {
