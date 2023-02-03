@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"image/color"
 	"image/png"
 	"math"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 
 	"github.com/BattlesnakeOfficial/exporter/engine"
 	"github.com/BattlesnakeOfficial/exporter/media"
+	"github.com/BattlesnakeOfficial/exporter/parse"
 	"github.com/BattlesnakeOfficial/exporter/render"
 )
 
@@ -29,6 +31,12 @@ const maxGIFResolution = 504 * 504
 
 // allowedPixelsPerSquare is a list of resolutions that the API will allow.
 var allowedPixelsPerSquare = []int{10, 20, 30, 40}
+
+var errBadRequest = fmt.Errorf("bad request")
+var errBadColor = fmt.Errorf("color parameter should have the format #FFFFFF")
+
+var reCustomizationParam = regexp.MustCompile(`^[A-Za-z-0-9#]{1,32}$`)
+var reColorParam = regexp.MustCompile(`^#?[A-Fa-f0-9]{6}$`)
 
 func handleVersion(w http.ResponseWriter, r *http.Request) {
 	version := os.Getenv("APP_VERSION")
@@ -43,7 +51,6 @@ var reAvatarCustomizations = regexp.MustCompile(`(?P<key>[a-z-]{1,32}):(?P<value
 
 func handleAvatar(w http.ResponseWriter, r *http.Request) {
 	subPath := strings.TrimPrefix(r.URL.Path, "/avatars")
-	errBadRequest := fmt.Errorf("bad request")
 	avatarSettings := render.AvatarSettings{}
 
 	// Extract width, height, and filetype
@@ -103,7 +110,7 @@ func handleAvatar(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case "color":
-			if len(cValue) != 7 || string(cValue[0]) != "#" {
+			if !reColorParam.MatchString(cValue) {
 				handleBadRequest(w, r, errBadRequest)
 				return
 			}
@@ -141,6 +148,66 @@ func handleAvatar(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "image/svg+xml")
 	fmt.Fprint(w, avatarSVG)
+}
+
+func handleCustomization(w http.ResponseWriter, r *http.Request) {
+	customizationType := pat.Param(r, "type")
+	customizationName := pat.Param(r, "name")
+	ext := pat.Param(r, "ext")
+
+	if ext != "svg" {
+		handleBadRequest(w, r, errBadRequest)
+		return
+	}
+
+	if customizationType != "head" && customizationType != "tail" {
+		handleBadRequest(w, r, errBadRequest)
+		return
+	}
+
+	if !reCustomizationParam.MatchString(customizationName) {
+		handleBadRequest(w, r, errBadRequest)
+		return
+	}
+
+	var customizationColor color.Color = color.Black
+	colorParam := r.URL.Query().Get("color")
+	if colorParam != "" {
+		if !reColorParam.MatchString(colorParam) {
+			handleBadRequest(w, r, errBadColor)
+			return
+		}
+
+		customizationColor = parse.HexColor(colorParam)
+	}
+
+	flippedParam := r.URL.Query().Get("flipped") != ""
+
+	var svg string
+	var err error
+	var shouldFlip bool
+	switch customizationType {
+	case "head":
+		svg, err = media.GetHeadSVG(customizationName)
+		shouldFlip = flippedParam
+	case "tail":
+		svg, err = media.GetTailSVG(customizationName)
+		shouldFlip = !flippedParam
+	}
+
+	if err != nil {
+		if err == media.ErrNotFound {
+			handleError(w, r, err, http.StatusNotFound)
+		} else {
+			handleError(w, r, err, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	svg = media.CustomizeSnakeSVG(svg, customizationColor, shouldFlip)
+
+	w.Header().Set("Content-Type", "image/svg+xml")
+	fmt.Fprint(w, svg)
 }
 
 func handleASCIIFrame(w http.ResponseWriter, r *http.Request) {

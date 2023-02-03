@@ -39,6 +39,7 @@ func TestHandlerAvatar_OK(t *testing.T) {
 		{"/head:beluga/tail:fish/color:%2331688e/500x100.svg", "image/svg+xml"},
 		{"/head:beluga/tail:fish/color:%23FfEeCc/500x100.svg", "image/svg+xml"},
 		{"/head:beluga/tail:fish/color:%23FfEeCc/500x100.png", "image/png"},
+		{"/head:beluga/tail:fish/color:FfEeCc/500x100.png", "image/png"},
 	} {
 		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/avatars%s", test.path), nil)
 		server.router.ServeHTTP(res, req)
@@ -64,10 +65,9 @@ func TestHandleAvatar_BadRequest(t *testing.T) {
 		"/500x100.zip",   // Invalid extension
 		"/500x99999.svg", // Invalid extension
 
-		"/color:00FF00/500x100.svg", // Invalid color value
+		"/color:barf/500x100.svg",   // Invalid color value
 		"/HEAD:default/500x100.svg", // Invalid characters
 		"/barf:true/500x100.svg",    // Unrecognized param
-
 	}
 
 	for _, path := range badRequestPaths {
@@ -76,6 +76,27 @@ func TestHandleAvatar_BadRequest(t *testing.T) {
 			server.router.ServeHTTP(res, req)
 			require.Equal(t, http.StatusBadRequest, res.Code)
 		})
+	}
+}
+
+func TestHandlerCustomization_OK(t *testing.T) {
+	server := NewServer()
+
+	for _, test := range []struct {
+		path        string
+		contentType string
+	}{
+		{"/head/beluga.svg", "image/svg+xml"},
+		{"/tail/fish.svg", "image/svg+xml"},
+		{"/tail/fish.svg?color=%2331688e", "image/svg+xml"},
+		{"/tail/fish.svg?color=31688e", "image/svg+xml"},
+		{"/tail/fish.svg?flipped=1", "image/svg+xml"},
+		{"/head/beluga.svg?color=%23ff00ff&flipped=1", "image/svg+xml"},
+	} {
+		req, res := fixtures.TestRequest(t, "GET", fmt.Sprintf("http://localhost/customizations%s", test.path), nil)
+		server.router.ServeHTTP(res, req)
+		require.Equal(t, http.StatusOK, res.Code, test.path)
+		require.Equal(t, res.Result().Header.Get("content-type"), test.contentType)
 	}
 }
 

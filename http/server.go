@@ -34,6 +34,8 @@ func NewServer() *Server {
 	// Export routes
 	mux.HandleFunc(pat.Get("/avatars/*"), withCaching(handleAvatar))
 
+	mux.HandleFunc(pat.Get("/customizations/:type/:name.:ext"), withCaching(handleCustomization))
+
 	mux.HandleFunc(pat.Get("/games/:game/gif"), withCaching(handleGIFGame))
 	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/ascii"), withCaching(handleASCIIFrame))
 	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/gif"), withCaching(handleGIFFrame))
