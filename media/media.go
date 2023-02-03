@@ -191,7 +191,7 @@ func (sm svgManager) ensureDownloaded(mediaPath string, c color.Color) (string, 
 			return "", err
 		}
 
-		svg = customiseSnakeSVG(svg, c)
+		svg = CustomizeSnakeSVG(svg, c, false)
 
 		err = sm.writeFile(customizedMediaPath, []byte(svg))
 		if err != nil {
@@ -203,8 +203,8 @@ func (sm svgManager) ensureDownloaded(mediaPath string, c color.Color) (string, 
 	return customizedMediaPath, nil
 }
 
-// customiseSnakeSVG sets the fill colour for the outer SVG tag
-func customiseSnakeSVG(svg string, c color.Color) string {
+// CustomizeSnakeSVG sets the fill colour for the outer SVG tag and optionally flips it horizontally.
+func CustomizeSnakeSVG(svg string, c color.Color, flipHorizontal bool) string {
 	var buf bytes.Buffer
 	decoder := xml.NewDecoder(strings.NewReader(svg))
 	encoder := xml.NewEncoder(&buf)
@@ -228,6 +228,10 @@ func customiseSnakeSVG(svg string, c color.Color) string {
 			if !rootSVGFound && v.Name.Local == "svg" {
 				rootSVGFound = true
 				attrs := append(v.Attr, xml.Attr{Name: xml.Name{Local: "fill"}, Value: colorToHex6(c)})
+				if flipHorizontal {
+					transform := "scale(-1, 1) translate(-100, 0)"
+					attrs = append(attrs, xml.Attr{Name: xml.Name{Local: "transform"}, Value: transform})
+				}
 				(&v).Attr = attrs
 			}
 
@@ -245,13 +249,13 @@ func customiseSnakeSVG(svg string, c color.Color) string {
 		}
 
 		if err := encoder.EncodeToken(token); err != nil {
-			log.Fatal(err)
+			log.WithError(err).Error("Failed to encode SVG")
 		}
 	}
 
 	// must call flush, otherwise some elements will be missing
 	if err := encoder.Flush(); err != nil {
-		log.Fatal(err)
+		log.WithError(err).Error("Failed to encode SVG")
 	}
 
 	return buf.String()

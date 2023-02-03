@@ -208,24 +208,28 @@ func TestColorToHex6(t *testing.T) {
 func TestCustomiseSVG(t *testing.T) {
 
 	// simple
-	customized := customiseSnakeSVG("<svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customized := CustomizeSnakeSVG("<svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff}, false)
 	require.Equal(t, `<svg fill="#00ccaa"></svg>`, customized)
 
 	// make sure it doesn't panic with strange/bad inputs
-	customiseSnakeSVG("", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSnakeSVG("afe9*#@(#f2038208", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSnakeSVG("<svg", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSnakeSVG("<svg><foo></>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSnakeSVG("<</>>>//", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
-	customiseSnakeSVG("<html></html>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	CustomizeSnakeSVG("", color.RGBA{0x00, 0xcc, 0xaa, 0xff}, false)
+	CustomizeSnakeSVG("afe9*#@(#f2038208", color.RGBA{0x00, 0xcc, 0xaa, 0xff}, false)
+	CustomizeSnakeSVG("<svg", color.RGBA{0x00, 0xcc, 0xaa, 0xff}, false)
+	CustomizeSnakeSVG("<svg><foo></>", color.RGBA{0x00, 0xcc, 0xaa, 0xff}, false)
+	CustomizeSnakeSVG("<</>>>//", color.RGBA{0x00, 0xcc, 0xaa, 0xff}, false)
+	CustomizeSnakeSVG("<html></html>", color.RGBA{0x00, 0xcc, 0xaa, 0xff}, false)
 
 	// nested
-	customized = customiseSnakeSVG("<svg><svg></svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customized = CustomizeSnakeSVG("<svg><svg></svg></svg>", color.RGBA{0x00, 0xcc, 0xaa, 0xff}, false)
 	require.Equal(t, `<svg fill="#00ccaa"><svg></svg></svg>`, customized, "nested SVG tags should be ignored")
 
 	// use a real head
-	customized = customiseSnakeSVG(headSVG, color.RGBA{0x00, 0xcc, 0xaa, 0xff})
+	customized = CustomizeSnakeSVG(headSVG, color.RGBA{0x00, 0xcc, 0xaa, 0xff}, false)
 	require.Contains(t, customized, `<svg id="root" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#00ccaa">`)
+
+	// flip horizontal
+	customized = CustomizeSnakeSVG(headSVG, color.RGBA{0x00, 0xcc, 0xaa, 0xff}, true)
+	require.Contains(t, customized, `<svg id="root" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" fill="#00ccaa" transform="scale(-1, 1) translate(-100, 0)">`)
 }
 
 const headSVG = `<svg id="root" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
