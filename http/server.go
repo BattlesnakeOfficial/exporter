@@ -66,7 +66,7 @@ func withCaching(wrappedHandler http.HandlerFunc) http.HandlerFunc {
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%s, immutable", cacheControlMaxAgeSeconds))
+		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%s", cacheControlMaxAgeSeconds))
 
 		// Set etag based on URL path and App Version
 		etagString := fmt.Sprintf("%s/%s", appVersion, r.URL.Path)
