@@ -41,6 +41,11 @@ func NewServer() *Server {
 	mux.HandleFunc(pat.Get("/games/:game/frames/:frame.txt"), withCaching(handleASCIIFrame))
 	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/:size.gif"), withCaching(handleGIFFrameDimensions))
 
+	// Deprecated and undocumented, remove these!
+	mux.HandleFunc(pat.Get("/games/:game/gif"), withCaching(handleGIFGame))
+	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/ascii"), withCaching(handleASCIIFrame))
+	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/gif"), withCaching(handleGIFFrame))
+
 	return &Server{
 		router: mux,
 		httpServer: &http.Server{
