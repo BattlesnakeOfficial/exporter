@@ -277,10 +277,6 @@ func handleGIFFrameDimensions(w http.ResponseWriter, r *http.Request) {
 	handleGIFFrameCommon(w, r, width, height)
 }
 
-func handleGIFFrame(w http.ResponseWriter, r *http.Request) {
-	handleGIFFrameCommon(w, r, 0, 0)
-}
-
 func handleGIFFrameCommon(w http.ResponseWriter, r *http.Request, width, height int) {
 	gameID := pat.Param(r, "game")
 	frameID, err := strconv.Atoi(pat.Param(r, "frame"))
@@ -347,10 +343,6 @@ func handleGIFGameDimensions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	handleCommonGIFGame(w, r, width, height)
-}
-
-func handleGIFGame(w http.ResponseWriter, r *http.Request) {
-	handleCommonGIFGame(w, r, 0, 0)
 }
 
 func handleCommonGIFGame(w http.ResponseWriter, r *http.Request, width, height int) {

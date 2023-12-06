@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
 	"net/http"
 	"os"
@@ -36,10 +37,6 @@ func NewServer() *Server {
 
 	mux.HandleFunc(pat.Get("/customizations/:type/:name.:ext"), withCaching(handleCustomization))
 
-	mux.HandleFunc(pat.Get("/games/:game/gif"), withCaching(handleGIFGame))
-	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/ascii"), withCaching(handleASCIIFrame))
-	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/gif"), withCaching(handleGIFFrame))
-
 	mux.HandleFunc(pat.Get("/games/:game/:size.gif"), withCaching(handleGIFGameDimensions))
 	mux.HandleFunc(pat.Get("/games/:game/frames/:frame.txt"), withCaching(handleASCIIFrame))
 	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/:size.gif"), withCaching(handleGIFFrameDimensions))
@@ -53,9 +50,23 @@ func NewServer() *Server {
 }
 
 func withCaching(wrappedHandler http.HandlerFunc) http.HandlerFunc {
+	appVersion, ok := os.LookupEnv("APP_VERSION")
+	if !ok {
+		appVersion = "0.0.0"
+	}
+
+	cacheControlMaxAgeSeconds, ok := os.LookupEnv("CACHE_CONTROL_MAX_AGE_SECONDS")
+	if !ok {
+		cacheControlMaxAgeSeconds = "86400" // 24 Hours
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		maxAgeSeconds := 60 * 60 * 24 // 24 Hours
-		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age:%d", maxAgeSeconds))
+		w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age:%s", cacheControlMaxAgeSeconds))
+
+		// Set etag based on URL path and App Version
+		etagString := fmt.Sprintf("%s/%s", appVersion, r.URL.Path)
+		w.Header().Set("Etag", fmt.Sprintf("%x", md5.Sum([]byte(etagString))))
+
 		wrappedHandler(w, r)
 	}
 }

@@ -1,4 +1,4 @@
-FROM golang:1.18.1-alpine as builder
+FROM golang:1.21.5-alpine as builder
 
 COPY . /go/src/github.com/BattlesnakeOfficial/exporter/
 WORKDIR /go/src/github.com/BattlesnakeOfficial/exporter

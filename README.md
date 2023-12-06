@@ -85,24 +85,6 @@ curl -i http://localhost:8000/avatars/head:beluga/500x100.svg
 curl -i http://localhost:8000/avatars/head:beluga/tail:fish/color:%2331688e/500x100.svg
 ```
 
-#### `/games/{game id}/gif`
-
-**DEPRECATED:** use `/games/{game id}/{width}x{height}.gif` instead.
-
-Exports the game as an animated gif.
-
-#### `/games/{game id}/frames/{frame number}/gif`
-
-**DEPRECATED:** use `/games/{game id}/frames/{frame number}/{width}x{height}.gif` instead.
-
-Exports a specific frame as a gif (no animation).
-
-#### `/games/{game id}/frames/{frame number}/ascii`
-
-**DEPRECATED:** use `/games/{game id}/frames/{frame number}.txt` instead.
-
-Exports a specific frame as an ASCII string.
-
 #### `/games/{game id}/{width}x{height}.gif`
 
 Exports the game as an animated gif sized `width` pixels wide and `height` pixels high.
@@ -136,12 +118,12 @@ These options may change. If you need an up-to-date list, look at `allowedPixels
 Using the above, you can determine the available GIF dimensions that you can request.
 
 Examples:
-- allowed sizes allowed for **11x11** board are: 
+- allowed sizes allowed for **11x11** board are:
   - **114x114** (10 pixels per board square)
   - **224x224** (20 pixels per board square)
   - **334x334** (30 pixels per board square)
   - **444x444** (40 pixels per board square)
-- allowed sizes allowed for **19x19** board are: 
+- allowed sizes allowed for **19x19** board are:
   - **194x194** (10 pixels per board square)
   - **384x384** (20 pixels per board square)
   - **574x574** (30 pixels per board square) (**Disallowed** because it exceeds `504x504`)
