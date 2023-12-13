@@ -354,11 +354,10 @@ func handleGIFGame(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleCommonGIFGame(w http.ResponseWriter, r *http.Request, width, height int) {
-
 	gameID := pat.Param(r, "game")
 	engineURL := r.URL.Query().Get("engine_url")
 
-	log.WithField("game", gameID).WithField("engine_url", engineURL).Info("exporting game")
+	log.WithField("game", gameID).WithField("engine_url", engineURL).Info("rendering gif for game")
 
 	game, err := engine.GetGame(gameID, engineURL)
 	if err != nil {

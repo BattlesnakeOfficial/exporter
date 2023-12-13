@@ -3,6 +3,7 @@ module github.com/BattlesnakeOfficial/exporter
 go 1.17
 
 require (
+	github.com/alitto/pond v1.8.3
 	github.com/disintegration/imaging v1.6.2
 	github.com/ericpauley/go-quantize v0.0.0-20200331213906-ae555eb2afa4
 	github.com/fogleman/gg v1.3.0

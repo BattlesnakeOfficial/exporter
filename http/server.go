@@ -12,10 +12,15 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/alitto/pond"
 	log "github.com/sirupsen/logrus"
 	"goji.io/v3"
 	"goji.io/v3/pat"
 )
+
+// How many requests can be queued up for any GIF render before we start rejecting with HTTP 429
+// Half of the current max in-flight requests
+const DEFAULT_RENDER_BACKLOG = 40
 
 type Server struct {
 	router     *goji.Mux
@@ -23,6 +28,9 @@ type Server struct {
 }
 
 func NewServer() *Server {
+	log.WithField("size", runtime.NumCPU()).Info("Starting GIF render pool")
+	renderPool := pond.New(runtime.NumCPU(), DEFAULT_RENDER_BACKLOG)
+
 	mux := goji.NewMux()
 	mux.Use(Recovery) // captures panics
 
@@ -40,20 +48,41 @@ func NewServer() *Server {
 
 	mux.HandleFunc(pat.Get("/customizations/:type/:name.:ext"), withCaching(handleCustomization))
 
-	mux.HandleFunc(pat.Get("/games/:game/:size.gif"), withCaching(handleGIFGameDimensions))
-	mux.HandleFunc(pat.Get("/games/:game/frames/:frame.txt"), withCaching(handleASCIIFrame))
-	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/:size.gif"), withCaching(handleGIFFrameDimensions))
+	mux.HandleFunc(pat.Get("/games/:game/:size.gif"), withConcurrencyLimit(renderPool, withCaching(handleGIFGameDimensions)))
+	mux.HandleFunc(pat.Get("/games/:game/gif"), withConcurrencyLimit(renderPool, withCaching(handleGIFGame)))
+	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/:size.gif"), withConcurrencyLimit(renderPool, withCaching(handleGIFFrameDimensions)))
+	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/gif"), withConcurrencyLimit(renderPool, withCaching(handleGIFFrame)))
 
-	// Deprecated and undocumented, remove these!
-	mux.HandleFunc(pat.Get("/games/:game/gif"), withCaching(handleGIFGame))
+	mux.HandleFunc(pat.Get("/games/:game/frames/:frame.txt"), withCaching(handleASCIIFrame))
 	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/ascii"), withCaching(handleASCIIFrame))
-	mux.HandleFunc(pat.Get("/games/:game/frames/:frame/gif"), withCaching(handleGIFFrame))
 
 	return &Server{
 		router: mux,
 		httpServer: &http.Server{
 			Handler: mux,
 		},
+	}
+}
+
+func withConcurrencyLimit(pool *pond.WorkerPool, wrappedHandler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		done := make(chan struct{})
+
+		// Try to submit a job to the pool asynchronously, and if it fails, reject the request
+		submitted := pool.TrySubmit(func() {
+			defer close(done)
+			wrappedHandler(w, r)
+		})
+
+		if !submitted {
+			close(done)
+			log.WithField("url", r.URL.String()).Print("No worker available from pool, rejecting request")
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		} else {
+			// Block until the job that was submitted to the pool is done
+			<-done
+		}
 	}
 }
 
