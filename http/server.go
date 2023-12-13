@@ -31,6 +31,9 @@ func NewServer() *Server {
 	mux.HandleFunc(pat.Get("/version"), handleVersion)
 	mux.HandleFunc(pat.Get("/healthz/alive"), handleAlive)
 	mux.HandleFunc(pat.Get("/healthz/ready"), handleReady)
+	mux.HandleFunc(pat.Get("/robots.txt"), func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "User-agent: *\nDisallow: /")
+	})
 
 	// Export routes
 	mux.HandleFunc(pat.Get("/avatars/*"), withCaching(handleAvatar))
