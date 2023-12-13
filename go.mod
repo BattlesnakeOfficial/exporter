@@ -1,6 +1,6 @@
 module github.com/BattlesnakeOfficial/exporter
 
-go 1.17
+go 1.21
 
 require (
 	github.com/alitto/pond v1.8.3
